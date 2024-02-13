@@ -105,7 +105,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             }
             RoomState = RoomState.ContentEvaluation;
 
-            AddDomainEvent(new EvaluationStartedDomainEvent(Id));
+            AddDomainEvent(new EvaluationStartedDomainEvent(Id, InvitedUsers));
         }
         public void CompleateContentEvaluation(User initiatingUser)
         {
@@ -119,7 +119,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             }
             RoomState = RoomState.EvaluationCompleate;
 
-            AddDomainEvent(new EvaluationCompleatedDomainEvent(Id));
+            AddDomainEvent(new EvaluationCompleatedDomainEvent(Id, InvitedUsers));
         }
     }
 }

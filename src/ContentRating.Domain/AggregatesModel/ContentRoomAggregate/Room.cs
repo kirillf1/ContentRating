@@ -6,10 +6,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
 {
     public class Room : Entity, IAggregateRoot
     {
-        public Room(Guid id, User creator)
+        public Room(Guid id, User creator, string name)
         {
             Id = id;
             Creator = creator;
+            Name = name;
             _addedContent = new();
             RoomState = RoomState.Editing;
             _invitedUsers = new();
@@ -18,6 +19,8 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
         public IReadOnlyCollection<User> InvitedUsers => _invitedUsers;
         public User Creator { get; private set; }
+        public string Name { get; private set; }
+
         private List<Content> _addedContent;
         private List<User> _invitedUsers;
         public void InviteUser(User initiatingUser, User invitedUser)
@@ -75,6 +78,22 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
 
             AddDomainEvent(new ContentAddedToRoomDomainEvent(newContent, Id));
         }
+        public void UpdateContent(User initiatingUser, Guid contentId, ContentModification contentModification)
+        {
+            if (initiatingUser != Creator)
+            {
+                throw new ForbiddenRoomOperationException("Only creator can update content");
+            }
+            if (RoomState == RoomState.EvaluationCompleate)
+            {
+                throw new InvalidRoomStageOperationException("Сan't update content in compleated room");
+            }
+            
+            var oldContent = _addedContent.Single(c => c.Id == contentId);
+            oldContent.ModifyContent(contentModification);
+            
+            AddDomainEvent(new ContentUpdatedInRoomDomainEvent(oldContent, Id));
+        }
         public bool RemoveContent(User initiatingUser, Content contentForRemove)
         {
             if (initiatingUser != Creator)
@@ -92,6 +111,14 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
                 AddDomainEvent(new ContentRemovedFromRoomDomaintEvent(contentForRemove, Id));
             }
             return isRemoved;
+        }
+        public void SetNewRoomName(string roomName)
+        {
+            if (roomName.Length < 3 || roomName.Length > 300)
+            {
+                throw new ArgumentException("Room name must be more than 3 and less than 300 symbols");
+            }
+            Name = roomName;
         }
         public void StartContentEvaluation(User initiatingUser)
         {
@@ -120,6 +147,10 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             RoomState = RoomState.EvaluationCompleate;
 
             AddDomainEvent(new EvaluationCompleatedDomainEvent(Id, InvitedUsers));
+        }
+        public void MarkDeleted()
+        {
+            AddDomainEvent(new RoomDeletedDomainEvent(Id));
         }
     }
 }

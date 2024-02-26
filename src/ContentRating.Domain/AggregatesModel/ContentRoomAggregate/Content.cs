@@ -12,25 +12,37 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             Type = type;
         }
 
-        public string Path { get; }
-        public string Name { get; }
-        public ContentType Type { get; }
+        public string Path { get; private set; }
+        public string Name { get; private set; }
+        public ContentType Type { get; private set; }
+        public void ModifyContent(ContentModification contentModification)
+        {
+            Path = contentModification.NewPath; 
+            Name = contentModification.NewName;
+            Type = contentModification.NewContentType;
+        }
         public override bool Equals(object obj)
         {
             if (obj == null || obj is not Content)
                 return false;
 
-            if (Object.ReferenceEquals(this, obj))
+            if (ReferenceEquals(this, obj))
                 return true;
 
-            if (this.GetType() != obj.GetType())
+            if (GetType() != obj.GetType())
                 return false;
 
             Content item = (Content)obj;
 
-            return item.Id == this.Id
-                && (item.Path.Equals(Path, StringComparison.OrdinalIgnoreCase) || item.Name.Equals(Name, StringComparison.OrdinalIgnoreCase));
+            return item.Id == Id
+               || item.Path.Equals(Path, StringComparison.OrdinalIgnoreCase) 
+               || item.Name.Equals(Name, StringComparison.OrdinalIgnoreCase);
                 
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
         }
     }
 }

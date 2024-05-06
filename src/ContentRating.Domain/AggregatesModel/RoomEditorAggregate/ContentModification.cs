@@ -1,6 +1,6 @@
 ﻿using ContentRating.Domain.Shared;
 
-namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
+namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
 {
     public class ContentModification : ValueObject
     {

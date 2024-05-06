@@ -1,4 +1,4 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
+﻿namespace ContentRating.Domain.Shared.RoomStates
 {
     public enum RoomState
     {

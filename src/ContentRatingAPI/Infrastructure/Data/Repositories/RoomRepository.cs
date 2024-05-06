@@ -1,4 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRoomAggregate;
+﻿using ContentRating.Domain.AggregatesModel.RoomEditorAggregate;
 using ContentRating.Domain.Shared;
 using MongoDB.Driver;
 
@@ -12,34 +12,34 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             this.mongoContext = mongoContext;
             UnitOfWork = mongoContext;
             this.changeTracker = changeTracker;
-            dbSet = mongoContext.GetCollection<Room>(COLLECTION_NAME);
+            dbSet = mongoContext.GetCollection<RoomEditor>(COLLECTION_NAME);
         }
         public IUnitOfWork UnitOfWork { get; }
         private readonly MongoContext mongoContext;
         private readonly IChangeTracker changeTracker;
-        private readonly IMongoCollection<Room> dbSet;
+        private readonly IMongoCollection<RoomEditor> dbSet;
 
-        public Room Add(Room room)
+        public RoomEditor Add(RoomEditor room)
         {
             mongoContext.AddCommand((s) => dbSet.InsertOneAsync(s, room));
             changeTracker.TrackEntity(room);
             return room;
         }
 
-        public void Delete(Room room)
+        public void Delete(RoomEditor room)
         {
             changeTracker.TrackEntity(room);
-            mongoContext.AddCommand((s) => dbSet.DeleteOneAsync(s, Builders<Room>.Filter.Eq(_ => _.Id, room.Id)));
+            mongoContext.AddCommand((s) => dbSet.DeleteOneAsync(s, Builders<RoomEditor>.Filter.Eq(_ => _.Id, room.Id)));
         }
 
-        public async Task<Room> GetRoom(Guid id)
+        public async Task<RoomEditor> GetRoom(Guid id)
         {
-            return await dbSet.Find(Builders<Room>.Filter.Eq(_ => _.Id, id)).SingleAsync();
+            return await dbSet.Find(Builders<RoomEditor>.Filter.Eq(_ => _.Id, id)).SingleAsync();
         }
 
-        public Room Update(Room room)
+        public RoomEditor Update(RoomEditor room)
         {
-            mongoContext.AddCommand((s) => dbSet.ReplaceOneAsync(s, Builders<Room>.Filter.Eq(_ => _.Id, room.Id), room));
+            mongoContext.AddCommand((s) => dbSet.ReplaceOneAsync(s, Builders<RoomEditor>.Filter.Eq(_ => _.Id, room.Id), room));
             changeTracker.TrackEntity(room);
             return room;
         }

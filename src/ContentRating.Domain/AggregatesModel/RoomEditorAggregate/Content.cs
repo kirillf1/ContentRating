@@ -1,6 +1,6 @@
 ﻿using ContentRating.Domain.Shared;
 
-namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
+namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
 {
     public class Content : Entity
     {
@@ -17,7 +17,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
         public ContentType Type { get; private set; }
         public void ModifyContent(ContentModification contentModification)
         {
-            Path = contentModification.NewPath; 
+            Path = contentModification.NewPath;
             Name = contentModification.NewName;
             Type = contentModification.NewContentType;
         }
@@ -35,9 +35,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             Content item = (Content)obj;
 
             return item.Id == Id
-               || item.Path.Equals(Path, StringComparison.OrdinalIgnoreCase) 
+               || item.Path.Equals(Path, StringComparison.OrdinalIgnoreCase)
                || item.Name.Equals(Name, StringComparison.OrdinalIgnoreCase);
-                
+
         }
 
         public override int GetHashCode()

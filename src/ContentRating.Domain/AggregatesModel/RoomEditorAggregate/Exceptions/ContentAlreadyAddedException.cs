@@ -1,4 +1,4 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate.Exceptions
+﻿namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Exceptions
 {
     public class ContentAlreadyAddedException(string? message, Content foundContent) : Exception(message)
     {

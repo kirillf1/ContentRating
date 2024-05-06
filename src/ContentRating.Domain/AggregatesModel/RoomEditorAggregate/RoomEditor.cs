@@ -1,12 +1,14 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRoomAggregate.Events;
-using ContentRating.Domain.AggregatesModel.ContentRoomAggregate.Exceptions;
+﻿
+using ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Events;
+using ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Exceptions;
 using ContentRating.Domain.Shared;
+using ContentRating.Domain.Shared.RoomStates;
 
-namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
+namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
 {
-    public class Room : Entity, IAggregateRoot
+    public class RoomEditor : Entity, IAggregateRoot
     {
-        public Room(Guid id, User creator, string name)
+        public RoomEditor(Guid id, Editor creator, string name)
         {
             Id = id;
             Creator = creator;
@@ -17,13 +19,13 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
         }
         public RoomState RoomState { get; private set; }
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
-        public IReadOnlyCollection<User> InvitedUsers => _invitedUsers;
-        public User Creator { get; private set; }
+        public IReadOnlyCollection<Editor> InvitedUsers => _invitedUsers;
+        public Editor Creator { get; private set; }
         public string Name { get; private set; }
 
         private List<Content> _addedContent;
-        private List<User> _invitedUsers;
-        public void InviteUser(User initiatingUser, User invitedUser)
+        private List<Editor> _invitedUsers;
+        public void InviteUser(Editor initiatingUser, Editor invitedUser)
         {
             if (initiatingUser != Creator)
             {
@@ -41,7 +43,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
 
             AddDomainEvent(new UserInvitedDomainEvent(invitedUser, Id));
         }
-        public bool KickUser(User initiatingUser, User userForKick)
+        public bool KickUser(Editor initiatingUser, Editor userForKick)
         {
             if (initiatingUser != Creator)
             {
@@ -60,7 +62,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             return isRemoved;
 
         }
-        public void AddContent(User initiatingUser, Content newContent)
+        public void AddContent(Editor initiatingUser, Content newContent)
         {
             if (initiatingUser != Creator)
             {
@@ -78,7 +80,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
 
             AddDomainEvent(new ContentAddedToRoomDomainEvent(newContent, Id));
         }
-        public void UpdateContent(User initiatingUser, Guid contentId, ContentModification contentModification)
+        public void UpdateContent(Editor initiatingUser, Guid contentId, ContentModification contentModification)
         {
             if (initiatingUser != Creator)
             {
@@ -88,13 +90,13 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             {
                 throw new InvalidRoomStageOperationException("Сan't update content in compleated room");
             }
-            
+
             var oldContent = _addedContent.Single(c => c.Id == contentId);
             oldContent.ModifyContent(contentModification);
-            
+
             AddDomainEvent(new ContentUpdatedInRoomDomainEvent(oldContent, Id));
         }
-        public bool RemoveContent(User initiatingUser, Content contentForRemove)
+        public bool RemoveContent(Editor initiatingUser, Content contentForRemove)
         {
             if (initiatingUser != Creator)
             {
@@ -120,13 +122,13 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
             }
             Name = roomName;
         }
-        public void StartContentEvaluation(User initiatingUser)
+        public void StartContentEvaluation(Editor initiatingUser)
         {
             if (initiatingUser != Creator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can start content evaluation");
             }
-            if(RoomState != RoomState.Editing)
+            if (RoomState != RoomState.Editing)
             {
                 throw new InvalidRoomStageOperationException("Сan't start evaluation if room is not editing state");
             }
@@ -134,7 +136,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomAggregate
 
             AddDomainEvent(new EvaluationStartedDomainEvent(Id, InvitedUsers));
         }
-        public void CompleateContentEvaluation(User initiatingUser)
+        public void CompleateContentEvaluation(Editor initiatingUser)
         {
             if (initiatingUser != Creator)
             {

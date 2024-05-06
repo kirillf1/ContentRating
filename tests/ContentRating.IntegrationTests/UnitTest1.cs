@@ -1,4 +1,4 @@
-using ContentRating.Domain.AggregatesModel.ContentRoomAggregate;
+using ContentRating.Domain.AggregatesModel.RoomEditorAggregate;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
 using MongoDB.Bson;
@@ -33,8 +33,8 @@ namespace ContentRating.IntegrationTests
         {
             var mongoClient = new MongoClient("mongodb://localhost:27017");
             var d = mongoClient.GetDatabase("MyTestDb");
-            var c = d.GetCollection<TestEntity>("rooms");
-            var e = c.Find(Builders<TestEntity>.Filter.Eq(c => c.Id, new Guid("b1cec36a-97d4-4b89-8baf-c18612f2454d"))).First();
+            var c = d.GetCollection<RoomEditor>("rooms");
+            var e = c.Find(Builders<RoomEditor>.Filter.Eq(c => c.Id, new Guid("50def115-72f9-4d08-aa7e-6d1c50d172e9"))).First();
             Console.WriteLine(e);
         }
         [Fact]

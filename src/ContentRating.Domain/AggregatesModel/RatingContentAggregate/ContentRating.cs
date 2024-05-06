@@ -4,9 +4,9 @@ using ContentRating.Domain.Shared;
 
 namespace ContentRating.Domain.AggregatesModel.RatingContentAggregate
 {
-    public class RatingContent : Entity, IAggregateRoot
+    public class ContentRating : Entity, IAggregateRoot
     {
-        public RatingContent(Guid contentId, Guid roomId, IEnumerable<Rater> raters)
+        public ContentRating(Guid contentId, Guid roomId, IEnumerable<Rater> raters)
         {
             Id = contentId;
             RoomId = roomId;

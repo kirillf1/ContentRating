@@ -46,7 +46,7 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             {
                 throw new ForbiddenRoomOperationException("Only creator can kick user");
             }
-            if (RoomState == RoomState.EvaluationCompleate)
+            if (RoomState == RoomState.EvaluationComplete)
             {
                 throw new InvalidRoomStageOperationException("Сan't kick a user when the room is compleated");
             }

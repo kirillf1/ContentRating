@@ -13,14 +13,26 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             Id = id;
             RoomCreator = creator;
             RoomState = RoomState.Editing;
+            _users = new();
+            _roomSpecification = new();
         }
+        private RoomControlSpecification _roomSpecification;
         public RoomState RoomState { get; private set; }
         public User RoomCreator { get; }
-        public IReadOnlyCollection<User> Users => _users;
-        private HashSet<User> _users;
-        public User? KickUser(Guid targetUserId, Guid initiatorId)
+        public IReadOnlyCollection<User> Users => _users.Values;
+        private Dictionary<Guid, User> _users;
+        public void KickUser(Guid targetUserId, Guid initiatorId)
         {
+            if(!_roomSpecification.RoomIsWorking(this))
+                throw new InvalidRoomStageOperationException("Сan't kick user when the room is not working");
 
+            if (!_users.TryGetValue(initiatorId, out var initiator) || !_users.TryGetValue(targetUserId, out var userForKick))
+            {
+                throw new ArgumentException("Room don't contain this user");
+            }
+            if (!_roomSpecification.CanKickAnotherUser(initiator))
+
+            
         }
         public void InviteUser(Editor initiatingUser, Editor invitedUser)
         {

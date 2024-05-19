@@ -1,4 +1,4 @@
-﻿namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 {
     public enum ContentType
     {

@@ -4,12 +4,16 @@
     {
         public RoomControlSpecification()
         {
-            _canKickRoles = new List<RoleType>() { RoleType.Admin };
+            _canControlAnotherUserRoles = new List<RoleType>() { RoleType.Admin };
         }
-        private List<RoleType> _canKickRoles;
+        private List<RoleType> _canControlAnotherUserRoles;
         public bool CanKickAnotherUser(User user)
         {
-            return _canKickRoles.Contains(user.Role);
+            return _canControlAnotherUserRoles.Contains(user.Role);
+        }
+        public bool CanInviteAnotherUser(User user)
+        {
+            return _canControlAnotherUserRoles.Contains(user.Role);
         }
         public bool RoomIsWorking(RoomAccessControl room)
         {

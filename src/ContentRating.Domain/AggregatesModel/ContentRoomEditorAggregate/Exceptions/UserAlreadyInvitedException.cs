@@ -1,6 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.RoomEditorAggregate;
-
-namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Exceptions
+﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Exceptions
 {
     public class UserAlreadyInvitedException(string message, Editor invitedUser) : Exception(message)
     {

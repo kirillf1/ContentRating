@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Events
+namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events
 {
     public record RoomDeletedDomainEvent(Guid RoomId) : INotification;
 }

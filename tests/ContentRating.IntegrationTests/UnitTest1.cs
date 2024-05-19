@@ -1,3 +1,4 @@
+using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.Domain.AggregatesModel.RoomEditorAggregate;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
@@ -13,6 +14,14 @@ namespace ContentRating.IntegrationTests
         public string Name { get; set; } = name;
         public string T { get; set; } = t;
         
+    }
+    public class TestEntity1(Guid id, string name, string t)
+    {
+
+        public Guid Id { get; set; } = id;
+        public string Name { get; set; } = name;
+        public string T { get; set; } = t;
+
     }
     public class UnitTest1
     {
@@ -33,8 +42,8 @@ namespace ContentRating.IntegrationTests
         {
             var mongoClient = new MongoClient("mongodb://localhost:27017");
             var d = mongoClient.GetDatabase("MyTestDb");
-            var c = d.GetCollection<RoomEditor>("rooms");
-            var e = c.Find(Builders<RoomEditor>.Filter.Eq(c => c.Id, new Guid("50def115-72f9-4d08-aa7e-6d1c50d172e9"))).First();
+            var c = d.GetCollection<ContentRoomEditor>("rooms");
+            var e = c.Find(Builders<ContentRoomEditor>.Filter.Eq(c => c.Id, new Guid("50def115-72f9-4d08-aa7e-6d1c50d172e9"))).First();
             Console.WriteLine(e);
         }
         [Fact]
@@ -48,18 +57,19 @@ namespace ContentRating.IntegrationTests
                 Session.StartTransaction();
                 try
                 {
-
+                    var c1 = d.GetCollection<TestEntity1>("rooms1");
                     var e = new TestEntity(Guid.NewGuid(), "test", "t");
                     c.InsertOne(Session ,e);
                     using (var session = await mongoClient.StartSessionAsync())
                     {
                         session.StartTransaction();
-                        e = new TestEntity(Guid.NewGuid(), "test", "t");
-                        c.InsertOne(session, e);
+                        var newEntity = new TestEntity1(Guid.NewGuid(), "test1", "t");
+                        c1.InsertOne(session, newEntity);
                         session.CommitTransaction();
                     }
                     Session.CommitTransaction();
                 }
+                
                 catch (Exception ex)
                 {
                     await Session.AbortTransactionAsync();
@@ -73,7 +83,7 @@ namespace ContentRating.IntegrationTests
             var mongoContext = new MongoContext(new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb" }, changeTracker, null);
             var rep = new RoomRepository(mongoContext, changeTracker);
 
-            var newRoom = new Room(Guid.NewGuid(), new User(Guid.NewGuid(), "test", false), "testRoom");
+            var newRoom = new ContentRoomEditor(Guid.NewGuid(), new Editor(Guid.NewGuid(), "test"), "testRoom");
             rep.Add(newRoom);
 
             await rep.UnitOfWork.SaveChangesAsync();

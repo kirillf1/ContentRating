@@ -1,16 +1,16 @@
-﻿using ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Events;
-using ContentRating.Domain.AggregatesModel.RoomEditorAggregate.Exceptions;
+﻿using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events;
+using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Exceptions;
 using ContentRating.Domain.Shared;
 using ContentRating.Domain.Shared.RoomStates;
 
-namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
+namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 {
-    public class RoomEditor : Entity, IAggregateRoot
+    public class ContentRoomEditor : Entity, IAggregateRoot
     {
-        public RoomEditor(Guid id, Editor creator, string name)
+        public ContentRoomEditor(Guid id, Editor roomCreator, string name)
         {
             Id = id;
-            Creator = creator;
+            RoomCreator = roomCreator;
             Name = name;
             _addedContent = new();
             RoomState = RoomState.Editing;
@@ -19,22 +19,23 @@ namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
         public RoomState RoomState { get; private set; }
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
         public IReadOnlyCollection<Editor> InvitedUsers => _invitedEditors;
-        public Editor Creator { get; private set; }
+        public Editor RoomCreator { get; private set; }
         public string Name { get; private set; }
 
-        private HashSet<Content> _addedContent;
-        private HashSet<Editor> _invitedEditors;
-      
-        public void AddContent(Editor initiatingUser, Content newContent)
+        private List<Content> _addedContent;
+        private List<Editor> _invitedEditors;
+
+        public void AddContent(Editor editor, ContentData contentData)
         {
-            if (initiatingUser != Creator)
+            if (!_invitedEditors.Contains(editor) || editor != RoomCreator)
             {
-                throw new ForbiddenRoomOperationException("Only creator can add content");
+                throw new ArgumentException("Editor don't exist in this room");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
                 throw new InvalidRoomStageOperationException("Сan't add content in completed room");
             }
+            var newContent = editor.CreateContent(contentData);
             if (_addedContent.Contains(newContent))
             {
                 throw new ContentAlreadyAddedException("Same content already added", newContent);
@@ -43,37 +44,47 @@ namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
 
             AddDomainEvent(new ContentAddedToRoomDomainEvent(newContent, Id));
         }
-        public void UpdateContent(Editor initiatingUser, Guid contentId, ContentModification contentModification)
+        public void UpdateContent(Editor editor, ContentData contentModification)
         {
-            if (initiatingUser != Creator)
+            if (!_invitedEditors.Contains(editor) || editor != RoomCreator)
             {
-                throw new ForbiddenRoomOperationException("Only creator can update content");
+                throw new ArgumentException("Editor don't exist in this room");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
                 throw new InvalidRoomStageOperationException("Сan't update content in completed room");
             }
 
-            var oldContent = _addedContent.Single(c => c.Id == contentId);
+            var oldContent = _addedContent.Single(c => c.Id == contentModification.Id);
+            var contentEditor = oldContent.ContentModificationHistory.EditorId;
+            if (contentEditor != editor.Id || RoomCreator != editor)
+            {
+                throw new ForbiddenRoomOperationException("Can't edit foregin content");
+            }
+
             oldContent.ModifyContent(contentModification);
 
             AddDomainEvent(new ContentUpdatedInRoomDomainEvent(oldContent, Id));
         }
-        public bool RemoveContent(Editor initiatingUser, Content contentForRemove)
+        public bool RemoveContent(Editor editor, Content content)
         {
-            if (initiatingUser != Creator)
+            if (!_invitedEditors.Contains(editor) || editor != RoomCreator)
             {
-                throw new ForbiddenRoomOperationException("Only creator can remove content");
+                throw new ArgumentException("Editor don't exist in this room");
+            }
+            if (content.ContentModificationHistory.EditorId != editor.Id || RoomCreator != editor)
+            {
+                throw new ForbiddenRoomOperationException("Can't edit foregin content");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
                 throw new InvalidRoomStageOperationException("Сan't remove in completed room");
             }
 
-            var isRemoved = _addedContent.Remove(contentForRemove);
+            var isRemoved = _addedContent.Remove(content);
             if (isRemoved)
             {
-                AddDomainEvent(new ContentRemovedFromRoomDomaintEvent(contentForRemove, Id));
+                AddDomainEvent(new ContentRemovedFromRoomDomaintEvent(content, Id));
             }
             return isRemoved;
         }
@@ -85,9 +96,9 @@ namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
             }
             Name = roomName;
         }
-        public void StartContentEvaluation(Editor initiatingUser)
+        public void CompleateEditing(Editor initiatingUser)
         {
-            if (initiatingUser != Creator)
+            if (initiatingUser != RoomCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can start content evaluation");
             }
@@ -101,7 +112,7 @@ namespace ContentRating.Domain.AggregatesModel.RoomEditorAggregate
         }
         public void CompleteContentEvaluation(Editor initiatingUser)
         {
-            if (initiatingUser != Creator)
+            if (initiatingUser != RoomCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can complete content evaluation");
             }

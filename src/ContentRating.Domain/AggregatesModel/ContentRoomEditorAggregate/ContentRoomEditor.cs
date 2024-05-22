@@ -27,7 +27,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 
         public void AddContent(Editor editor, ContentData contentData)
         {
-            if (!_invitedEditors.Contains(editor) || editor != RoomCreator)
+            if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
             {
                 throw new ArgumentException("Editor don't exist in this room");
             }
@@ -46,7 +46,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
         }
         public void UpdateContent(Editor editor, ContentData contentModification)
         {
-            if (!_invitedEditors.Contains(editor) || editor != RoomCreator)
+            if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
             {
                 throw new ArgumentException("Editor don't exist in this room");
             }
@@ -68,7 +68,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
         }
         public bool RemoveContent(Editor editor, Content content)
         {
-            if (!_invitedEditors.Contains(editor) || editor != RoomCreator)
+            if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
             {
                 throw new ArgumentException("Editor don't exist in this room");
             }

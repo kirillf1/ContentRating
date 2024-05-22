@@ -1,4 +1,4 @@
-using ContentRating.Domain.AggregatesModel.RatingContentAggregate;
+
 
 var builder = WebApplication.CreateBuilder(args);
 

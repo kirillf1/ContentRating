@@ -18,7 +18,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
         }
         public RoomState RoomState { get; private set; }
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
-        public IReadOnlyCollection<Editor> InvitedUsers => _invitedEditors;
+        public IReadOnlyCollection<Editor> InvitedEditors => _invitedEditors;
         public Editor RoomCreator { get; private set; }
         public string Name { get; private set; }
 
@@ -59,7 +59,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             var contentEditor = oldContent.ContentModificationHistory.EditorId;
             if (contentEditor != editor.Id || RoomCreator != editor)
             {
-                throw new ForbiddenRoomOperationException("Can't edit foregin content");
+                throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
 
             oldContent.ModifyContent(contentModification);
@@ -74,7 +74,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             if (content.ContentModificationHistory.EditorId != editor.Id || RoomCreator != editor)
             {
-                throw new ForbiddenRoomOperationException("Can't edit foregin content");
+                throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
@@ -96,9 +96,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             Name = roomName;
         }
-        public void CompleateEditing(Editor initiatingUser)
+        public void CompleteEditing(Editor initiatingEditor)
         {
-            if (initiatingUser != RoomCreator)
+            if (initiatingEditor != RoomCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can start content evaluation");
             }
@@ -108,11 +108,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             RoomState = RoomState.ContentEvaluation;
 
-            AddDomainEvent(new EvaluationStartedDomainEvent(Id, InvitedUsers));
+            AddDomainEvent(new EvaluationStartedDomainEvent(Id, RoomCreator, InvitedEditors));
         }
-        public void CompleteContentEvaluation(Editor initiatingUser)
+        public void CompleteContentEvaluation(Editor initiatingEditor)
         {
-            if (initiatingUser != RoomCreator)
+            if (initiatingEditor != RoomCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can complete content evaluation");
             }
@@ -122,7 +122,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             RoomState = RoomState.EvaluationComplete;
 
-            AddDomainEvent(new EvaluationCompleatedDomainEvent(Id, InvitedUsers));
+            AddDomainEvent(new EvaluationCompletedDomainEvent(Id, RoomCreator, InvitedEditors));
         }
         public void MarkDeleted()
         {

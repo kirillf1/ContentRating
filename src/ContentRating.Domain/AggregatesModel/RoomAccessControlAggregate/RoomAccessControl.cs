@@ -56,7 +56,7 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             AddDomainEvent(new UserInvitedDomainEvent(newUser, Id));
 
         }
-        public void CompleateEvaluation()
+        public void CompleteEvaluation()
         {
             RoomState = RoomState.EvaluationComplete;
         }

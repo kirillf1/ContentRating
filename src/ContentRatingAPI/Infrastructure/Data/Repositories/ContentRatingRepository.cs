@@ -44,5 +44,15 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             changeTracker.TrackEntity(contentRating);
             return contentRating;
         }
+
+        public async Task<IEnumerable<ContentRatingAggregate>> GetContentRatingsByRoom(Guid roomId)
+        {
+            var ratings = await dbSet.Find(Builders<ContentRatingAggregate>.Filter.Eq(_ => _.Id, roomId)).ToListAsync();
+            foreach (var rating in ratings)
+            {
+                changeTracker.TrackEntity(rating);
+            }
+            return ratings;
+        }
     }
 }

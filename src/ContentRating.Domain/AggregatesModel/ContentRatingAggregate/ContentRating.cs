@@ -13,25 +13,25 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
         public bool IsContentEstimated { get; private set; }
 
         public Score AverageContentScore => new(_raters.Average(c => c.CurrentScore.Value));
-        public void AddNewRater(Guid raterId, RaterType raterType)
+        public void InviteRater(RaterInvitation invitation)
         {
-            CheckCanCangeRating();
-            if (_raters.Find(c=> raterId == c.Id) is not null)
+            CheckCanChangeRating();
+            if (_raters.Find(c=> invitation.Id == c.Id) is not null)
                 return;
-            var rater = new Rater(raterId, raterType, _specification.MinScore);
+            var rater = new Rater(invitation.Id, invitation.RaterType, _specification.MinScore);
             _raters.Add(rater);
         }
         public void RemoveRater(Rater oldRater)
         {
-            CheckCanCangeRating();
-            if (_raters.Contains(oldRater))
+            CheckCanChangeRating();
+            if (!_raters.Contains(oldRater))
                 return;
 
             _raters.Remove(oldRater);
         }
         public void EstimateContent(Estimation estimation)
         {
-            CheckCanCangeRating();
+            CheckCanChangeRating();
 
             if (!_specification.IsSatisfiedRaters(estimation.Initiator, estimation.CurrentRater))
                 throw new ForbiddenRatingOperationException("Invalid raters access");
@@ -43,22 +43,22 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
         {
             IsContentEstimated = true;
         }
-        private void CheckCanCangeRating()
+        private void CheckCanChangeRating()
         {
             if (IsContentEstimated)
                 throw new ForbiddenRatingOperationException("Content estimated");
         }
-        private ContentRating(Guid contentId, Guid roomId, IEnumerable<Rater> raters, ContentRatingSpecification specification)
+        private ContentRating(Guid contentId, Guid roomId, ContentRatingSpecification specification)
         {
             Id = contentId;
             RoomId = roomId;
             _specification = specification;
-            _raters = new(raters);
+            _raters = new();
             IsContentEstimated = false;
         }
-        public static ContentRating Create(Guid contentId, Guid roomId, IEnumerable<Rater> raters, ContentRatingSpecification specification)
+        public static ContentRating Create(Guid contentId, Guid roomId, ContentRatingSpecification specification)
         {
-            return new ContentRating(contentId, roomId, raters, specification);
+            return new ContentRating(contentId, roomId, specification);
         }
     }
 }

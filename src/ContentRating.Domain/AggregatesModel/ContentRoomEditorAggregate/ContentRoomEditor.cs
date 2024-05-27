@@ -15,21 +15,24 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             _addedContent = new();
             RoomState = RoomState.Editing;
             _invitedEditors = new();
+            MaxRating = Rating.DefaultMaxRating;
+            MinRating = Rating.DefaultMinRating;
         }
         public RoomState RoomState { get; private set; }
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
         public IReadOnlyCollection<Editor> InvitedUsers => _invitedEditors;
         public Editor RoomCreator { get; private set; }
         public string Name { get; private set; }
-
+        public Rating MaxRating { get; private set; }
+        public Rating MinRating { get; private set; }   
         private List<Content> _addedContent;
         private List<Editor> _invitedEditors;
 
-        public void AddContent(Editor editor, ContentData contentData)
+        public void CreateContent(Editor editor, ContentData contentData)
         {
             if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
             {
-                throw new ArgumentException("Editor don't exist in this room");
+                throw new ForbiddenRoomOperationException("Editor don't exist in this room");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
@@ -44,11 +47,12 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 
             AddDomainEvent(new ContentAddedToRoomDomainEvent(newContent, Id));
         }
+        
         public void UpdateContent(Editor editor, ContentData contentModification)
         {
             if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
             {
-                throw new ArgumentException("Editor don't exist in this room");
+                throw new ForbiddenRoomOperationException("Editor don't exist in this room");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
@@ -57,9 +61,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 
             var oldContent = _addedContent.Single(c => c.Id == contentModification.Id);
             var contentEditor = oldContent.ContentModificationHistory.EditorId;
-            if (contentEditor != editor.Id || RoomCreator != editor)
+            if (contentEditor != editor.Id && RoomCreator != editor)
             {
-                throw new ForbiddenRoomOperationException("Can't edit foregin content");
+                throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
 
             oldContent.ModifyContent(contentModification);
@@ -70,11 +74,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
         {
             if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
             {
-                throw new ArgumentException("Editor don't exist in this room");
+                throw new ForbiddenRoomOperationException("Editor don't exist in this room");
             }
-            if (content.ContentModificationHistory.EditorId != editor.Id || RoomCreator != editor)
+            if (content.ContentModificationHistory.EditorId != editor.Id && RoomCreator != editor)
             {
-                throw new ForbiddenRoomOperationException("Can't edit foregin content");
+                throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
             if (RoomState == RoomState.EvaluationComplete)
             {
@@ -88,6 +92,30 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             return isRemoved;
         }
+        public void InviteEditor(Editor inviter, Editor newEditor)
+        {
+            if(inviter != RoomCreator)
+            {
+                throw new ForbiddenRoomOperationException("Only creator can invite editors");
+            }
+            if (_invitedEditors.Contains(newEditor))
+            {
+                throw new ArgumentException("Inviter already added");
+            }
+            _invitedEditors.Add(newEditor);
+        }
+        public void KickEditor(Editor initiator, Editor editorForKick)
+        {
+            if (initiator != RoomCreator)
+            {
+                throw new ForbiddenRoomOperationException("Only creator can invite editors");
+            }
+            if (!_invitedEditors.Contains(editorForKick))
+            {
+                return;
+            }
+            _invitedEditors.Remove(editorForKick);
+        }
         public void SetNewRoomName(string roomName)
         {
             if (roomName.Length < 3 || roomName.Length > 300)
@@ -96,7 +124,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             Name = roomName;
         }
-        public void CompleateEditing(Editor initiatingUser)
+        public void CompleteContentEditing(Editor initiatingUser)
         {
             if (initiatingUser != RoomCreator)
             {
@@ -108,7 +136,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             RoomState = RoomState.ContentEvaluation;
 
-            AddDomainEvent(new EvaluationStartedDomainEvent(Id, InvitedUsers));
+            AddDomainEvent(new EvaluationStartedDomainEvent(Id, RoomCreator, InvitedUsers, AddedContent, MinRating, MaxRating));
         }
         public void CompleteContentEvaluation(Editor initiatingUser)
         {
@@ -122,7 +150,18 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             RoomState = RoomState.EvaluationComplete;
 
-            AddDomainEvent(new EvaluationCompleatedDomainEvent(Id, InvitedUsers));
+            AddDomainEvent(new EvaluationCompletedDomainEvent(Id, InvitedUsers));
+        }
+        public void ChangeRatingRange(Rating minRating, Rating maxRating)
+        {
+            if (RoomState != RoomState.Editing)
+                throw new ForbiddenRoomOperationException("Rating range can be change only in editing state");
+
+            if (minRating.Value > maxRating.Value)
+                throw new ArgumentException("Min rating can't be more than max");
+
+            MinRating = minRating;
+            MaxRating = maxRating;
         }
         public void MarkDeleted()
         {

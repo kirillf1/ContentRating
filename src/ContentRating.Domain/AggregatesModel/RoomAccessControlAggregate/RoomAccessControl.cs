@@ -56,7 +56,7 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             AddDomainEvent(new UserInvitedDomainEvent(newUser, Id));
 
         }
-        public void CompleateEvaluation()
+        public void CompleteEvaluation()
         {
             RoomState = RoomState.EvaluationComplete;
         }
@@ -64,8 +64,8 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
         {
             Id = id;
             RoomCreator = creator;
-            RoomState = RoomState.Editing;
-            _users = new() { creator };
+            RoomState = RoomState.ContentEvaluation;
+            _users = [creator];
             _roomSpecification = specification;
         }
         public static RoomAccessControl Create(Guid id, User creator)

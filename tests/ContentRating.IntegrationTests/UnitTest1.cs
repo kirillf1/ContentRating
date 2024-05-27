@@ -108,7 +108,7 @@ namespace ContentRating.IntegrationTests
             var id = Guid.NewGuid();
             var editor = new Editor(Guid.NewGuid(), "test");
             var newRoom = new ContentRoomEditor(id, editor, "testRoom");
-            newRoom.AddContent(editor, new ContentData(Guid.NewGuid(), "test", "test", ContentType.Image));
+            newRoom.CreateContent(editor, new ContentData(Guid.NewGuid(), "test", "test", ContentType.Image));
             rep.Add(newRoom);
 
             await rep.UnitOfWork.SaveChangesAsync();

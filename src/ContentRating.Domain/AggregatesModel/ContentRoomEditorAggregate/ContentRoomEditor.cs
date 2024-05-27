@@ -20,7 +20,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
         }
         public RoomState RoomState { get; private set; }
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
-        public IReadOnlyCollection<Editor> InvitedUsers => _invitedEditors;
+        public IReadOnlyCollection<Editor> InvitedEditors => _invitedEditors;
         public Editor RoomCreator { get; private set; }
         public string Name { get; private set; }
         public Rating MaxRating { get; private set; }
@@ -125,8 +125,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             Name = roomName;
         }
         public void CompleteContentEditing(Editor initiatingUser)
+        public void CompleteEditing(Editor initiatingEditor)
         {
-            if (initiatingUser != RoomCreator)
+            if (initiatingEditor != RoomCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can start content evaluation");
             }
@@ -138,9 +139,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 
             AddDomainEvent(new EvaluationStartedDomainEvent(Id, RoomCreator, InvitedUsers, AddedContent, MinRating, MaxRating));
         }
-        public void CompleteContentEvaluation(Editor initiatingUser)
+        public void CompleteContentEvaluation(Editor initiatingEditor)
         {
-            if (initiatingUser != RoomCreator)
+            if (initiatingEditor != RoomCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can complete content evaluation");
             }

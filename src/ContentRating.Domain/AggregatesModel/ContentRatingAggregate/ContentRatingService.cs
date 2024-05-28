@@ -22,7 +22,7 @@
             }
             await _contentRatingRepository.UnitOfWork.SaveChangesAsync();
         }
-        public async Task InviteRater(Guid roomId, RaterInvitation raterInvitation)
+        public async Task InviteRaterInContentRatingRoom(Guid roomId, RaterInvitation raterInvitation)
         {
             var ratings = await _contentRatingRepository.GetContentRatingsByRoom(roomId);
             foreach (var rating in ratings)

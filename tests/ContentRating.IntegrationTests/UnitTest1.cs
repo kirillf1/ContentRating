@@ -141,7 +141,7 @@ namespace ContentRating.IntegrationTests
             var id = Guid.NewGuid();
             var spec = new ContentRatingSpecification(new Score(0), new Score(10));
             var raters = new List<Rater> { new Rater(Guid.NewGuid(), RaterType.Owner, spec.MinScore), new Rater(Guid.NewGuid(), RaterType.Owner, spec.MinScore) };
-            var rating = ContentRatingAggregate.Create(id, Guid.NewGuid(), raters, spec);
+            var rating = ContentRatingAggregate.Create(id, Guid.NewGuid(), spec);
             rep.Add(rating);
 
             await rep.UnitOfWork.SaveChangesAsync();

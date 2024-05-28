@@ -13,13 +13,14 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
         public bool IsContentEstimated { get; private set; }
 
         public Score AverageContentScore => new(_raters.Average(c => c.CurrentScore.Value));
-        public void InviteRater(RaterInvitation invitation)
+        public Rater InviteRater(RaterInvitation invitation)
         {
             CheckCanChangeRating();
-            if (_raters.Find(c=> invitation.Id == c.Id) is not null)
-                return;
+            if (_raters.Find(c => invitation.Id == c.Id) is not null)
+                throw new ArgumentException("Rater is already added");
             var rater = new Rater(invitation.Id, invitation.RaterType, _specification.MinScore);
             _raters.Add(rater);
+            return rater;
         }
         public void RemoveRater(Rater oldRater)
         {
@@ -33,11 +34,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
         {
             CheckCanChangeRating();
 
-            if (!_specification.IsSatisfiedRaters(estimation.Initiator, estimation.CurrentRater))
+            if (!_specification.IsSatisfiedRatersForContentEstimation(estimation.Initiator, estimation.CurrentRater))
                 throw new ForbiddenRatingOperationException("Invalid raters access");
 
             estimation.CurrentRater.Rate(estimation.NewScore, _specification);
-            AddDomainEvent(new ContentRatingChangedDomainEvent(RoomId, Id, estimation.CurrentRater, estimation.NewScore));
+            AddDomainEvent(new ContentRatingChangedDomainEvent(RoomId, Id, estimation.CurrentRater, AverageContentScore));
         }
         public void CompleteEstimation()
         {

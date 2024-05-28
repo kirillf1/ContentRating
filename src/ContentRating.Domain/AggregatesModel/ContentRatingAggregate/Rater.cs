@@ -17,7 +17,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
         {
             if (!ratingSpecification.IsSatisfiedScore(score))
                 throw new ForbiddenRatingOperationException($"Score must be more or equal {ratingSpecification.MinScore.Value} " +
-                    $"and less or equal then {ratingSpecification.MaxScore.Value}");
+                    $"and less or equal {ratingSpecification.MaxScore.Value}");
             CurrentScore = score;
         }
     }

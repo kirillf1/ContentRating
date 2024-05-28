@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="RoomAccessControl\**" />
+    <EmbeddedResource Remove="RoomAccessControl\**" />
+    <None Remove="RoomAccessControl\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="xunit" Version="2.4.2" />
@@ -25,10 +31,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\ContentRating.Domain\ContentRating.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="RoomAccessControl\" />
   </ItemGroup>
 
 </Project>

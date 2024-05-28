@@ -4,6 +4,8 @@
     {
         public ContentRatingSpecification(Score minScore, Score maxScore)
         {
+            if (minScore > maxScore)
+                throw new ArgumentException("Max score should be more than min");
             MinScore = minScore;
             MaxScore = maxScore;
         }
@@ -12,9 +14,9 @@
         public Score MaxScore { get; }
         public bool IsSatisfiedScore(Score score)
         {
-            return MinScore >= score && score <= MaxScore;
+            return score >= MinScore && score <= MaxScore;
         }
-        public bool IsSatisfiedRaters(Rater initiator, Rater currentRater)
+        public bool IsSatisfiedRatersForContentEstimation(Rater initiator, Rater currentRater)
         {
             if(initiator == currentRater)
                 return true;

@@ -7,13 +7,13 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
     public class RoomAccessControl : Entity, IAggregateRoot
     {
         private RoomControlSpecification _roomSpecification;
-        public RoomState RoomState { get; private set; }
         public User RoomCreator { get; }
         public IReadOnlyCollection<User> Users => _users;
         private List<User> _users;
+        public bool IsAccessControlStopped { get; private set; } 
         public void KickUser(Guid targetUserId, Guid initiatorId)
         {
-            if (!_roomSpecification.RoomIsWorking(this))
+            if (IsAccessControlStopped)
                 throw new InvalidRoomStageOperationException("Сan't kick user when the room is not working");
 
             var initiator = _users.Find(c => c.Id == initiatorId);
@@ -38,7 +38,7 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
         }
         public void InviteUser(User newUser, Guid inviterId)
         {
-            if (!_roomSpecification.RoomIsWorking(this))
+            if (IsAccessControlStopped)
                 throw new InvalidRoomStageOperationException("Сan't invite user when the room is not working");
 
             if (_users.Contains(newUser))
@@ -56,21 +56,25 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             AddDomainEvent(new UserInvitedDomainEvent(newUser, Id));
 
         }
-        public void CompleteEvaluation()
+        public void StopAccessControl()
         {
-            RoomState = RoomState.EvaluationComplete;
+            IsAccessControlStopped = true;
         }
-        private RoomAccessControl(Guid id, User creator, RoomControlSpecification specification)
-        {
+        private RoomAccessControl(Guid id, User creator, RoomControlSpecification specification, List<User> invitedUsersWithCreator)
+        { 
             Id = id;
+            if(!invitedUsersWithCreator.Contains(creator))
+                invitedUsersWithCreator.Add(creator);
             RoomCreator = creator;
-            RoomState = RoomState.ContentEvaluation;
-            _users = [creator];
+            IsAccessControlStopped = false;
+            _users = invitedUsersWithCreator;
             _roomSpecification = specification;
         }
-        public static RoomAccessControl Create(Guid id, User creator)
+        public static RoomAccessControl Create(Guid id, User creator, List<User>? otherInvitedUsers = null)
         {
-            return new RoomAccessControl(id, creator, new RoomControlSpecification());
+            otherInvitedUsers ??= new List<User>();
+            otherInvitedUsers.Add(creator);
+            return new RoomAccessControl(id, creator, new RoomControlSpecification(), otherInvitedUsers);
         }
     }
 }

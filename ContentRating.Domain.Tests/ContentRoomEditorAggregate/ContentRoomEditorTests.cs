@@ -114,7 +114,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
             Assert.Throws<ForbiddenRoomOperationException>(()=> room.UpdateContent(foreignEditor, newContentData));
         }
         [Fact]
-        public void CompleteEvaluation_WithContent_AddEvaluationCompletedEvent()
+        public void CompleteContentEvaluation_WithContent_AddEvaluationCompletedEvent()
         {
             var room = CreateEmptyRoomEditor();
             var contentData = CreateRandomContentData();

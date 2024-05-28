@@ -124,8 +124,8 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             Name = roomName;
         }
-        public void CompleteContentEditing(Editor initiatingUser)
-        public void CompleteEditing(Editor initiatingEditor)
+
+        public void CompleteContentEditing(Editor initiatingEditor)
         {
             if (initiatingEditor != RoomCreator)
             {
@@ -137,7 +137,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             RoomState = RoomState.ContentEvaluation;
 
-            AddDomainEvent(new EvaluationStartedDomainEvent(Id, RoomCreator, InvitedUsers, AddedContent, MinRating, MaxRating));
+            AddDomainEvent(new EvaluationStartedDomainEvent(Id, RoomCreator, InvitedEditors, AddedContent, MinRating, MaxRating));
         }
         public void CompleteContentEvaluation(Editor initiatingEditor)
         {
@@ -151,7 +151,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             RoomState = RoomState.EvaluationComplete;
 
-            AddDomainEvent(new EvaluationCompletedDomainEvent(Id, InvitedUsers));
+            AddDomainEvent(new EvaluationCompletedDomainEvent(Id, InvitedEditors));
         }
         public void ChangeRatingRange(Rating minRating, Rating maxRating)
         {

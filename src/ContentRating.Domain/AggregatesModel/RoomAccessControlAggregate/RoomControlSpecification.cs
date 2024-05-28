@@ -15,9 +15,6 @@
         {
             return _canControlAnotherUserRoles.Contains(user.Role);
         }
-        public bool RoomIsWorking(RoomAccessControl room)
-        {
-            return room.RoomState == Shared.RoomStates.RoomState.ContentEvaluation;
-        }
+       
     }
 }

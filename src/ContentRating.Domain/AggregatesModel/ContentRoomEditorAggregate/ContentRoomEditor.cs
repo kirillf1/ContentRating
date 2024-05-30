@@ -1,6 +1,5 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Exceptions;
-using ContentRating.Domain.Shared;
 using ContentRating.Domain.Shared.RoomStates;
 
 namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
@@ -17,6 +16,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             _invitedEditors = new();
             MaxRating = Rating.DefaultMaxRating;
             MinRating = Rating.DefaultMinRating;
+            AddDomainEvent(new ContentRoomEditorCreatedDomainEvent(id, roomCreator, name));
         }
         public RoomState RoomState { get; private set; }
         public IReadOnlyCollection<Content> AddedContent => _addedContent;
@@ -88,28 +88,21 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             var isRemoved = _addedContent.Remove(content);
             if (isRemoved)
             {
-                AddDomainEvent(new ContentRemovedFromRoomDomaintEvent(content, Id));
+                AddDomainEvent(new ContentRemovedFromRoomDomainEvent(content, Id));
             }
             return isRemoved;
         }
-        public void InviteEditor(Editor inviter, Editor newEditor)
+        public void InviteEditor(Editor newEditor)
         {
-            if(inviter != RoomCreator)
-            {
-                throw new ForbiddenRoomOperationException("Only creator can invite editors");
-            }
+           
             if (_invitedEditors.Contains(newEditor))
             {
                 throw new ArgumentException("Inviter already added");
             }
             _invitedEditors.Add(newEditor);
         }
-        public void KickEditor(Editor initiator, Editor editorForKick)
-        {
-            if (initiator != RoomCreator)
-            {
-                throw new ForbiddenRoomOperationException("Only creator can invite editors");
-            }
+        public void KickEditor(Editor editorForKick)
+        {         
             if (!_invitedEditors.Contains(editorForKick))
             {
                 return;
@@ -153,8 +146,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 
             AddDomainEvent(new EvaluationCompletedDomainEvent(Id, InvitedEditors));
         }
-        public void ChangeRatingRange(Rating minRating, Rating maxRating)
+        public void ChangeRatingRange(Editor ratingChanger, Rating minRating, Rating maxRating)
         {
+            if (ratingChanger != RoomCreator)
+                throw new ForbiddenRoomOperationException("Only creator can change rating range");
+
             if (RoomState != RoomState.Editing)
                 throw new ForbiddenRoomOperationException("Rating range can be change only in editing state");
 

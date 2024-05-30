@@ -10,10 +10,10 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
         public User RoomCreator { get; }
         public IReadOnlyCollection<User> Users => _users;
         private List<User> _users;
-        public bool IsAccessControlStopped { get; private set; } 
+        public RoomState RoomState { get; private set; }
         public void KickUser(Guid targetUserId, Guid initiatorId)
         {
-            if (IsAccessControlStopped)
+            if (RoomState == RoomState.EvaluationComplete)
                 throw new InvalidRoomStageOperationException("Сan't kick user when the room is not working");
 
             var initiator = _users.Find(c => c.Id == initiatorId);
@@ -33,12 +33,16 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
 
             _users.Remove(userForKick);
 
-            AddDomainEvent(new UserKickedDomainEvent(userForKick, Id));
+            if (RoomState == RoomState.ContentEvaluation)
+                AddDomainEvent(new RaterKickedDomainEvent(userForKick, Id));
+            
+            else if (RoomState == RoomState.Editing)
+                AddDomainEvent(new EditorKickedDomainEvent(Id, initiator, userForKick));
 
         }
         public void InviteUser(User newUser, Guid inviterId)
         {
-            if (IsAccessControlStopped)
+            if (RoomState == RoomState.EvaluationComplete)
                 throw new InvalidRoomStageOperationException("Сan't invite user when the room is not working");
 
             if (_users.Contains(newUser))
@@ -53,20 +57,36 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
 
             _users.Contains(newUser);
 
-            AddDomainEvent(new UserInvitedDomainEvent(newUser, Id));
-
+            if (RoomState == RoomState.ContentEvaluation)
+                AddDomainEvent(new RaterInvitedDomainEvent(newUser, Id));
+            else if (RoomState == RoomState.Editing)
+                AddDomainEvent(new EditorInvitedDomainEvent(Id, inviter, newUser));
         }
-        public void StopAccessControl()
+        public UserAccessInformation RequestAccessInformation(Guid userId)
         {
-            IsAccessControlStopped = true;
+            var user = _users.Find(c=> c.Id == userId);
+            if (user is null)
+                return new UserAccessInformation(userId, false, false, false, false);
+            return new UserAccessInformation(userId, _roomSpecification.CanEditContent(this, user),
+                RoomState == RoomState.Editing, _roomSpecification.CanInviteAnotherUser(user), 
+                _roomSpecification.CanKickAnotherUser(user));
         }
+        public void StartControlContentEvaluationRoom()
+        {
+            RoomState = RoomState.ContentEvaluation;
+        }
+        public void StartControlContentEstimatedRoom()
+        {
+            RoomState = RoomState.EvaluationComplete;
+        }
+
         private RoomAccessControl(Guid id, User creator, RoomControlSpecification specification, List<User> invitedUsersWithCreator)
         { 
             Id = id;
             if(!invitedUsersWithCreator.Contains(creator))
                 invitedUsersWithCreator.Add(creator);
             RoomCreator = creator;
-            IsAccessControlStopped = false;
+            RoomState = RoomState.Editing;
             _users = invitedUsersWithCreator;
             _roomSpecification = specification;
         }

@@ -10,5 +10,4 @@ public class User : Entity
         Role = role;
     }
     public RoleType Role { get; private set; }
-
 }

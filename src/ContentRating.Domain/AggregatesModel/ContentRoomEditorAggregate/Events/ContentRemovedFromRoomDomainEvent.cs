@@ -2,5 +2,5 @@
 
 namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events
 {
-    public record ContentRemovedFromRoomDomaintEvent(Content Content, Guid RoomId) : INotification;
+    public record ContentRemovedFromRoomDomainEvent(Content Content, Guid RoomId) : INotification;
 }

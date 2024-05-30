@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Application\RoomAccessControl\InviteUser\" />
     <Folder Include="Controllers\" />
     <Folder Include="Model\" />
   </ItemGroup>

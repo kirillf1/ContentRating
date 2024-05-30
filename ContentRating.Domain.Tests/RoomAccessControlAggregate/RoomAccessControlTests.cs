@@ -16,7 +16,7 @@ namespace ContentRating.Domain.Tests.RoomAccessControlAggregate
             var newUser = new User(Guid.NewGuid(), RoleType.Default);
             accessControl.InviteUser(newUser, creator.Id);
 
-            var userInvitedEvent = accessControl.DomainEvents.OfType<UserInvitedDomainEvent>().Single();
+            var userInvitedEvent = accessControl.DomainEvents.OfType<RaterInvitedDomainEvent>().Single();
             Assert.Equal(newUser, userInvitedEvent.User);
             Assert.Equal(accessControl.Id, userInvitedEvent.RoomId);
         }
@@ -44,7 +44,7 @@ namespace ContentRating.Domain.Tests.RoomAccessControlAggregate
 
             accessControl.KickUser(userForKick.Id, creator.Id);
 
-            var userKickedEvent = accessControl.DomainEvents.OfType<UserKickedDomainEvent>().Single();
+            var userKickedEvent = accessControl.DomainEvents.OfType<RaterKickedDomainEvent>().Single();
             Assert.Equal(userForKick, userKickedEvent.KickedUser);
             Assert.Equal(accessControl.Id, userKickedEvent.RoomId);
         }
@@ -62,15 +62,56 @@ namespace ContentRating.Domain.Tests.RoomAccessControlAggregate
         }
 
         [Fact]
-        public void KickUser_AccessControlStopped_ThrowInvalidRoomStageOperationException()
+        public void KickUser_ContentEstimated_ThrowInvalidRoomStageOperationException()
         {
             var creator = new User(Guid.NewGuid(), RoleType.Admin);
             var userForKick = new User(Guid.NewGuid(), RoleType.Default);
             var accessControl = RoomAccessControl.Create(Guid.NewGuid(), creator, [userForKick]);
 
-            accessControl.StopAccessControl();
+            accessControl.StartControlContentEstimatedRoom();
 
             Assert.Throws<InvalidRoomStageOperationException>(() => accessControl.KickUser(userForKick.Id, creator.Id));
+        }
+        [Fact]
+        public void RequestUserAccessInformation_FullAccess_ShouldCanEditAndViewRating()
+        {
+            var creator = new User(Guid.NewGuid(), RoleType.Admin);
+            var accessControl = RoomAccessControl.Create(Guid.NewGuid(), creator);
+
+            var accessInformation = accessControl.RequestAccessInformation(creator.Id);
+
+            Assert.True(accessInformation.CanInviteUsers);
+            Assert.True(accessInformation.CanViewRoom);
+            Assert.True(accessInformation.CanRate);
+            Assert.True(accessInformation.CanKickUsers);
+        }
+        [Fact]
+        public void RequestUserAccessInformation_UnknownUserId_NoPermission()
+        {
+            var creator = new User(Guid.NewGuid(), RoleType.Admin);
+            var accessControl = RoomAccessControl.Create(Guid.NewGuid(), creator);
+            var unknownUserId = Guid.NewGuid();
+
+            var accessInformation = accessControl.RequestAccessInformation(unknownUserId);
+
+            Assert.False(accessInformation.CanInviteUsers);
+            Assert.False(accessInformation.CanViewRoom);
+            Assert.False(accessInformation.CanRate);
+            Assert.False(accessInformation.CanKickUsers);
+        }
+        [Fact]
+        public void RequestUserAccessInformation_DefaultUser_LimitedAccess()
+        {
+            var creator = new User(Guid.NewGuid(), RoleType.Admin);
+            var defaultUser = new User(Guid.NewGuid(), RoleType.Default);
+            var accessControl = RoomAccessControl.Create(Guid.NewGuid(), creator, [defaultUser]);
+
+            var accessInformation = accessControl.RequestAccessInformation(defaultUser.Id);
+
+            Assert.False(accessInformation.CanInviteUsers);
+            Assert.True(accessInformation.CanViewRoom);
+            Assert.True(accessInformation.CanRate);
+            Assert.False(accessInformation.CanKickUsers);
         }
     }
 }

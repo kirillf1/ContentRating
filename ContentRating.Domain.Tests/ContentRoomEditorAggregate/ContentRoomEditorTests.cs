@@ -9,6 +9,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
     public class ContentRoomEditorTests
     {
         static Random random = new Random();
+        // стоит подумать чтобы контролировать состояние только в access control и убрать всю логику с других служб или просто им посылать события
         [Fact]
         public void CreateContent_NewContent_AddContentUpdatedInRoomEvent()
         {

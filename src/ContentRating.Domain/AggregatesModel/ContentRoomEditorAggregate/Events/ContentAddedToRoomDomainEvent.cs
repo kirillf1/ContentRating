@@ -1,5 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
-using MediatR;
+﻿using MediatR;
 
 namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events
 {

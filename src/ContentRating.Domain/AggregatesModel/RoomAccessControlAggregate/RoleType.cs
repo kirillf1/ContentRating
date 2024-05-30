@@ -4,6 +4,7 @@
     {
         Admin,
         Default,
-        Mock
+        Mock,
+        Editor
     }
 }

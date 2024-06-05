@@ -36,7 +36,10 @@ namespace ContentRatingAPI.Infrastructure.Data
 
                     var commandTasks = _commands.Select(c => c(Session));
 
-                    await Task.WhenAll(commandTasks);
+                    foreach (var commandTask in commandTasks)
+                    {
+                        await commandTask;
+                    }
 
                     await Session.CommitTransactionAsync(cancellationToken);
                 }

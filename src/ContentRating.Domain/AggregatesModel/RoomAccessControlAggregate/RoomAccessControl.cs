@@ -66,10 +66,11 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
         {
             var user = _users.Find(c=> c.Id == userId);
             if (user is null)
-                return new UserAccessInformation(userId, false, false, false, false);
-            return new UserAccessInformation(userId, _roomSpecification.CanEditContent(this, user),
-                RoomState == RoomState.Editing, _roomSpecification.CanInviteAnotherUser(user), 
-                _roomSpecification.CanKickAnotherUser(user));
+                return new UserAccessInformation( false, false, false, false);
+            var canRate = RoomState == RoomState.ContentEvaluation;
+            return new UserAccessInformation( _roomSpecification.CanEditContent(this, user),
+                canRate, _roomSpecification.CanInviteAnotherUser(user), 
+                _roomSpecification.CanKickAnotherUser(user), user);
         }
         public void StartControlContentEvaluationRoom()
         {

@@ -93,8 +93,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             return isRemoved;
         }
         public void InviteEditor(Editor newEditor)
-        {
-           
+        {          
             if (_invitedEditors.Contains(newEditor))
             {
                 throw new ArgumentException("Inviter already added");
@@ -132,16 +131,8 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 
             AddDomainEvent(new EvaluationStartedDomainEvent(Id, RoomCreator, InvitedEditors, AddedContent, MinRating, MaxRating));
         }
-        public void CompleteContentEvaluation(Editor initiatingEditor)
-        {
-            if (initiatingEditor != RoomCreator)
-            {
-                throw new ForbiddenRoomOperationException("Only creator can complete content evaluation");
-            }
-            if (RoomState != RoomState.ContentEvaluation)
-            {
-                throw new InvalidRoomStageOperationException("Сan't complete evaluation if room is not evaluation state");
-            }
+        public void CompleteContentEvaluation()
+        {          
             RoomState = RoomState.EvaluationComplete;
 
             AddDomainEvent(new EvaluationCompletedDomainEvent(Id, InvitedEditors));

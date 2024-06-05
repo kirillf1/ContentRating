@@ -10,7 +10,7 @@
         }
         public async Task StartContentEstimation(IEnumerable<Guid> contentIds, Guid roomId, IEnumerable<RaterInvitation> invitations, Score minScore, Score maxScore)
         {
-            var specification = new ContentRatingSpecification(new Score(0), new Score(10));
+            var specification = new ContentRatingSpecification(minScore, maxScore);
             foreach (var contentId in contentIds)
             {
                 var contentRating = ContentRating.Create(contentId, roomId, specification);

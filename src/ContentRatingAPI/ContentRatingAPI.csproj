@@ -11,14 +11,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Application\RoomAccessControl\**" />
     <Compile Remove="Domain\**" />
+    <Content Remove="Application\RoomAccessControl\**" />
     <Content Remove="Domain\**" />
+    <EmbeddedResource Remove="Application\RoomAccessControl\**" />
     <EmbeddedResource Remove="Domain\**" />
+    <None Remove="Application\RoomAccessControl\**" />
     <None Remove="Domain\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="8.0.6" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
     <PackageReference Include="MongoDB.Driver" Version="2.23.1" />
     <PackageReference Include="MongoDB.Driver.Core" Version="2.23.1" />
@@ -26,7 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\RoomAccessControl\InviteUser\" />
     <Folder Include="Controllers\" />
     <Folder Include="Model\" />
   </ItemGroup>

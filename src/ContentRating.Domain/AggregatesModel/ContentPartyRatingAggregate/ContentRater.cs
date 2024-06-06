@@ -1,11 +1,10 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Exceptions;
-using ContentRating.Domain.Shared;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
 
-namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
+namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
-    public class Rater : Entity
+    public class ContentRater : Entity
     {
-        public Rater(Guid id, RaterType raterType, Score score)
+        public ContentRater(Guid id, RaterType raterType, Score score)
         {
             Id = id;
             RaterType = raterType;

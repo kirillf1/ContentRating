@@ -1,6 +1,4 @@
-﻿using ContentRating.Domain.Shared;
-
-namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
     public class RaterInvitation : ValueObject
     {

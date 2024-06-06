@@ -1,28 +1,27 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Events;
-using ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Exceptions;
-using ContentRating.Domain.Shared;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Events;
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
 
-namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
+namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
-    public class ContentRating : Entity, IAggregateRoot
+    public class ContentPartyRating : Entity, IAggregateRoot
     {
         public Guid RoomId { get; private set; }
-        public IReadOnlyCollection<Rater> Raters => _raters;
+        public IReadOnlyCollection<ContentRater> Raters => _raters;
         private ContentRatingSpecification _specification;
-        private List<Rater> _raters;
+        private List<ContentRater> _raters;
         public bool IsContentEstimated { get; private set; }
 
         public Score AverageContentScore => new(_raters.Average(c => c.CurrentScore.Value));
-        public Rater InviteRater(RaterInvitation invitation)
+        public ContentRater InviteRater(RaterInvitation invitation)
         {
             CheckCanChangeRating();
             if (_raters.Find(c => invitation.Id == c.Id) is not null)
                 throw new ArgumentException("Rater is already added");
-            var rater = new Rater(invitation.Id, invitation.RaterType, _specification.MinScore);
+            var rater = new ContentRater(invitation.Id, invitation.RaterType, _specification.MinScore);
             _raters.Add(rater);
             return rater;
         }
-        public void RemoveRater(Rater oldRater)
+        public void RemoveRater(ContentRater oldRater)
         {
             CheckCanChangeRating();
             if (!_raters.Contains(oldRater))
@@ -49,7 +48,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
             if (IsContentEstimated)
                 throw new ForbiddenRatingOperationException("Content estimated");
         }
-        private ContentRating(Guid contentId, Guid roomId, ContentRatingSpecification specification)
+        private ContentPartyRating(Guid contentId, Guid roomId, ContentRatingSpecification specification)
         {
             Id = contentId;
             RoomId = roomId;
@@ -57,9 +56,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
             _raters = new();
             IsContentEstimated = false;
         }
-        public static ContentRating Create(Guid contentId, Guid roomId, ContentRatingSpecification specification)
+        public static ContentPartyRating Create(Guid contentId, Guid roomId, ContentRatingSpecification specification)
         {
-            return new ContentRating(contentId, roomId, specification);
+            return new ContentPartyRating(contentId, roomId, specification);
         }
     }
 }

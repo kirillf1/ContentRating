@@ -1,9 +1,8 @@
-﻿
-namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate
 {
     public class UserAccessInformation : ValueObject
     {
-        public UserAccessInformation(bool canEditContent, bool canRate, bool canInviteUsers, bool canKickUsers, User? userInformation = null)
+        public UserAccessInformation(bool canEditContent, bool canRate, bool canInviteUsers, bool canKickUsers, Rater? userInformation = null)
         {
             CanViewRoom = canEditContent;
             CanRate = canRate;
@@ -16,7 +15,7 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
         public bool CanRate { get; }
         public bool CanInviteUsers { get; }
         public bool CanKickUsers { get; }
-        public User? UserInformation { get; }
+        public Rater? UserInformation { get; }
 
         protected override IEnumerable<object> GetEqualityComponents()
         {

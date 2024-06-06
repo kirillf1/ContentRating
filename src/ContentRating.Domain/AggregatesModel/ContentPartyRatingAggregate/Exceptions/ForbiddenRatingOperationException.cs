@@ -1,4 +1,4 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Exceptions
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions
 {
     public class ForbiddenRatingOperationException(string message) : Exception(message)
     {

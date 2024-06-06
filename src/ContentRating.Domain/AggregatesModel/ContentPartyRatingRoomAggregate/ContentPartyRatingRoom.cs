@@ -1,17 +1,16 @@
-﻿using ContentRating.Domain.Shared;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate.Events;
 using ContentRating.Domain.Shared.RoomStates;
-using ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate.Events;
 
-namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
+namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate
 {
-    public class RoomAccessControl : Entity, IAggregateRoot
+    public class ContentPartyRatingRoom : Entity, IAggregateRoot
     {
         private RoomControlSpecification _roomSpecification;
-        public User RoomCreator { get; }
-        public IReadOnlyCollection<User> Users => _users;
-        private List<User> _users;
+        public Rater RoomCreator { get; }
+        public IReadOnlyCollection<Rater> Users => _users;
+        private List<Rater> _users;
         public RoomState RoomState { get; private set; }
-        public void KickUser(Guid targetUserId, Guid initiatorId)
+        public void KickRater(Guid targetUserId, Guid initiatorId)
         {
             if (RoomState == RoomState.EvaluationComplete)
                 throw new InvalidRoomStageOperationException("Сan't kick user when the room is not working");
@@ -31,21 +30,16 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             if (userForKick == RoomCreator)
                 throw new ForbiddenRoomOperationException("Cannot kick room creator");
 
-            _users.Remove(userForKick);
-
-            if (RoomState == RoomState.ContentEvaluation)
-                AddDomainEvent(new RaterKickedDomainEvent(userForKick, Id));
-            
-            else if (RoomState == RoomState.Editing)
-                AddDomainEvent(new EditorKickedDomainEvent(Id, initiator, userForKick));
+            _users.Remove(userForKick); 
+             AddDomainEvent(new RaterKickedDomainEvent(userForKick, Id));
 
         }
-        public void InviteUser(User newUser, Guid inviterId)
+        public void InviteUser(Rater newRater, Guid inviterId)
         {
             if (RoomState == RoomState.EvaluationComplete)
                 throw new InvalidRoomStageOperationException("Сan't invite user when the room is not working");
 
-            if (_users.Contains(newUser))
+            if (_users.Contains(newRater))
             {
                 throw new ArgumentException("This user is already invited");
             }
@@ -55,21 +49,19 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             if (!_roomSpecification.CanInviteAnotherUser(inviter))
                 throw new ForbiddenRoomOperationException("This user does not have the right to kick other users ");
 
-            _users.Contains(newUser);
+            _users.Contains(newRater);
 
             if (RoomState == RoomState.ContentEvaluation)
-                AddDomainEvent(new RaterInvitedDomainEvent(newUser, Id));
-            else if (RoomState == RoomState.Editing)
-                AddDomainEvent(new EditorInvitedDomainEvent(Id, inviter, newUser));
+                AddDomainEvent(new RaterInvitedDomainEvent(newRater, Id));
         }
         public UserAccessInformation RequestAccessInformation(Guid userId)
         {
-            var user = _users.Find(c=> c.Id == userId);
+            var user = _users.Find(c => c.Id == userId);
             if (user is null)
-                return new UserAccessInformation( false, false, false, false);
+                return new UserAccessInformation(false, false, false, false);
             var canRate = RoomState == RoomState.ContentEvaluation;
-            return new UserAccessInformation( _roomSpecification.CanEditContent(this, user),
-                canRate, _roomSpecification.CanInviteAnotherUser(user), 
+            return new UserAccessInformation(_roomSpecification.CanEditContent(this, user),
+                canRate, _roomSpecification.CanInviteAnotherUser(user),
                 _roomSpecification.CanKickAnotherUser(user), user);
         }
         public void StartControlContentEvaluationRoom()
@@ -81,21 +73,21 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
             RoomState = RoomState.EvaluationComplete;
         }
 
-        private RoomAccessControl(Guid id, User creator, RoomControlSpecification specification, List<User> invitedUsersWithCreator)
-        { 
+        private ContentPartyRatingRoom(Guid id, Rater creator, RoomControlSpecification specification, List<Rater> invitedUsersWithCreator)
+        {
             Id = id;
-            if(!invitedUsersWithCreator.Contains(creator))
+            if (!invitedUsersWithCreator.Contains(creator))
                 invitedUsersWithCreator.Add(creator);
             RoomCreator = creator;
             RoomState = RoomState.Editing;
             _users = invitedUsersWithCreator;
             _roomSpecification = specification;
         }
-        public static RoomAccessControl Create(Guid id, User creator, List<User>? otherInvitedUsers = null)
+        public static ContentPartyRatingRoom Create(Guid id, Rater creator, List<Rater>? otherInvitedUsers = null)
         {
-            otherInvitedUsers ??= new List<User>();
+            otherInvitedUsers ??= new List<Rater>();
             otherInvitedUsers.Add(creator);
-            return new RoomAccessControl(id, creator, new RoomControlSpecification(), otherInvitedUsers);
+            return new ContentPartyRatingRoom(id, creator, new RoomControlSpecification(), otherInvitedUsers);
         }
     }
 }

@@ -125,7 +125,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
             room.CompleteContentEditing(room.RoomCreator);
             room.CompleteContentEvaluation(room.RoomCreator);
 
-            var evaluationStartedEvent = room.DomainEvents.OfType<EvaluationStartedDomainEvent>().FirstOrDefault();
+            var evaluationStartedEvent = room.DomainEvents.OfType<ContentListCreatedDomainEvent>().FirstOrDefault();
             var evaluationCompletedEvent = room.DomainEvents.OfType<EvaluationCompletedDomainEvent>().FirstOrDefault();
             Assert.NotNull(evaluationStartedEvent);
             Assert.NotNull(evaluationCompletedEvent);

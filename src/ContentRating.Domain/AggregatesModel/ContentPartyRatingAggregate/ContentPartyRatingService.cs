@@ -1,10 +1,10 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
-    public class ContentRatingService
+    public class ContentPartyRatingService
     {
-        private readonly IContentRatingRepository _contentRatingRepository;
+        private readonly IContentPartyRatingRepository _contentRatingRepository;
 
-        public ContentRatingService(IContentRatingRepository contentRatingRepository)
+        public ContentPartyRatingService(IContentPartyRatingRepository contentRatingRepository)
         {
             _contentRatingRepository = contentRatingRepository;
         }
@@ -13,7 +13,7 @@
             var specification = new ContentRatingSpecification(minScore, maxScore);
             foreach (var contentId in contentIds)
             {
-                var contentRating = ContentRating.Create(contentId, roomId, specification);
+                var contentRating = ContentPartyRating.Create(contentId, roomId, specification);
                 foreach (var invitation in invitations)
                 {
                     contentRating.InviteRater(invitation);

@@ -1,8 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.Shared;
 using Moq;
 using Xunit;
-using ContentRatingAggregateRoot = ContentRating.Domain.AggregatesModel.ContentRatingAggregate.ContentRating;
+using ContentRatingAggregateRoot = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
 
 namespace ContentRating.Domain.Tests.ContentRatingAggregate
 {
@@ -11,7 +11,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
         [Fact]
         public async Task StartEstimation_ValidContentWithRaters_ContentRatingSavedWithMinScore()
         {
-            var repository = new Mock<IContentRatingRepository>();
+            var repository = new Mock<IContentPartyRatingRepository>();
             var maxScore = new Score(5);
             var minScore = new Score(0);
             var expectedAverageScore = minScore;
@@ -19,14 +19,14 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             repository.Setup(c=> c.UnitOfWork).Returns(unitOfwork);
             var invites = new List<RaterInvitation>() 
             { 
-                new(Guid.NewGuid(), RaterType.Owner), 
+                new(Guid.NewGuid(), RaterType.Admin), 
                 new(Guid.NewGuid(), RaterType.Mock),
                 new(Guid.NewGuid(), RaterType.Default)
             };
             var contentIds = new List<Guid>() { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
             var expectedRoomId = Guid.NewGuid();
 
-            var contentRatingService = new ContentRatingService(repository.Object);
+            var contentRatingService = new ContentPartyRatingService(repository.Object);
             await contentRatingService.StartContentEstimation(contentIds, expectedRoomId, invites, minScore, maxScore);
 
             repository.Verify(c => c.Add(It.Is<ContentRatingAggregateRoot>(c => contentIds.Contains(c.Id) 
@@ -39,7 +39,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
         [Fact]
         public async Task CompleteContentEstimation_SameRoomId_ContentStateIsEstimated()
         {
-            var repository = new Mock<IContentRatingRepository>();
+            var repository = new Mock<IContentPartyRatingRepository>();
             var contentRatingList = new List<ContentRatingAggregateRoot>();
             var unitOfwork = Mock.Of<IUnitOfWork>();
             var contentRatings = CreateContentRatingsWithSameRaters(4).ToList();
@@ -47,7 +47,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             repository.Setup(c => c.GetContentRatingsByRoom(It.IsAny<Guid>())).Returns(Task.FromResult(contentRatings.AsEnumerable()));
             var roomId = Guid.NewGuid();
 
-            var contentRatingService = new ContentRatingService(repository.Object);
+            var contentRatingService = new ContentPartyRatingService(repository.Object);
             await contentRatingService.CompleteContentEstimation(roomId);
 
             repository.Verify(c => c.GetContentRatingsByRoom(roomId), Times.Once);
@@ -59,7 +59,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
         {
             var invites = new List<RaterInvitation>()
             {
-                new(Guid.NewGuid(), RaterType.Owner),
+                new(Guid.NewGuid(), RaterType.Admin),
                 new(Guid.NewGuid(), RaterType.Mock),
                 new(Guid.NewGuid(), RaterType.Default)
             };

@@ -1,6 +1,4 @@
-﻿using ContentRating.Domain.Shared;
-
-namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 {
     public interface IRoomRepository : IRepository<ContentRoomEditor>
     {

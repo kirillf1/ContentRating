@@ -1,11 +1,11 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.Shared;
 using MongoDB.Driver;
-using ContentRatingAggregate = ContentRating.Domain.AggregatesModel.ContentRatingAggregate.ContentRating;
+using ContentRatingAggregate = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
 
 namespace ContentRatingAPI.Infrastructure.Data.Repositories
 {
-    public class ContentRatingRepository : IContentRatingRepository
+    public class ContentRatingRepository : IContentPartyRatingRepository
     {
         private const string COLLECTION_NAME = "content_ratings";
         public ContentRatingRepository(MongoContext mongoContext, IChangeTracker changeTracker)

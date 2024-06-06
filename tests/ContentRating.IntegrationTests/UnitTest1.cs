@@ -1,6 +1,7 @@
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
-using ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
@@ -13,7 +14,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Moq;
 using System;
-using ContentRatingAggregate = ContentRating.Domain.AggregatesModel.ContentRatingAggregate.ContentRating;
+using ContentRatingAggregate = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
 
 namespace ContentRating.IntegrationTests
 {
@@ -140,7 +141,7 @@ namespace ContentRating.IntegrationTests
 
             var id = Guid.NewGuid();
             var spec = new ContentRatingSpecification(new Score(0), new Score(10));
-            var raters = new List<Rater> { new Rater(Guid.NewGuid(), RaterType.Owner, spec.MinScore), new Rater(Guid.NewGuid(), RaterType.Owner, spec.MinScore) };
+            var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin, spec.MinScore), new ContentRater(Guid.NewGuid(), RaterType.Admin, spec.MinScore) };
             var rating = ContentRatingAggregate.Create(id, Guid.NewGuid(), spec);
             rep.Add(rating);
 
@@ -157,7 +158,7 @@ namespace ContentRating.IntegrationTests
             };
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
            
-            BsonClassMap.RegisterClassMap<RoomAccessControl>(classMap =>
+            BsonClassMap.RegisterClassMap<ContentPartyRatingRoom>(classMap =>
             {
                 classMap.AutoMap();
                 classMap.MapField("_users").SetElementName("Users");
@@ -172,8 +173,8 @@ namespace ContentRating.IntegrationTests
             var rep = new RoomAccessControlRepository(mongoContext, changeTracker);
 
             var id = Guid.NewGuid();
-            var user = new User(Guid.NewGuid(), RoleType.Admin);
-            var room = RoomAccessControl.Create(id, user);
+            var user = new Rater(Guid.NewGuid(), RoleType.Admin);
+            var room = ContentPartyRatingRoom.Create(id, user);
 
             rep.Add(room);
 

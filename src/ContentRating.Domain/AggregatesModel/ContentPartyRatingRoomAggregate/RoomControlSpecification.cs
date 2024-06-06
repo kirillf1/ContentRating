@@ -1,6 +1,6 @@
 ﻿using ContentRating.Domain.Shared.RoomStates;
 
-namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
+namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate
 {
     public class RoomControlSpecification
     {
@@ -11,15 +11,15 @@ namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
         }
         private List<RoleType> _canControlAnotherUserRoles;
         private List<RoleType> _canEditContentRoles;
-        public bool CanKickAnotherUser(User user)
+        public bool CanKickAnotherUser(Rater user)
         {
             return _canControlAnotherUserRoles.Contains(user.Role);
         }
-        public bool CanInviteAnotherUser(User user)
+        public bool CanInviteAnotherUser(Rater user)
         {
             return _canControlAnotherUserRoles.Contains(user.Role);
         }
-        public bool CanEditContent(RoomAccessControl roomAccessControl, User user)
+        public bool CanEditContent(ContentPartyRatingRoom roomAccessControl, Rater user)
         {
             if (!roomAccessControl.Users.Contains(user))
                 return false;

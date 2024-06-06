@@ -1,8 +1,9 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
-using ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Events;
-using ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Exceptions;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Events;
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
+using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
 using Xunit;
-using ContentRatingAggregateRoot = ContentRating.Domain.AggregatesModel.ContentRatingAggregate.ContentRating;
+using ContentRatingAggregateRoot = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
 
 namespace ContentRating.Domain.Tests.ContentRatingAggregate
 {
@@ -14,7 +15,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             var specification = CreateContentRatingSpecification();
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
 
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Owner);
+            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
             var newRater = contentRating.InviteRater(newInvitation);
 
             Assert.Contains(newRater, contentRating.Raters);
@@ -26,7 +27,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
         {
             var specification = CreateContentRatingSpecification();
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Owner);
+            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
             var newRater = contentRating.InviteRater(newInvitation);
 
             contentRating.RemoveRater(newRater);
@@ -40,7 +41,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
 
             contentRating.CompleteEstimation();
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Owner);
+            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
 
             Assert.Throws<ForbiddenRatingOperationException>(() => contentRating.InviteRater(newInvitation));
         }
@@ -76,7 +77,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
             var expectedScore = new Score(value);
 
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Owner);
+            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
             var newRater = contentRating.InviteRater(newInvitation);
             var newEstimation = new Estimation(newRater, newRater, expectedScore);
             
@@ -89,7 +90,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
             var newScore = specification.MaxScore;
             
-            var ownerInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Owner);
+            var ownerInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
             var ownerRater = contentRating.InviteRater(ownerInvitation);
             var defaultRaterInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Default);
             var defaultRater = contentRating.InviteRater(defaultRaterInvitation);
@@ -104,7 +105,7 @@ namespace ContentRating.Domain.Tests.ContentRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
             var newScore = specification.MaxScore;
 
-            var ownerInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Owner);
+            var ownerInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
             var ownerRater = contentRating.InviteRater(ownerInvitation);
             var defaultRaterInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Default);
             var defaultRater = contentRating.InviteRater(defaultRaterInvitation);

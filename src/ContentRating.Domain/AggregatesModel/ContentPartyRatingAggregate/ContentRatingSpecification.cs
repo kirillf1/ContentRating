@@ -1,4 +1,4 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
     public class ContentRatingSpecification
     {
@@ -16,15 +16,15 @@
         {
             return score >= MinScore && score <= MaxScore;
         }
-        public bool IsSatisfiedRatersForContentEstimation(Rater initiator, Rater currentRater)
+        public bool IsSatisfiedRatersForContentEstimation(ContentRater initiator, ContentRater currentRater)
         {
-            if(initiator == currentRater)
+            if (initiator == currentRater)
                 return true;
 
             if (initiator.RaterType == RaterType.Mock)
                 return false;
 
-            if(initiator.RaterType != RaterType.Owner && currentRater.RaterType != RaterType.Mock)
+            if (initiator.RaterType != RaterType.Admin && currentRater.RaterType != RaterType.Mock)
                 return false;
 
             return true;

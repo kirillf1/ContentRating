@@ -1,11 +1,9 @@
-﻿using ContentRating.Domain.Shared;
-
-namespace ContentRating.Domain.AggregatesModel.ContentRatingAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
     public class Score : ValueObject
     {
         public Score(double value)
-        {        
+        {
             Value = value;
         }
 

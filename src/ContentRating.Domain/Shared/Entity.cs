@@ -1,6 +1,4 @@
-﻿using MediatR;
-
-namespace ContentRating.Domain.Shared
+﻿namespace ContentRating.Domain.Shared
 {
     public abstract class Entity
     {

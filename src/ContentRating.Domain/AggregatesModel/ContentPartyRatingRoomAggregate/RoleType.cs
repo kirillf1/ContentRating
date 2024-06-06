@@ -1,4 +1,4 @@
-﻿namespace ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate
 {
     public enum RoleType
     {

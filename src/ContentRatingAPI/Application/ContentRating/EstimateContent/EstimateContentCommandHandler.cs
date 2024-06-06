@@ -1,13 +1,14 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
 using MediatR;
 
 namespace ContentRatingAPI.Application.ContentRating.EstimateContent
 {
     public class EstimateContentCommandHandler : IRequestHandler<EstimateContentCommand>
     {
-        private readonly IContentRatingRepository contentRatingRepository;
+        private readonly IContentPartyRatingRepository contentRatingRepository;
 
-        public EstimateContentCommandHandler(IContentRatingRepository contentRatingRepository)
+        public EstimateContentCommandHandler(IContentPartyRatingRepository contentRatingRepository)
         {
             this.contentRatingRepository = contentRatingRepository;
         }

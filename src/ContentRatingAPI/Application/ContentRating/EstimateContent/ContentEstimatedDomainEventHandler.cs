@@ -1,4 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRatingAggregate.Events;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Events;
 using ContentRatingAPI.Notifications;
 
 namespace ContentRatingAPI.Application.ContentRating.EstimateContent

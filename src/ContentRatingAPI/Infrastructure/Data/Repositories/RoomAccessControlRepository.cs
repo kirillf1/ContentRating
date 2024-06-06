@@ -1,4 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.RoomAccessControlAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate;
 using ContentRating.Domain.Shared;
 using MongoDB.Driver;
 using System.Collections.Generic;
@@ -13,34 +13,34 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             this.mongoContext = mongoContext;
             UnitOfWork = mongoContext;
             this.changeTracker = changeTracker;
-            dbSet = mongoContext.GetCollection<RoomAccessControl>(COLLECTION_NAME);
+            dbSet = mongoContext.GetCollection<ContentPartyRatingRoom>(COLLECTION_NAME);
         }
         public IUnitOfWork UnitOfWork { get; }
         private readonly MongoContext mongoContext;
         private readonly IChangeTracker changeTracker;
-        private readonly IMongoCollection<RoomAccessControl> dbSet;
+        private readonly IMongoCollection<ContentPartyRatingRoom> dbSet;
 
-        public RoomAccessControl Add(RoomAccessControl room)
+        public ContentPartyRatingRoom Add(ContentPartyRatingRoom room)
         {
             mongoContext.AddCommand((s) => dbSet.InsertOneAsync(s, room));
             changeTracker.TrackEntity(room);
             return room;
         }
 
-        public void Delete(RoomAccessControl room)
+        public void Delete(ContentPartyRatingRoom room)
         {
             changeTracker.TrackEntity(room);
-            mongoContext.AddCommand((s) => dbSet.DeleteOneAsync(s, Builders<RoomAccessControl>.Filter.Eq(_ => _.Id, room.Id)));
+            mongoContext.AddCommand((s) => dbSet.DeleteOneAsync(s, Builders<ContentPartyRatingRoom>.Filter.Eq(_ => _.Id, room.Id)));
         }
 
-        public async Task<RoomAccessControl> GetRoom(Guid id)
+        public async Task<ContentPartyRatingRoom> GetRoom(Guid id)
         {
-            return await dbSet.Find(Builders<RoomAccessControl>.Filter.Eq(_ => _.Id, id)).SingleAsync();
+            return await dbSet.Find(Builders<ContentPartyRatingRoom>.Filter.Eq(_ => _.Id, id)).SingleAsync();
         }
 
-        public RoomAccessControl Update(RoomAccessControl room)
+        public ContentPartyRatingRoom Update(ContentPartyRatingRoom room)
         {
-            mongoContext.AddCommand((s) => dbSet.ReplaceOneAsync(s, Builders<RoomAccessControl>.Filter.Eq(_ => _.Id, room.Id), room));
+            mongoContext.AddCommand((s) => dbSet.ReplaceOneAsync(s, Builders<ContentPartyRatingRoom>.Filter.Eq(_ => _.Id, room.Id), room));
             changeTracker.TrackEntity(room);
             return room;
         }

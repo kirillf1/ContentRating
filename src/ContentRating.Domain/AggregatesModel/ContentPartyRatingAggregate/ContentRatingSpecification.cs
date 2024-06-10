@@ -16,18 +16,15 @@
         {
             return score >= MinScore && score <= MaxScore;
         }
-        public bool IsSatisfiedRatersForContentEstimation(ContentRater initiator, ContentRater currentRater)
+        public bool HasAccessToEstimateContent(ContentRater estimationInitiator, ContentRater raterForChangeScore)
         {
-            if (initiator == currentRater)
+            if (estimationInitiator == raterForChangeScore)
                 return true;
 
-            if (initiator.RaterType == RaterType.Mock)
-                return false;
-
-            if (initiator.RaterType != RaterType.Admin && currentRater.RaterType != RaterType.Mock)
-                return false;
-
-            return true;
+            if(estimationInitiator.RaterType != RaterType.Mock && raterForChangeScore.RaterType == RaterType.Mock)
+                return true;
+            
+            return false;
         }
     }
 }

@@ -1,23 +1,21 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
-
-namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
+﻿namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
-    public class ContentRater : Entity
+    public class ContentRater : ValueObject
     {
-        public ContentRater(Guid id, RaterType raterType, Score score)
+        public ContentRater(Guid raterId, RaterType raterType)
         {
-            Id = id;
+            RaterId = raterId;
             RaterType = raterType;
-            CurrentScore = score;
+
         }
+
+        public Guid RaterId { get; }
         public RaterType RaterType { get; private set; }
-        public Score CurrentScore { get; private set; }
-        internal void Rate(Score score, ContentRatingSpecification ratingSpecification)
+
+        protected override IEnumerable<object> GetEqualityComponents()
         {
-            if (!ratingSpecification.IsSatisfiedScore(score))
-                throw new ForbiddenRatingOperationException($"Score must be more or equal {ratingSpecification.MinScore.Value} " +
-                    $"and less or equal {ratingSpecification.MaxScore.Value}");
-            CurrentScore = score;
-        }
+            yield return RaterId;
+            yield return RaterType;
+        }      
     }
 }

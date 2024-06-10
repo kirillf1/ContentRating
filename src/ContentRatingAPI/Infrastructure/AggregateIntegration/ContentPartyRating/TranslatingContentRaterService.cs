@@ -1,0 +1,26 @@
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRatingAPI.Application.ContentPartyRating.ContentRaterService;
+
+namespace ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRating
+{
+    public class TranslatingContentRaterService : IContentRaterService
+    {
+        private readonly ContentRaterAdapter contentRaterAdapter;
+
+        public TranslatingContentRaterService(ContentRaterAdapter contentRaterAdapter)
+        {
+            this.contentRaterAdapter = contentRaterAdapter;
+        }
+        public async Task<ContentRatersForEstimation> GetContentRatersForEstimation(Guid roomId, Guid initiatorRaterId, Guid targetRaterId)
+        {
+            var raters = await contentRaterAdapter.GetContentRates(roomId, initiatorRaterId, targetRaterId);
+            return new ContentRatersForEstimation(raters[0], raters[1]);
+        }
+
+        public async Task<ContentRater> GetRaterFromRoom(Guid roomId, Guid RaterId)
+        {
+            var rater = await contentRaterAdapter.GetContentRater(roomId, RaterId);
+            return rater;
+        }
+    }
+}

@@ -1,6 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate.Events;
+using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Exceptions;
+using ContentRating.Domain.Shared.Content;
 using ContentRating.Domain.Shared.RoomStates;
 using Xunit;
 
@@ -9,7 +11,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
     public class ContentRoomEditorTests
     {
         static Random random = new Random();
-        // стоит подумать чтобы контролировать состояние только в access control и убрать всю логику с других служб или просто им посылать события
+
         [Fact]
         public void CreateContent_NewContent_AddContentUpdatedInRoomEvent()
         {
@@ -57,7 +59,6 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
             var editor = room.RoomCreator;
 
             room.CompleteContentEditing(editor);
-            room.CompleteContentEvaluation(editor);
 
             Assert.Throws<InvalidRoomStageOperationException>(() => room.CreateContent(editor, newContentData));
         }
@@ -123,10 +124,9 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
             var content = room.AddedContent.Last();
 
             room.CompleteContentEditing(room.RoomCreator);
-            room.CompleteContentEvaluation(room.RoomCreator);
 
             var evaluationStartedEvent = room.DomainEvents.OfType<ContentListCreatedDomainEvent>().FirstOrDefault();
-            var evaluationCompletedEvent = room.DomainEvents.OfType<EvaluationCompletedDomainEvent>().FirstOrDefault();
+            var evaluationCompletedEvent = room.DomainEvents.OfType<AllContentEstimatedDomainEvent>().FirstOrDefault();
             Assert.NotNull(evaluationStartedEvent);
             Assert.NotNull(evaluationCompletedEvent);
             Assert.Contains(content, evaluationStartedEvent.AddedContent);

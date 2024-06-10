@@ -8,26 +8,26 @@
         {
             _contentRatingRepository = contentRatingRepository;
         }
-        public async Task StartContentEstimation(IEnumerable<Guid> contentIds, Guid roomId, IEnumerable<RaterInvitation> invitations, Score minScore, Score maxScore)
+        public async Task StartContentEstimation(IEnumerable<Guid> contentIds, Guid roomId, IEnumerable<ContentRater> raters, Score minScore, Score maxScore)
         {
             var specification = new ContentRatingSpecification(minScore, maxScore);
             foreach (var contentId in contentIds)
             {
                 var contentRating = ContentPartyRating.Create(contentId, roomId, specification);
-                foreach (var invitation in invitations)
+                foreach (var rater in raters)
                 {
-                    contentRating.InviteRater(invitation);
+                    contentRating.AddNewRaterInContentEstimation(rater);
                 }
                 _contentRatingRepository.Add(contentRating);
             }
             await _contentRatingRepository.UnitOfWork.SaveChangesAsync();
         }
-        public async Task InviteRaterInContentRatingRoom(Guid roomId, RaterInvitation raterInvitation)
+        public async Task AddNewRaterScoreInContentRatingList(Guid roomId, ContentRater newRater)
         {
             var ratings = await _contentRatingRepository.GetContentRatingsByRoom(roomId);
             foreach (var rating in ratings)
             {
-                rating.InviteRater(raterInvitation);
+                rating.AddNewRaterInContentEstimation(newRater);
                 _contentRatingRepository.Update(rating);
             }
             await _contentRatingRepository.UnitOfWork.SaveChangesAsync();

@@ -1,11 +1,13 @@
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
-using ContentRating.Domain.AggregatesModel.ContentPartyRatingRoomAggregate;
-using ContentRating.Domain.AggregatesModel.ContentRatingAggregate;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
+using ContentRating.Domain.Shared.Content;
+using ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRating;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
 using MediatR;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
@@ -13,8 +15,8 @@ using MongoDB.Bson.Serialization.Options;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Moq;
-using System;
-using ContentRatingAggregate = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
+using System.Linq.Expressions;
+
 
 namespace ContentRating.IntegrationTests
 {
@@ -62,7 +64,7 @@ namespace ContentRating.IntegrationTests
         {
             var mongoClient = new MongoClient("mongodb://localhost:27017");
             var d = mongoClient.GetDatabase("MyTestDb");
-            var c = d.GetCollection<TestEntity>("rooms");
+
             using (var Session = await mongoClient.StartSessionAsync())
             {
                 Session.StartTransaction();
@@ -70,14 +72,10 @@ namespace ContentRating.IntegrationTests
                 {
                     var c1 = d.GetCollection<TestEntity1>("rooms1");
                     var e = new TestEntity(Guid.NewGuid(), "test", "t");
+                    
+                    var c = d.GetCollection<TestEntity>("rooms");
                     c.InsertOne(Session, e);
-                    using (var session = await mongoClient.StartSessionAsync())
-                    {
-                        session.StartTransaction();
-                        var newEntity = new TestEntity1(Guid.NewGuid(), "test1", "t");
-                        c1.InsertOne(session, newEntity);
-                        session.CommitTransaction();
-                    }
+                    c1.InsertOne(Session, new TestEntity1(Guid.NewGuid(), "tet", "test"));
                     Session.CommitTransaction();
                 }
 
@@ -103,9 +101,11 @@ namespace ContentRating.IntegrationTests
             });
             var mediatr = new Mock<IMediator>();
             var changeTracker = new InMemoryChangeTracker();
-            var mongoContext = new MongoContext(new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb" }, changeTracker, mediatr.Object);
-            var rep = new RoomRepository(mongoContext, changeTracker);
-
+            var options = Options.Create( new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb" });
+            var client = new MongoClient(options.Value.Connection);
+            var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
+            var rep = new ContentEditorRoomRepository(mongoContext, options);
+            await mongoContext.BeginTransactionAsync();
             var id = Guid.NewGuid();
             var editor = new Editor(Guid.NewGuid(), "test");
             var newRoom = new ContentRoomEditor(id, editor, "testRoom");
@@ -113,7 +113,9 @@ namespace ContentRating.IntegrationTests
             rep.Add(newRoom);
 
             await rep.UnitOfWork.SaveChangesAsync();
+            await mongoContext.CommitAsync();
             var room = await rep.GetRoom(id);
+            var r = await rep.HasEditorInRoom(id, Guid.NewGuid());
             await Console.Out.WriteLineAsync();
         }
         [Fact]
@@ -125,27 +127,39 @@ namespace ContentRating.IntegrationTests
             };
             
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
-                BsonClassMap.RegisterClassMap<ContentRatingAggregate>(classMap =>
+                BsonClassMap.RegisterClassMap<ContentPartyRating>(classMap =>
             {
-                classMap.AutoMap();
-                classMap.MapField("_specification").SetElementName("Specification");
-                classMap.MapField("_raters").SetElementName("Raters");
-                classMap.UnmapProperty(c => c.Raters);
-            
+                classMap.AutoMap();;
+                //classMap.SetDictionaryRepresentation(memberName: "_raterScores", representation: DictionaryRepresentation.ArrayOfDocuments);
+                classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
 
             });
             var mediatr = new Mock<IMediator>();
             var changeTracker = new InMemoryChangeTracker();
-            var mongoContext = new MongoContext(new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb" }, changeTracker, mediatr.Object);
-            var rep = new ContentRatingRepository(mongoContext, changeTracker);
+            var options = Options.Create(new MongoDBOptions
+            {
+                Connection = "mongodb://localhost:27017",
+                DatabaseName = "MyTestDb",
+                ContentPartyEstimationRoomCollectionName = "PartyEstimation",
+                ContentPartyRatingCollectionName = "ContentPartyRating"
+            });
+            var client = new MongoClient(options.Value.Connection);
+            var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
+            await mongoContext.BeginTransactionAsync();
+            var rep = new ContentPartyRatingRepository(mongoContext, options);
 
             var id = Guid.NewGuid();
             var spec = new ContentRatingSpecification(new Score(0), new Score(10));
-            var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin, spec.MinScore), new ContentRater(Guid.NewGuid(), RaterType.Admin, spec.MinScore) };
-            var rating = ContentRatingAggregate.Create(id, Guid.NewGuid(), spec);
+            var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin), new ContentRater(Guid.NewGuid(), RaterType.Admin) };
+            var rating = ContentPartyRating.Create(id, Guid.NewGuid(), spec);
+            foreach (var rater in raters)
+            {
+                rating.AddNewRaterInContentEstimation(rater);
+            }
             rep.Add(rating);
 
             await rep.UnitOfWork.SaveChangesAsync();
+            await mongoContext.CommitAsync();
             var r = await rep.GetContentRating(id);
             await Console.Out.WriteLineAsync();
         }
@@ -158,29 +172,57 @@ namespace ContentRating.IntegrationTests
             };
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
            
-            BsonClassMap.RegisterClassMap<ContentPartyRatingRoom>(classMap =>
+            BsonClassMap.RegisterClassMap<ContentPartyEstimationRoom>(classMap =>
             {
                 classMap.AutoMap();
-                classMap.MapField("_users").SetElementName("Users");
-                classMap.MapField("_roomSpecification").SetElementName("RoomSpecification");
-                classMap.UnmapProperty(c => c.Users);
+                classMap.MapProperty(c => c.Raters);
 
+
+            });
+            BsonClassMap.RegisterClassMap<ContentPartyRating>(classMap =>
+            {
+                classMap.AutoMap(); ;
+                //classMap.SetDictionaryRepresentation(memberName: "_raterScores", representation: DictionaryRepresentation.ArrayOfDocuments);
+                classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
 
             });
             var mediatr = new Mock<IMediator>();
             var changeTracker = new InMemoryChangeTracker();
-            var mongoContext = new MongoContext(new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb" }, changeTracker, mediatr.Object);
-            var rep = new RoomAccessControlRepository(mongoContext, changeTracker);
-
+            var options = Options.Create(new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb", 
+                ContentPartyEstimationRoomCollectionName = "PartyEstimation", ContentPartyRatingCollectionName = "ContentPartyRating" });
+            var client = new MongoClient(options.Value.Connection);
+            var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
+            var rep = new ContentPartyEstimationRoomRepository(mongoContext, options);;
             var id = Guid.NewGuid();
-            var user = new Rater(Guid.NewGuid(), RoleType.Admin);
-            var room = ContentPartyRatingRoom.Create(id, user);
+            var user = new Rater(Guid.NewGuid(), RoleType.Admin, "test");
+            var room = ContentPartyEstimationRoom.Create(id, user, [new ContentForEstimation(Guid.NewGuid(), )]);
+            room.InviteRater(new Rater(Guid.NewGuid(), RoleType.Admin, "test"), user.Id);
 
             rep.Add(room);
 
             await rep.UnitOfWork.SaveChangesAsync();
+            var adapter = new ContentRaterAdapter(new ContentRaterTranslator(), mongoContext, options);
+            var a = await adapter.GetContentRates(id, room.Raters.Select(c => c.Id).ToArray());
+            var rep1 = new ContentPartyRatingRepository(mongoContext, options);
+
+            var id1 = Guid.NewGuid();
+            var spec = new ContentRatingSpecification(new Score(0), new Score(10));
+            var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin), new ContentRater(Guid.NewGuid(), RaterType.Admin) };
+            var rating = ContentPartyRating.Create(id1, Guid.NewGuid(), spec);
+            foreach (var rater in raters)
+            {
+                rating.AddNewRaterInContentEstimation(rater);
+            }
+            rep1.Add(rating);
+
+            await rep1.UnitOfWork.SaveChangesAsync();
+            
+            var r1 = await rep1.GetContentRating(id1);
             var r = await rep.GetRoom(id);
+            var res = await rep.HasRaterInRoom(id, user.Id);
             await Console.Out.WriteLineAsync();
         }
+       
     }
-}
+
+    }

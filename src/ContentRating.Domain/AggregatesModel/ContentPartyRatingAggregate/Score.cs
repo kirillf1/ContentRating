@@ -37,5 +37,9 @@
         {
             return new Score(left.Value - right.Value);
         }
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 }

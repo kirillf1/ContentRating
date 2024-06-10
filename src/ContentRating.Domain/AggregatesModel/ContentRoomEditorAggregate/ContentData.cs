@@ -1,4 +1,6 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
+﻿using ContentRating.Domain.Shared.Content;
+
+namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 {
     public class ContentData : ValueObject
     {

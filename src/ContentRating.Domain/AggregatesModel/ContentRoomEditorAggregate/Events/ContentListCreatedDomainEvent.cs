@@ -1,4 +1,6 @@
-﻿namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+
+namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events
 {
     public record ContentListCreatedDomainEvent(Guid RoomId, Editor Creator, 
         IReadOnlyCollection<Editor> InvitedEditors, IReadOnlyCollection<Content> AddedContent, 

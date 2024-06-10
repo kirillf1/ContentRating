@@ -1,4 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
+﻿using ContentRating.Domain.Shared.Content;
 
 namespace ContentRatingAPI.Application.ContentRoomEditor.ContentModifications
 {

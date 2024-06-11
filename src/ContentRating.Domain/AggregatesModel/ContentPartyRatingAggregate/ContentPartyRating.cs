@@ -21,7 +21,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
         private Dictionary<Guid, Score> _raterScores;
         public void AddNewRaterInContentEstimation(ContentRater contentRater)
         {
-            CheckEstimationIsCompleated();
+            CheckEstimationIsCompleted();
             var raterId = contentRater.RaterId;
             if (_raterScores.ContainsKey(raterId))
                 throw new ArgumentException("Rater is already added");
@@ -29,13 +29,27 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
         }
         public void RemoveRaterFromContentEstimation(ContentRater contentRater)
         {
-            CheckEstimationIsCompleated();
+            CheckEstimationIsCompleted();
             
             _raterScores.Remove(contentRater.RaterId);
         }
+        public void ChangeEstimationSpecification(ContentRatingSpecification newSpecification)
+        {
+            Specification = newSpecification;
+            var newMaxScore = newSpecification.MaxScore;
+            var newMinScore = newSpecification.MinScore;
+            foreach (var raterId in _raterScores.Keys)
+            {
+                var score = _raterScores[raterId];
+                if (score > newMaxScore)
+                    _raterScores[raterId] = newMaxScore;
+                else if (score < newMinScore)
+                    _raterScores[raterId] = newMinScore;
+            }
+        }
         public void EstimateContent(Estimation estimation)
         {
-            CheckEstimationIsCompleated();
+            CheckEstimationIsCompleted();
 
             if (!_raterScores.ContainsKey(estimation.RaterForChangeScore.RaterId) || !_raterScores.ContainsKey(estimation.ContentEstimationInitiator.RaterId))
                 throw new ForbiddenRatingOperationException("Unknown raters");
@@ -52,7 +66,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
         {
             IsContentEstimated = true;
         }
-        private void CheckEstimationIsCompleated()
+        private void CheckEstimationIsCompleted()
         {
             if (IsContentEstimated)
                 throw new ForbiddenRatingOperationException("Content estimated");

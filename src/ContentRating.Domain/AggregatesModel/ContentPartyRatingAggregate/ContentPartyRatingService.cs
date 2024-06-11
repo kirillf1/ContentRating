@@ -43,5 +43,15 @@
             }
             await _contentRatingRepository.UnitOfWork.SaveChangesAsync();
         }
+        public async Task ChangeRatingSpecification(Guid roomId, Score newMinScore, Score newMaxScore)
+        {
+            var ratings = await _contentRatingRepository.GetContentRatingsByRoom(roomId);
+            foreach (var rating in ratings)
+            {
+                rating.ChangeEstimationSpecification(new ContentRatingSpecification(newMinScore, newMaxScore));
+                _contentRatingRepository.Update(rating);
+            }
+            await _contentRatingRepository.UnitOfWork.SaveChangesAsync();
+        }
     }
 }

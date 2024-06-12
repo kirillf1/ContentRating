@@ -33,6 +33,17 @@
             await _contentRatingRepository.UnitOfWork.SaveChangesAsync();
 
         }
+        public async Task RemoveRaterScoreInContentRatingList(Guid roomId, ContentRater rater)
+        {
+            var ratings = await _contentRatingRepository.GetContentRatingsByRoom(roomId);
+            foreach (var rating in ratings)
+            {
+                rating.RemoveRaterFromContentEstimation(rater);
+                _contentRatingRepository.Update(rating);
+            }
+            await _contentRatingRepository.UnitOfWork.SaveChangesAsync();
+
+        }
         public async Task CompleteContentEstimation(Guid roomId)
         {
             var ratings = await _contentRatingRepository.GetContentRatingsByRoom(roomId);

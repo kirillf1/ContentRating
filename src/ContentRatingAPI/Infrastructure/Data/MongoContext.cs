@@ -35,6 +35,7 @@ namespace ContentRatingAPI.Infrastructure.Data
         }
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_scopedSession is null)
             {
                 using var session = await _mongoClient.StartSessionAsync(cancellationToken: cancellationToken);

@@ -46,5 +46,13 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             var ratings = await dbSet.Find(Builders<ContentRatingAggregate>.Filter.Eq(_ => _.Id, roomId)).ToListAsync();         
             return ratings;
         }
+
+        public async Task<ContentRatingAggregate> GetContentRating(Guid roomId, Guid contentId)
+        {
+            return await dbSet.Find(Builders<ContentRatingAggregate>.Filter.And(
+                    Builders<ContentRatingAggregate>.Filter.Eq(_ => _.RoomId, roomId),
+                    Builders<ContentRatingAggregate>.Filter.Eq(_ => _.ContentId, contentId)))
+                .SingleAsync();
+        }
     }
 }

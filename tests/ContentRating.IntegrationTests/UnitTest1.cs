@@ -2,6 +2,7 @@ using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.Domain.Shared.Content;
+using ContentRatingAPI.Application.ContentLoader;
 using ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRating;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
@@ -127,9 +128,11 @@ namespace ContentRating.IntegrationTests
             };
             
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
+
                 BsonClassMap.RegisterClassMap<ContentPartyRating>(classMap =>
             {
                 classMap.AutoMap();;
+                classMap.MapField(c => c.Id).SetElementName("ContentId");
                 //classMap.SetDictionaryRepresentation(memberName: "_raterScores", representation: DictionaryRepresentation.ArrayOfDocuments);
                 classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
 
@@ -145,6 +148,17 @@ namespace ContentRating.IntegrationTests
             });
             var client = new MongoClient(options.Value.Connection);
             var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
+          
+
+            // Создание индексов, стоит засунуть в Onstartap и добавить в context функционал добавлениея индексов
+
+            var indexKeysDefinition = Builders<ContentPartyRating>.IndexKeys.Ascending(c => c.Id).Ascending(c => c.RoomId);
+            var indexOptions = new CreateIndexOptions { Unique = true };
+            var indexModel = new CreateIndexModel<ContentPartyRating>(indexKeysDefinition, indexOptions);
+            var c = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
+            c.Indexes.CreateOne(indexModel);
+  
+            c.Indexes.CreateOne(indexModel);
             await mongoContext.BeginTransactionAsync();
             var rep = new ContentPartyRatingRepository(mongoContext, options);
 
@@ -152,12 +166,15 @@ namespace ContentRating.IntegrationTests
             var spec = new ContentRatingSpecification(new Score(0), new Score(10));
             var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin), new ContentRater(Guid.NewGuid(), RaterType.Admin) };
             var rating = ContentPartyRating.Create(id, Guid.NewGuid(), spec);
+            var s = rating.AverageContentScore;
             foreach (var rater in raters)
             {
                 rating.AddNewRaterInContentEstimation(rater);
             }
+           
             rep.Add(rating);
-
+            rating = ContentPartyRating.Create(id, Guid.NewGuid(), spec);
+            rep.Add(rating);
             await rep.UnitOfWork.SaveChangesAsync();
             await mongoContext.CommitAsync();
             var r = await rep.GetContentRating(id);
@@ -195,7 +212,7 @@ namespace ContentRating.IntegrationTests
             var rep = new ContentPartyEstimationRoomRepository(mongoContext, options);;
             var id = Guid.NewGuid();
             var user = new Rater(Guid.NewGuid(), RoleType.Admin, "test");
-            var room = ContentPartyEstimationRoom.Create(id, user, [new ContentForEstimation(Guid.NewGuid(), )]);
+            var room = ContentPartyEstimationRoom.Create(id, user, [new ContentForEstimation(Guid.NewGuid(),"testName","/test/url", ContentType.Audio)]);
             room.InviteRater(new Rater(Guid.NewGuid(), RoleType.Admin, "test"), user.Id);
 
             rep.Add(room);
@@ -222,7 +239,14 @@ namespace ContentRating.IntegrationTests
             var res = await rep.HasRaterInRoom(id, user.Id);
             await Console.Out.WriteLineAsync();
         }
-       
+        [Fact]
+        public async Task Test7()
+        {
+            var loader = new ContentLoaderService();
+            await loader.SaveToHLS(@"C:\Users\kirill\Downloads\Limp Bizkit - My Way.mp4", @"D:\Videos", "limp");
+        }
+
+
     }
 
     }

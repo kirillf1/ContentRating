@@ -132,7 +132,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
                 throw new ForbiddenRoomOperationException("Only creator can start content evaluation");
             }
 
-            AddDomainEvent(new ContentListCreatedDomainEvent(Id, RoomCreator, InvitedEditors, AddedContent, MinRating, MaxRating, contentListName));
+            AddDomainEvent(new ContentListCreatedDomainEvent(Id, RoomCreator, InvitedEditors, AddedContent, contentListName));
         }
         public void MarkDeleted()
         {

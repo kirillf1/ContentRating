@@ -1,9 +1,9 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
-using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRatingAPI.Infrastructure.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using ContentPartyEstimationRoomAggregate = ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate.ContentPartyEstimationRoom;
 
 namespace ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRating
 {
@@ -22,7 +22,7 @@ namespace ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRatin
         }
         public async Task<ContentRater> GetContentRater(Guid roomId, Guid raterId)
         {
-            var rooms = mongoContext.GetCollection<ContentPartyEstimationRoom>(options.Value.ContentPartyEstimationRoomCollectionName);
+            var rooms = mongoContext.GetCollection<ContentPartyEstimationRoomAggregate>(options.Value.ContentPartyEstimationRoomCollectionName);
             var rater = await rooms.AsQueryable().
                 Where(c=> c.Id == roomId).
                 SelectMany(c=> c.Raters).
@@ -32,7 +32,7 @@ namespace ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRatin
         }
         public async Task<List<ContentRater>> GetContentRates(Guid roomId, params Guid[] raterIds)
         {
-            var rooms = mongoContext.GetCollection<ContentPartyEstimationRoom>(options.Value.ContentPartyEstimationRoomCollectionName);
+            var rooms = mongoContext.GetCollection<ContentPartyEstimationRoomAggregate>(options.Value.ContentPartyEstimationRoomCollectionName);
             var raters = await rooms.AsQueryable().
                 Where(c => c.Id == roomId).
                 SelectMany(c => c.Raters).

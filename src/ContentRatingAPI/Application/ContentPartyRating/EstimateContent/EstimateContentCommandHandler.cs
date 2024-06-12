@@ -15,7 +15,7 @@ namespace ContentRatingAPI.Application.ContentPartyRating.EstimateContent
         }
         public async Task Handle(EstimateContentCommand request, CancellationToken cancellationToken)
         {
-            var contentRating = await contentRatingRepository.GetContentRating(request.ContentId);
+            var contentRating = await contentRatingRepository.GetContentRating(request.ContentRatingId);
             var raters = await contentRaterService.GetContentRatersForEstimation(contentRating.RoomId, request.EstimationInitiatorId, request.RaterForChangeScoreId);
 
             var estimation = new Estimation(raters.Initiator, raters.TargetRater, new Score(request.NewScore));

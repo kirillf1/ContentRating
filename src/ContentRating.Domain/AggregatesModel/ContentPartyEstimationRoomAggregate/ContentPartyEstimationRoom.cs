@@ -32,7 +32,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             {
                 throw new ArgumentException("Room don't contain this rater");
             }
-            if (!RoomSpecification.CanKickAnotherUser(initiator))
+            if (!RoomSpecification.CanKickAnotherRater(initiator))
                 throw new ForbiddenRoomOperationException("This rater does not have the right to kick other users ");
 
             if (initiator == raterForKick)
@@ -57,7 +57,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
 
             var inviter = _raters.Find(c => c.Id == inviterId) ?? throw new ArgumentException("Unknown inviter");
 
-            if (!RoomSpecification.CanInviteAnotherUser(inviter))
+            if (!RoomSpecification.CanInviteAnotherRater(inviter))
                 throw new ForbiddenRoomOperationException("This rater does not have the access to kick other raters");
 
             _raters.Add(newRater);
@@ -91,8 +91,10 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             if (oldRatingRange != RatingRange)
                 AddDomainEvent(new RatingRangeChangedDomainEvent(Id, RatingRange.MaxRating, RatingRange.MinRating));
         }
-        public void CompleteContentEstimation()
+        public void CompleteContentEstimation(Rater rater)
         {
+            if (rater != RoomCreator)
+                throw new ForbiddenRoomOperationException("Can complete estimation only room creator");
             IsAllContentEstimated = true;
             AddDomainEvent(new AllContentEstimatedDomainEvent(Id, Raters));
         }
@@ -109,7 +111,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             RatingRange = ratingRange;
             RoomSpecification = specification;
             _contentList = new(contentList);
-
+            AddDomainEvent(new ContentEstimationStartedDomainEvent(Id, Raters, ContentForEstimation, RatingRange));
         }
         public static ContentPartyEstimationRoom Create(Guid id, Rater creator, IEnumerable<ContentForEstimation> contentList, 
             RatingRange? ratingRange = null, List<Rater>? otherInvitedUsers = null)

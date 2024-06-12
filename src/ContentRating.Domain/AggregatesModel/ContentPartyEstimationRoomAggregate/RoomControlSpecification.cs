@@ -19,11 +19,11 @@
         }
         private List<RoleType> _canEditContentListRoles;
         private List<RoleType> _canControlAnotherRaterRoles;
-        public bool CanKickAnotherUser(Rater rater)
+        public bool CanKickAnotherRater(Rater rater)
         {
             return _canControlAnotherRaterRoles.Contains(rater.Role);
         }
-        public bool CanInviteAnotherUser(Rater rater)
+        public bool CanInviteAnotherRater(Rater rater)
         {
             return _canControlAnotherRaterRoles.Contains(rater.Role);
         }

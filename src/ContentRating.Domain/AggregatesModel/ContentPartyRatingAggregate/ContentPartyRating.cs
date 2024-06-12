@@ -7,6 +7,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
     public class ContentPartyRating : Entity, IAggregateRoot
     {
+        public Guid ContentId { get; }
         public Guid RoomId { get; private set; }
         public int RatersCount => _raterScores.Count;
         public ReadOnlyDictionary<Guid, Score> RaterScores
@@ -15,7 +16,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
             private set { _raterScores = value.ToDictionary(); }
         }
         public bool IsContentEstimated { get; private set; }
-        public Score AverageContentScore => new(_raterScores.Values.Average(c => c.Value));
+        public Score AverageContentScore => new( _raterScores.Values.DefaultIfEmpty(Specification.MinScore).Average(c => c.Value));
 
         public ContentRatingSpecification Specification { get; private set; }
         private Dictionary<Guid, Score> _raterScores;
@@ -60,7 +61,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
             if (!Specification.IsSatisfiedScore(estimation.NewScore))
                 throw new ForbiddenRatingOperationException("Invalid score value");
 
-            AddDomainEvent(new ContentRatingChangedDomainEvent(RoomId, Id, estimation.RaterForChangeScore, estimation.NewScore, AverageContentScore));
+            AddDomainEvent(new ContentRatingChangedDomainEvent(ContentId, RoomId, ContentId, estimation.RaterForChangeScore, estimation.NewScore, AverageContentScore));
         }
         public void CompleteEstimation()
         {
@@ -71,17 +72,19 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
             if (IsContentEstimated)
                 throw new ForbiddenRatingOperationException("Content estimated");
         }
-        private ContentPartyRating(Guid contentId, Guid roomId, ContentRatingSpecification specification)
-        {
-            Id = contentId;
+        private ContentPartyRating(Guid id, Guid contentId, Guid roomId, ContentRatingSpecification specification)
+        { 
+            Id = id;
+            ContentId = contentId;
             RoomId = roomId;
             Specification = specification;
             _raterScores = [];
             IsContentEstimated = false;
         }
-        public static ContentPartyRating Create(Guid contentId, Guid roomId, ContentRatingSpecification specification)
+        public static ContentPartyRating Create(Guid contentId, Guid roomId, ContentRatingSpecification specification, Guid? id = null)
         {
-            return new ContentPartyRating(contentId, roomId, specification);
+            id ??= Guid.NewGuid();
+            return new ContentPartyRating(id.Value, contentId, roomId, specification);
         }
     }
 }

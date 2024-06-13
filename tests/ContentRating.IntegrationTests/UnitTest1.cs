@@ -242,8 +242,9 @@ namespace ContentRating.IntegrationTests
         [Fact]
         public async Task Test7()
         {
+            var videoData = await File.ReadAllBytesAsync("C:\\Users\\TaKi\\Downloads\\Green Day - Dilemma (Official Music Video).mp4");
             var loader = new ContentLoaderService();
-            await loader.SaveToHLS(@"C:\Users\kirill\Downloads\Limp Bizkit - My Way.mp4", @"D:\Videos", "limp");
+            await loader.SaveToHLS(videoData, @"D:\Videos", "limp");
         }
 
 

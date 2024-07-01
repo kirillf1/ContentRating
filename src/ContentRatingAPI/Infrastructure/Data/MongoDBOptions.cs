@@ -9,5 +9,6 @@
         public string ContentEditorRoomCollectionName { get; set; } = String.Empty;
         public string ContentPartyEstimationRoomCollectionName { get; set; } = String.Empty;
         public string ContentPartyRatingCollectionName {  get; set; } = String.Empty;
+        public string SavedContentFileCollectionName { get; set; } = String.Empty;
     }
 }

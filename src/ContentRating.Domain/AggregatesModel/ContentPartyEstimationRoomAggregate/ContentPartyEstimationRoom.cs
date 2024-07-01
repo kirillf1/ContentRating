@@ -114,12 +114,12 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             AddDomainEvent(new ContentEstimationStartedDomainEvent(Id, Raters, ContentForEstimation, RatingRange));
         }
         public static ContentPartyEstimationRoom Create(Guid id, Rater creator, IEnumerable<ContentForEstimation> contentList, 
-            RatingRange? ratingRange = null, List<Rater>? otherInvitedUsers = null)
+            RatingRange? ratingRange = null, List<Rater>? otherInvitedRaters = null)
         {
-            otherInvitedUsers ??= new List<Rater>();
+            otherInvitedRaters ??= new List<Rater>();
             ratingRange ??= new RatingRange();
-            otherInvitedUsers.Add(creator);
-            return new ContentPartyEstimationRoom(id, creator, new RoomControlSpecification(), otherInvitedUsers, contentList, ratingRange);
+            otherInvitedRaters.Add(creator);
+            return new ContentPartyEstimationRoom(id, creator, new RoomControlSpecification(), otherInvitedRaters, contentList, ratingRange);
         }
     }
 }

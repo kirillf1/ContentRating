@@ -1,11 +1,23 @@
-
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRatingAPI.Infrastructure.AggregateIntegration;
+using ContentRatingAPI.Infrastructure.Authentication;
+using ContentRatingAPI.Infrastructure.Authorization;
+using ContentRatingAPI.Infrastructure.ContentFileManagers;
+using ContentRatingAPI.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-// Add services to the container.
+builder.AddApplicationAuthentication();
+builder.AddMongoDbStorage();
+builder.AddAggregateIntegrations();
+builder.AddApplicationAuthorization();
+
+// if more services add new extension
+builder.Services.AddScoped<ContentPartyRatingService>();
+builder.AddContentFileManager();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -20,6 +32,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

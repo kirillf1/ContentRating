@@ -1,5 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
-using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Events;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Events;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
 using System.Collections.ObjectModel;
 
@@ -7,7 +6,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
 {
     public class ContentPartyRating : Entity, IAggregateRoot
     {
-        public Guid ContentId { get; }
+        public Guid ContentId { get; private set; }
         public Guid RoomId { get; private set; }
         public int RatersCount => _raterScores.Count;
         public ReadOnlyDictionary<Guid, Score> RaterScores
@@ -60,6 +59,8 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
             
             if (!Specification.IsSatisfiedScore(estimation.NewScore))
                 throw new ForbiddenRatingOperationException("Invalid score value");
+
+            _raterScores[estimation.RaterForChangeScore.RaterId] = estimation.NewScore;
 
             AddDomainEvent(new ContentRatingChangedDomainEvent(ContentId, RoomId, ContentId, estimation.RaterForChangeScore, estimation.NewScore, AverageContentScore));
         }

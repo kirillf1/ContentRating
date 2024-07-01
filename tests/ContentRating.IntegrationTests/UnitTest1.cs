@@ -2,11 +2,13 @@ using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.Domain.Shared.Content;
-using ContentRatingAPI.Application.ContentLoader;
 using ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRating;
+using ContentRatingAPI.Infrastructure.ContentFileManagers;
+using ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
+using HeyRed.Mime;
 using MediatR;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -17,6 +19,8 @@ using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Moq;
 using System.Linq.Expressions;
+using MongoDB.Driver.Linq;
+using ContentRatingAPI.Application.ContentFileManager;
 
 
 namespace ContentRating.IntegrationTests
@@ -124,15 +128,15 @@ namespace ContentRating.IntegrationTests
         {
             var conventionPack = new ConventionPack
             {
-                new MapReadOnlyPropertiesConvention()
+                new MapReadOnlyPropertiesConvention(),
             };
             
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
 
                 BsonClassMap.RegisterClassMap<ContentPartyRating>(classMap =>
             {
-                classMap.AutoMap();;
-                classMap.MapField(c => c.Id).SetElementName("ContentId");
+                classMap.AutoMap();
+                //classMap.MapField(c => c.Id).SetElementName("ContentId");
                 //classMap.SetDictionaryRepresentation(memberName: "_raterScores", representation: DictionaryRepresentation.ArrayOfDocuments);
                 classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
 
@@ -158,12 +162,11 @@ namespace ContentRating.IntegrationTests
             var c = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
             c.Indexes.CreateOne(indexModel);
   
-            c.Indexes.CreateOne(indexModel);
             await mongoContext.BeginTransactionAsync();
             var rep = new ContentPartyRatingRepository(mongoContext, options);
 
             var id = Guid.NewGuid();
-            var spec = new ContentRatingSpecification(new Score(0), new Score(10));
+            var spec = new ContentRatingSpecification(new Score(1), new Score(10));
             var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin), new ContentRater(Guid.NewGuid(), RaterType.Admin) };
             var rating = ContentPartyRating.Create(id, Guid.NewGuid(), spec);
             var s = rating.AverageContentScore;
@@ -173,11 +176,11 @@ namespace ContentRating.IntegrationTests
             }
            
             rep.Add(rating);
-            rating = ContentPartyRating.Create(id, Guid.NewGuid(), spec);
-            rep.Add(rating);
+
             await rep.UnitOfWork.SaveChangesAsync();
             await mongoContext.CommitAsync();
-            var r = await rep.GetContentRating(id);
+            var r = await rep.GetContentRating(rating.Id);
+            var f = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
             await Console.Out.WriteLineAsync();
         }
         [Fact]
@@ -198,7 +201,7 @@ namespace ContentRating.IntegrationTests
             });
             BsonClassMap.RegisterClassMap<ContentPartyRating>(classMap =>
             {
-                classMap.AutoMap(); ;
+                classMap.AutoMap();
                 //classMap.SetDictionaryRepresentation(memberName: "_raterScores", representation: DictionaryRepresentation.ArrayOfDocuments);
                 classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
 
@@ -242,9 +245,32 @@ namespace ContentRating.IntegrationTests
         [Fact]
         public async Task Test7()
         {
-            var videoData = await File.ReadAllBytesAsync("C:\\Users\\TaKi\\Downloads\\Green Day - Dilemma (Official Music Video).mp4");
-            var loader = new ContentLoaderService();
-            await loader.SaveToHLS(videoData, @"D:\Videos", "limp");
+            var conventionPack = new ConventionPack
+            {
+                new MapReadOnlyPropertiesConvention()
+            };
+            ConventionRegistry.Register("Conventions", conventionPack, _ => true);
+            BsonClassMap.RegisterClassMap<SavedContentFileInfo>(classMap =>
+            {
+                classMap.AutoMap();
+            });
+            var mediatr = new Mock<IMediator>();
+            var changeTracker = new InMemoryChangeTracker();
+            var options = Options.Create(new MongoDBOptions
+            {
+                Connection = "mongodb://localhost:27017",
+                DatabaseName = "MyTestDb",
+                ContentPartyEstimationRoomCollectionName = "PartyEstimation",
+                ContentPartyRatingCollectionName = "ContentPartyRating",
+                SavedContentFileCollectionName = "saved_files"
+            });
+            var client = new MongoClient(options.Value.Connection);
+            var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
+            var s = new SavedContentMongoStorage(mongoContext, options);
+            var id = Guid.NewGuid();
+            await s.Add(new SavedContentFileInfo(id, DateTime.UtcNow, "test", ContentType.Video));
+            var t = await s.GetSavedContent(id);
+            await Console.Out.WriteLineAsync();
         }
 
 

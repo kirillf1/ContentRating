@@ -6,8 +6,7 @@ namespace ContentRatingAPI.Infrastructure.Data
 {
     public class MongoContext : IUnitOfWork
     {
-
-        public MongoContext(IOptions<MongoDBOptions> options, IChangeTracker changeTracker, IMediator mediator, MongoClient mongoClient)
+        public MongoContext(IOptions<MongoDBOptions> options, IChangeTracker changeTracker, IMediator mediator, IMongoClient mongoClient)
         {
             _database = mongoClient.GetDatabase(options.Value.DatabaseName);
             _changeTracker = changeTracker;
@@ -17,7 +16,7 @@ namespace ContentRatingAPI.Infrastructure.Data
         }
         private IMongoDatabase _database;
         private IClientSessionHandle? _scopedSession;
-        private MongoClient _mongoClient;
+        private IMongoClient _mongoClient;
         private readonly List<Func<IClientSessionHandle, Task>> _commands;
         private readonly IChangeTracker _changeTracker;
         private readonly IMediator _mediator;

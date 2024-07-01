@@ -4,7 +4,7 @@ using Moq;
 using Xunit;
 using ContentRatingAggregateRoot = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
 
-namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
+namespace ContentRating.Domain.Tests.ContentPartyRatingAggregateTest
 {
     public class ContentPartyRatingServiceTests
     {
@@ -17,7 +17,7 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             var expectedAverageScore = minScore;
             var unitOfwork = Mock.Of<IUnitOfWork>();
             repository.Setup(c => c.UnitOfWork).Returns(unitOfwork);
-            var invites = new List<RaterInvitation>()
+            var newRaters = new List<ContentRater>()
             {
                 new(Guid.NewGuid(), RaterType.Admin),
                 new(Guid.NewGuid(), RaterType.Mock),
@@ -27,10 +27,10 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             var expectedRoomId = Guid.NewGuid();
 
             var contentRatingService = new ContentPartyRatingService(repository.Object);
-            await contentRatingService.StartContentEstimation(contentIds, expectedRoomId, invites, minScore, maxScore);
+            await contentRatingService.StartContentEstimation(contentIds, expectedRoomId, newRaters, minScore, maxScore);
 
-            repository.Verify(c => c.Add(It.Is<ContentRatingAggregateRoot>(c => contentIds.Contains(c.Id)
-                                && c.Raters.Count == invites.Count
+            repository.Verify(c => c.Add(It.Is<ContentRatingAggregateRoot>(c => contentIds.Contains(c.ContentId)
+                                && c.RaterScores.Count == newRaters.Count
                                 && c.AverageContentScore.Equals(expectedAverageScore))),
                 Times.Exactly(contentIds.Count));
             Mock.Get(unitOfwork).Verify(r => r.SaveChangesAsync(default), Times.Once);
@@ -57,7 +57,7 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
 
         private IEnumerable<ContentRatingAggregateRoot> CreateContentRatingsWithSameRaters(int contentRatingCount)
         {
-            var invites = new List<RaterInvitation>()
+            var raters = new List<ContentRater>()
             {
                 new(Guid.NewGuid(), RaterType.Admin),
                 new(Guid.NewGuid(), RaterType.Mock),
@@ -68,9 +68,9 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             for (int i = 0; i < contentRatingCount; i++)
             {
                 var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), roomId, specification);
-                foreach (var invite in invites)
+                foreach (var invite in raters)
                 {
-                    contentRating.InviteRater(invite);
+                    contentRating.AddNewRaterInContentEstimation(invite);
                 }
                 yield return contentRating;
             }

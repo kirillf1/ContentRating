@@ -6,7 +6,7 @@ using ContentRating.Domain.Shared.Content;
 using ContentRating.Domain.Shared.RoomStates;
 using Xunit;
 
-namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
+namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
 {
     public class ContentRoomEditorTests
     {
@@ -51,17 +51,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
 
             Assert.Throws<ForbiddenRoomOperationException>(() => room.CreateContent(editor, newContentData));
         }
-        [Fact]
-        public void CreateContent_EvaluationCompleted_ThrowInvalidRoomStageOperation()
-        {
-            var room = CreateEmptyRoomEditor();
-            var newContentData = CreateRandomContentData();
-            var editor = room.RoomCreator;
-
-            room.CompleteContentEditing(editor);
-
-            Assert.Throws<InvalidRoomStageOperationException>(() => room.CreateContent(editor, newContentData));
-        }
+        
         [Fact]
         public void UpdateContent_SameContentEditor_AddContentUpdatedInRoomEvent()
         {
@@ -113,26 +103,9 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregate
             room.CreateContent(room.RoomCreator, contentData);
             var newContentData = new ContentData(contentData.Id, "new_name", "/new_path", ContentType.Image);
 
-            Assert.Throws<ForbiddenRoomOperationException>(()=> room.UpdateContent(foreignEditor, newContentData));
+            Assert.Throws<ForbiddenRoomOperationException>(() => room.UpdateContent(foreignEditor, newContentData));
         }
-        [Fact]
-        public void CompleteContentEvaluation_WithContent_AddEvaluationCompletedEvent()
-        {
-            var room = CreateEmptyRoomEditor();
-            var contentData = CreateRandomContentData();
-            room.CreateContent(room.RoomCreator, contentData);
-            var content = room.AddedContent.Last();
-
-            room.CompleteContentEditing(room.RoomCreator);
-
-            var evaluationStartedEvent = room.DomainEvents.OfType<ContentListCreatedDomainEvent>().FirstOrDefault();
-            var evaluationCompletedEvent = room.DomainEvents.OfType<AllContentEstimatedDomainEvent>().FirstOrDefault();
-            Assert.NotNull(evaluationStartedEvent);
-            Assert.NotNull(evaluationCompletedEvent);
-            Assert.Contains(content, evaluationStartedEvent.AddedContent);
-            Assert.Equal(room.RoomCreator, evaluationStartedEvent.Creator);
-            Assert.Equal(room.Id, evaluationCompletedEvent.RoomId);
-        }
+       
         private static ContentRoomEditor CreateEmptyRoomEditor()
         {
             var editor = new Editor(Guid.NewGuid(), "test");

@@ -4,7 +4,7 @@ using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exception
 using Xunit;
 using ContentRatingAggregateRoot = ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.ContentPartyRating;
 
-namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
+namespace ContentRating.Domain.Tests.ContentPartyRatingAggregateTest
 {
     public class ContentPartyRatingTests
     {
@@ -29,20 +29,20 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             var rater = new ContentRater(Guid.NewGuid(), RaterType.Admin);
             contentRating.AddNewRaterInContentEstimation(rater);
 
-            contentRating.RemoveRater(newRater);
+            contentRating.RemoveRaterFromContentEstimation(rater);
 
-            Assert.DoesNotContain(newRater, contentRating.Raters);
+            Assert.DoesNotContain(rater.RaterId, contentRating.RaterScores.Keys);
         }
         [Fact]
-        public void InviteRater_ContentEstimated_ThrowForbiddenRatingOperationException()
+        public void AddNewRater_ContentEstimated_ThrowForbiddenRatingOperationException()
         {
             var specification = CreateContentRatingSpecification();
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
 
             contentRating.CompleteEstimation();
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
+            var newRater = new ContentRater(Guid.NewGuid(), RaterType.Admin);
 
-            Assert.Throws<ForbiddenRatingOperationException>(() => contentRating.InviteRater(newInvitation));
+            Assert.Throws<ForbiddenRatingOperationException>(() => contentRating.AddNewRaterInContentEstimation(newRater));
         }
         [Theory]
         [InlineData(0.3)]
@@ -56,15 +56,15 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
             var expectedScore = new Score(value);
 
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Default);
-            var newRater = contentRating.InviteRater(newInvitation);
+            var newRater = new ContentRater(Guid.NewGuid(), RaterType.Default);
+            contentRating.AddNewRaterInContentEstimation(newRater);
             var newEstimation = new Estimation(newRater, newRater, expectedScore);
             contentRating.EstimateContent(newEstimation);
 
             var contentRatingChanged = contentRating.DomainEvents.OfType<ContentRatingChangedDomainEvent>().Single();
-            Assert.Equal(contentRating.AverageContentScore, contentRatingChanged.AverageScore);
+            Assert.Equal(contentRating.AverageContentScore, contentRatingChanged.AverageContentScore);
             Assert.Equal(contentRating.RoomId, contentRatingChanged.RoomId);
-            Assert.Equal(expectedScore, newRater.CurrentScore);
+            Assert.Equal(expectedScore, contentRating.RaterScores[newRater.RaterId]);
         }
         [Theory]
         [InlineData(-1.4)]
@@ -76,8 +76,8 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
             var expectedScore = new Score(value);
 
-            var newInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
-            var newRater = contentRating.InviteRater(newInvitation);
+            var newRater = new ContentRater(Guid.NewGuid(), RaterType.Admin);
+            contentRating.AddNewRaterInContentEstimation(newRater);
             var newEstimation = new Estimation(newRater, newRater, expectedScore);
 
             Assert.Throws<ForbiddenRatingOperationException>(() => contentRating.EstimateContent(newEstimation));
@@ -89,35 +89,15 @@ namespace ContentRating.Domain.Tests.ContentPartyRatingAggregate
             var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
             var newScore = specification.MaxScore;
 
-            var ownerInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
-            var ownerRater = contentRating.InviteRater(ownerInvitation);
-            var defaultRaterInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Default);
-            var defaultRater = contentRating.InviteRater(defaultRaterInvitation);
-            var estimation = new Estimation(defaultRater, ownerRater, newScore);
+            var adminRater = new ContentRater(Guid.NewGuid(), RaterType.Admin);
+            contentRating.AddNewRaterInContentEstimation(adminRater);
+            var defaultRater = new ContentRater(Guid.NewGuid(), RaterType.Default);
+            contentRating.AddNewRaterInContentEstimation(defaultRater);
+            var estimation = new Estimation(defaultRater, adminRater, newScore);
 
             Assert.Throws<ForbiddenRatingOperationException>(() => contentRating.EstimateContent(estimation));
         }
-        [Fact]
-        public void EstimateContent_OwnerChangeRatingDefaultUser_ContentRatingChanged()
-        {
-            var specification = CreateContentRatingSpecification();
-            var contentRating = ContentRatingAggregateRoot.Create(Guid.NewGuid(), Guid.NewGuid(), specification);
-            var newScore = specification.MaxScore;
-
-            var ownerInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Admin);
-            var ownerRater = contentRating.InviteRater(ownerInvitation);
-            var defaultRaterInvitation = new RaterInvitation(Guid.NewGuid(), RaterType.Default);
-            var defaultRater = contentRating.InviteRater(defaultRaterInvitation);
-            var estimation = new Estimation(ownerRater, defaultRater, newScore);
-            contentRating.EstimateContent(estimation);
-
-            var contentRatingChanged = contentRating.DomainEvents.OfType<ContentRatingChangedDomainEvent>().Single();
-            Assert.Equal(contentRating.AverageContentScore, contentRatingChanged.AverageScore);
-            Assert.Equal(contentRating.RoomId, contentRatingChanged.RoomId);
-            Assert.Equal(defaultRater, contentRatingChanged.Rater);
-            Assert.Equal(newScore, defaultRater.CurrentScore);
-        }
-
+      
         private static ContentRatingSpecification CreateContentRatingSpecification(double minScore = 0, double maxScore = 10)
         {
             return new ContentRatingSpecification(new Score(minScore), new Score(maxScore));

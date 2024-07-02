@@ -44,7 +44,6 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
             var fileSaver = value;
             var newContent = await fileSaver.SaveFile(Guid.NewGuid(), Path.GetExtension(fileName), contentBytes, cancellationToken);
             await savedContentStorage.Add(newContent);
-            //var newURL = $"{options.Value.DomainAddress}/{options.Value.APIRoute}/{newContent.Id}";
             return newContent;
         }
         public async Task<ContentFile> GetFile(Guid id, string baseUrlForSegmentManifest, CancellationToken cancellationToken = default)

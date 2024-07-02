@@ -15,7 +15,7 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
             var mimeType = MimeTypesMap.GetMimeType(fileExtension);
             if (!mimeType.StartsWith("image"))
                 throw new ArgumentException("File extension must be image");
-            var path = await base.SaveFile(Path.Combine("images", $"{fileId}.{fileExtension}"), data, cancellationToken);
+            var path = await base.SaveFile(Path.Combine("images", $"{fileId}{fileExtension}"), data, cancellationToken);
             return new SavedContentFileInfo(fileId, DateTime.UtcNow, path, ContentRating.Domain.Shared.Content.ContentType.Image);
         }
     }

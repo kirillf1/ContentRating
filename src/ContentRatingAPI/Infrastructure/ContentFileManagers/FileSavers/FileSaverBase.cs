@@ -16,11 +16,11 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
         {
             if (!Path.HasExtension(fileName))
                 throw new ArgumentException("Invalid file name");
-
-            if(!Directory.Exists(options.Value.Directory))
-                Directory.CreateDirectory(options.Value.Directory);
-
             var fullPath = Path.Combine(options.Value.Directory, fileName);
+            var directory = Path.GetDirectoryName(fullPath);
+            if(!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
             await File.WriteAllBytesAsync(fullPath, data, cancellationToken);
             return fullPath;
         }

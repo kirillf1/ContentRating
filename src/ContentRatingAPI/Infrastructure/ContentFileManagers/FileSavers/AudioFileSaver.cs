@@ -11,7 +11,7 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
             var mimeType = MimeTypesMap.GetMimeType(fileExtension);
             if (!mimeType.StartsWith("audio"))
                 throw new ArgumentException("File extension must be audio");
-            var path = await base.SaveFile(Path.Combine("audio_files", $"{fileId}.{fileExtension}"), data, cancellationToken);
+            var path = await base.SaveFile(Path.Combine("audio_files", $"{fileId}{fileExtension}"), data, cancellationToken);
             return new SavedContentFileInfo(fileId, DateTime.UtcNow, path, ContentRating.Domain.Shared.Content.ContentType.Audio);
         }
     }

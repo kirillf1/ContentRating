@@ -16,19 +16,33 @@ namespace ContentRatingAPI.Infrastructure.Data
         }
         private IMongoDatabase _database;
         private IClientSessionHandle? _scopedSession;
+        private Guid? _transactionId;
         private IMongoClient _mongoClient;
         private readonly List<Func<IClientSessionHandle, Task>> _commands;
         private readonly IChangeTracker _changeTracker;
         private readonly IMediator _mediator;
-        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task<MongoTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             _scopedSession ??= await _mongoClient.StartSessionAsync(cancellationToken: cancellationToken);
+            if (_scopedSession.IsInTransaction)
+                throw new MongoException("Transaction is started");
+
             _scopedSession.StartTransaction();
+            _transactionId = Guid.NewGuid();
+            return new MongoTransaction(_transactionId.Value);
         }
-        public async Task CommitAsync(CancellationToken cancellationToken = default)
+        public bool HasActiveTransaction()
         {
-            if (_scopedSession is null)
-                throw new ArgumentNullException(nameof(_scopedSession));
+            var isInTransaction = _scopedSession?.IsInTransaction;
+            return isInTransaction.GetValueOrDefault();
+        }
+        public async Task CommitAsync(MongoTransaction transaction, CancellationToken cancellationToken = default)
+        {
+            if (_scopedSession is null || !_scopedSession.IsInTransaction)
+                throw new MongoException("Session not started");
+
+            if (transaction.TransactionId != _transactionId)
+                throw new MongoException("Unknown transaction");
 
             await _scopedSession.CommitTransactionAsync(cancellationToken);
         }

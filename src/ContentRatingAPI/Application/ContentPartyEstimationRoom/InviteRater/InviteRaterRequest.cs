@@ -2,6 +2,9 @@
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater
 {
-    public record InviteRaterCommand(Guid RoomId, Guid InviteInitiatorId, Guid RaterForInviteId, 
-        RoleType RoleType, string RaterName) : IRequest;
+    public class InviteRaterRequest
+    {
+        public required RoleType RoleType { get; set; }
+        public required string RaterName { get; set; }
+    }
 }

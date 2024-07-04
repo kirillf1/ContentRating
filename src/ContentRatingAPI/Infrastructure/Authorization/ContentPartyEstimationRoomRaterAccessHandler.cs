@@ -17,26 +17,20 @@ namespace ContentRatingAPI.Infrastructure.Authorization
 
         protected async override Task HandleRequirementAsync(AuthorizationHandlerContext context, ContentPartyEstimationRoomRaterAccessRequirement requirement)
         {
-            try
-            {
-                var httpContext = httpContextAccessor.HttpContext;
-                var roomId = httpContext?.TryGetRoomIdFromHttpContext();
-                if (!roomId.HasValue || !Guid.TryParse(httpContext?.User.GetUserId(), out var userId))
-                {
-                    context.Fail();
-                    return;
-                }
-                if (!await requirement.Pass(contentPartyEstimationRoomRepository, userId, roomId.Value))
-                {
-                    context.Fail();
-                    return;
-                }
-                context.Succeed(requirement);
-            }
-            catch (Exception ex)
+            var httpContext = httpContextAccessor.HttpContext;
+            var roomId = httpContext?.TryGetRoomIdFromHttpContext();
+            if (!roomId.HasValue || !Guid.TryParse(httpContext?.User.GetUserId(), out var userId))
             {
                 context.Fail();
+                return;
             }
+            if (!await requirement.Pass(contentPartyEstimationRoomRepository, userId, roomId.Value))
+            {
+                context.Fail();
+                return;
+            }
+            context.Succeed(requirement);
+
         }
     }
 }

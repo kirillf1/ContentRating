@@ -32,7 +32,7 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
 
         public async Task<ContentPartyEstimationRoom> GetRoom(Guid id)
         {
-            return await dbSet.Find(Builders<ContentPartyEstimationRoom>.Filter.Eq(_ => _.Id, id)).SingleAsync();
+            return await dbSet.Find(Builders<ContentPartyEstimationRoom>.Filter.Eq(_ => _.Id, id)).SingleOrDefaultAsync();
         }
 
         public ContentPartyEstimationRoom Update(ContentPartyEstimationRoom room)

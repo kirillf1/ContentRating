@@ -1,13 +1,11 @@
 ﻿using ContentRatingAPI.Application.ContentFileManager;
-using ContentRatingAPI.Models.ContentFiles;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContentRatingAPI.Controllers
 {
-    
-    [Route($"api/content-files")]
+
+    [Route("api/content-files")]
     [ApiController]
     [Authorize]
     public class ContentFilesController : ControllerBase

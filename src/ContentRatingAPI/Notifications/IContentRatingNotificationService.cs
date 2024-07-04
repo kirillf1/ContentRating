@@ -4,5 +4,5 @@
     {
         public Task NotififyRatingChanged(Guid roomId, Guid raterId, double score);
     }
-    
+
 }

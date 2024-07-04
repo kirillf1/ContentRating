@@ -110,7 +110,7 @@ namespace ContentRating.IntegrationTests
             var client = new MongoClient(options.Value.Connection);
             var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
             var rep = new ContentEditorRoomRepository(mongoContext, options);
-            await mongoContext.BeginTransactionAsync();
+            var transaction = await mongoContext.BeginTransactionAsync();
             var id = Guid.NewGuid();
             var editor = new Editor(Guid.NewGuid(), "test");
             var newRoom = new ContentRoomEditor(id, editor, "testRoom");
@@ -118,7 +118,7 @@ namespace ContentRating.IntegrationTests
             rep.Add(newRoom);
 
             await rep.UnitOfWork.SaveChangesAsync();
-            await mongoContext.CommitAsync();
+            await mongoContext.CommitAsync(transaction);
             var room = await rep.GetRoom(id);
             var r = await rep.HasEditorInRoom(id, Guid.NewGuid());
             await Console.Out.WriteLineAsync();
@@ -162,7 +162,7 @@ namespace ContentRating.IntegrationTests
             var c = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
             c.Indexes.CreateOne(indexModel);
   
-            await mongoContext.BeginTransactionAsync();
+            var transaction = await mongoContext.BeginTransactionAsync();
             var rep = new ContentPartyRatingRepository(mongoContext, options);
 
             var id = Guid.NewGuid();
@@ -178,7 +178,7 @@ namespace ContentRating.IntegrationTests
             rep.Add(rating);
 
             await rep.UnitOfWork.SaveChangesAsync();
-            await mongoContext.CommitAsync();
+            await mongoContext.CommitAsync(transaction);
             var r = await rep.GetContentRating(rating.Id);
             var f = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
             await Console.Out.WriteLineAsync();

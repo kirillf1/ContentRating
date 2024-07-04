@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ContentRatingAPI.Application.Identity.RegisterUser;
-using ContentRatingAPI.Models.Authentication;
 using ContentRatingAPI.Application.Identity.RefreshToken;
 
 namespace ContentRatingAPI.Controllers

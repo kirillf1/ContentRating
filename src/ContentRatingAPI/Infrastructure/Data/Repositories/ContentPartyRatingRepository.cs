@@ -30,9 +30,9 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
                 Builders<ContentRatingAggregate>.Filter.Eq(_ => _.Id, contentRating.Id)), contentRating);
         }
 
-        public async Task<ContentRatingAggregate> GetContentRating(Guid id)
+        public async Task<ContentRatingAggregate?> GetContentRating(Guid id)
         {
-            return await dbSet.Find(Builders<ContentRatingAggregate>.Filter.Eq(_ => _.Id, id)).SingleAsync();
+            return await dbSet.Find(Builders<ContentRatingAggregate>.Filter.Eq(_ => _.Id, id)).SingleOrDefaultAsync();
         }
 
         public ContentRatingAggregate Update(ContentRatingAggregate contentRating)
@@ -47,12 +47,12 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             return ratings;
         }
 
-        public async Task<ContentRatingAggregate> GetContentRating(Guid roomId, Guid contentId)
+        public async Task<ContentRatingAggregate?> GetContentRating(Guid roomId, Guid contentId)
         {
             return await dbSet.Find(Builders<ContentRatingAggregate>.Filter.And(
                     Builders<ContentRatingAggregate>.Filter.Eq(_ => _.RoomId, roomId),
                     Builders<ContentRatingAggregate>.Filter.Eq(_ => _.ContentId, contentId)))
-                .SingleAsync();
+                .SingleOrDefaultAsync();
         }
     }
 }

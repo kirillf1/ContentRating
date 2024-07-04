@@ -39,7 +39,7 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
 
         private async Task ConvertToHls(byte[] videoData, string outputPath, VideoInfo videoInfo)
         {  
-            var arguments = $"-i - -c:v h264_nvenc -b:v {videoInfo.VideoBitrate}k -b:a {videoInfo.AudioBitrate}k -hls_time {fFMPEGOptions.Value.SegmentTime} -hls_list_size 0 -r {videoInfo.FPS} -hls_segment_filename \"{outputPath}%03d.ts\" \"{outputPath}.m3u8\"";
+            var arguments = $"-i - -c:v libx264 -b:v {videoInfo.VideoBitrate}k -b:a {videoInfo.AudioBitrate}k -hls_time {fFMPEGOptions.Value.SegmentTime} -hls_list_size 0 -r {videoInfo.FPS} -hls_segment_filename \"{outputPath}%03d.ts\" \"{outputPath}.m3u8\"";
             using CancellationTokenSource cts = new(TimeSpan.FromMinutes(5));
             using var process = new Process
             {

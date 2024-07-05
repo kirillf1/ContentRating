@@ -1,3 +1,4 @@
+using Ardalis.Result.AspNetCore;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRatingAPI.Infrastructure.AggregateIntegration;
 using ContentRatingAPI.Infrastructure.Authentication;
@@ -7,6 +8,7 @@ using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using Serilog;
+using System.Net;
 using System.Text.Json.Serialization;
 
 // add configuration if needed
@@ -33,10 +35,18 @@ try
     builder.Services.AddScoped<ContentPartyRatingService>();
     builder.AddContentFileManager();
 
-    builder.Services.AddControllers().AddJsonOptions(x =>
+    builder.Services.AddControllers(mvcOptions => mvcOptions
+    .AddResultConvention(resultStatusMap => resultStatusMap
+        .AddDefaultMap()
+        .For(ResultStatus.Ok, HttpStatusCode.OK, resultStatusOptions => resultStatusOptions
+            .For("POST", HttpStatusCode.Created)
+            .For("DELETE", HttpStatusCode.NoContent))
+        .For(ResultStatus.Error, HttpStatusCode.InternalServerError)
+    )).AddJsonOptions(x =>
     {
         x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
@@ -61,7 +71,7 @@ try
     app.Run();
     return 0;
 }
-catch(Exception ex)
+catch (Exception ex)
 {
     Log.Fatal(ex, "Host terminated unexpectedly");
     return 1;

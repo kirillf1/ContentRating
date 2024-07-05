@@ -4,7 +4,7 @@ using ContentPartyEstimationRoomAggregate = ContentRating.Domain.AggregatesModel
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation
 {
-    public class StartContentPartyEstimationCommandHandler : IRequestHandler<StartContentPartyEstimationCommand>
+    public class StartContentPartyEstimationCommandHandler : IRequestHandler<StartContentPartyEstimationCommand, Result>
     {
         private readonly IContentPartyEstimationRoomRepository roomRepository;
         private readonly IContentForEstimationService contentForEstimationService;
@@ -14,15 +14,20 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPa
             this.roomRepository = roomRepository;
             this.contentForEstimationService = contentForEstimationService;
         }
-        public async Task Handle(StartContentPartyEstimationCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(StartContentPartyEstimationCommand request, CancellationToken cancellationToken)
         {
             var creator = new Rater(request.CreatorId, RoleType.Admin, request.CreatorName);
             var ratingRange = new RatingRange(new Rating(request.MaxRating), new Rating(request.MinRating));
             var contentForEstimation = await contentForEstimationService.RequestContentForEstimationFromEditor(request.ContentListId, request.CreatorId);
 
+            var existingRoom = await roomRepository.GetRoom(request.RoomId);
+            if (existingRoom is not null)
+                return Result.Invalid(new ValidationError($"Room with id {request.RoomId} exists"));
+
             var newRoom = ContentPartyEstimationRoomAggregate.Create(request.RoomId, creator, contentForEstimation, ratingRange);
             roomRepository.Add(newRoom);
             await roomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
         }
     }
 }

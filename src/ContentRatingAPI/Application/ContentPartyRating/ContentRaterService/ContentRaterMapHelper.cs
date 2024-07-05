@@ -1,6 +1,5 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
-using MediatR;
 
 namespace ContentRatingAPI.Application.ContentPartyRating.ContentRaterService
 {

@@ -1,4 +1,4 @@
 ﻿namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteContentEstimation
 {
-    public record CompleteContentEstimationCommand(Guid InitiatorId, Guid RoomId) : IRequest;
+    public record CompleteContentEstimationCommand(Guid InitiatorId, Guid RoomId) : IRequest<Result>;
 }

@@ -1,4 +1,5 @@
-﻿using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
+﻿using Ardalis.Result.AspNetCore;
+using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteContentEstimation;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.KickRater;
@@ -35,69 +36,72 @@ namespace ContentRatingAPI.Controllers
             return Ok();
         }
 
+        [TranslateResultToActionResult]
         [Authorize]
         [HttpPost("{roomId:guid}")]
-        public async Task<IActionResult> CreateEstimationRoom(Guid roomId, 
+        public async Task<Result> CreateEstimationRoom(Guid roomId, 
             [FromBody] CreatePartyEstimationRoomRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new StartContentPartyEstimationCommand(roomId, request.ContentListId, request.RoomName,
+            return await mediator.Send(new StartContentPartyEstimationCommand(roomId, request.ContentListId, request.RoomName,
                 request.MinRating, request.MaxRating, userInfo.Id, userInfo.Name));
-            return Ok();
+            
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/rater/{raterId:guid}")]
-        public async Task<IActionResult> InviteRaterToRoom(Guid roomId, Guid raterId,
+        [ExpectedFailures(ResultStatus.NotFound, ResultStatus.Invalid, ResultStatus.Error)]
+        public async Task<Result> InviteRaterToRoom(Guid roomId, Guid raterId,
             [FromBody] InviteRaterRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new InviteRaterCommand(roomId, userInfo.Id, raterId, request.RoleType, request.RaterName));
-            return Ok();
+            return await mediator.Send(new InviteRaterCommand(roomId, userInfo.Id, raterId, request.RoleType, request.RaterName));
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/rater/{raterId:guid}")]
-        public async Task<IActionResult> KickRater(Guid roomId, Guid raterId)
+        public async Task<Result> KickRater(Guid roomId, Guid raterId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new KickRaterCommand(roomId, userInfo.Id, raterId));
-            return Ok();
+            return await mediator.Send(new KickRaterCommand(roomId, userInfo.Id, raterId));
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/complete-estimation")]
-        public async Task<IActionResult> CompleteRoomEstimation(Guid roomId)
+        public async Task<Result> CompleteRoomEstimation(Guid roomId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new CompleteContentEstimationCommand(userInfo.Id, roomId));
-            return Ok();
+            return await mediator.Send(new CompleteContentEstimationCommand(userInfo.Id, roomId));
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<IActionResult> DeleteUnavailableContent(Guid roomId, Guid contentId)
+        public async Task<Result> DeleteUnavailableContent(Guid roomId, Guid contentId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new RemoveUnavailableContentCommand(roomId, contentId, userInfo.Id));
-            return Ok();
+            return await mediator.Send(new RemoveUnavailableContentCommand(roomId, contentId, userInfo.Id));
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/rating-range")]
         public async Task<IActionResult> ChangeRatingRange(Guid roomId, 

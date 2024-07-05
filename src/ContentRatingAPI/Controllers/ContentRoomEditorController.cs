@@ -1,5 +1,4 @@
 ﻿using Ardalis.Result.AspNetCore;
-using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRatingAPI.Application.ContentRoomEditor.ContentModifications;
 using ContentRatingAPI.Application.ContentRoomEditor.CreateContentEditorRoom;
 using ContentRatingAPI.Application.ContentRoomEditor.InviteEditor;
@@ -40,7 +39,7 @@ namespace ContentRatingAPI.Controllers
         [Authorize]
         [HttpPost("{roomId:guid}")]
         [TranslateResultToActionResult]
-        public async Task<Result<bool>> CreateContentRoomEditor(Guid roomId, 
+        public async Task<Result> CreateContentRoomEditor(Guid roomId, 
             [FromBody] CreateContentRoomEditorRequest createContentRoomEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
@@ -54,67 +53,71 @@ namespace ContentRatingAPI.Controllers
 
         [Authorize(policy: Policies.ContentRoomEditorUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<IActionResult> AddContentInRoomEditor(Guid roomId, Guid contentId, 
-            [FromBody] CreateContentRequest createContentRequest )
+        [TranslateResultToActionResult]
+        public async Task<Result> AddContentInRoomEditor(Guid roomId, Guid contentId, 
+            [FromBody] CreateContentRequest createContentRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new CreateContentCommand(roomId, userInfo.Id, contentId,
+           return await mediator.Send(new CreateContentCommand(roomId, userInfo.Id, contentId,
                 createContentRequest.Name, createContentRequest.Path, createContentRequest.ContentType));
-            return Ok();
+           
         }
 
         [Authorize(policy: Policies.ContentRoomEditorUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<IActionResult> UpdateContentInRoomEditor(Guid roomId, Guid contentId,
+        [TranslateResultToActionResult]
+        public async Task<Result> UpdateContentInRoomEditor(Guid roomId, Guid contentId,
             [FromBody] UpdateContentRequest updateContentRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new UpdateContentCommand(contentId, roomId, userInfo.Id, updateContentRequest.Name,
+           return await mediator.Send(new UpdateContentCommand(contentId, roomId, userInfo.Id, updateContentRequest.Name,
                 updateContentRequest.Path, updateContentRequest.ContentType));
-            return Ok();
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentRoomEditorUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<IActionResult> DeleteContentInRoomEditor(Guid roomId, Guid contentId)
+        public async Task<Result> DeleteContentInRoomEditor(Guid roomId, Guid contentId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Publish(new RemoveContentCommand(contentId, roomId, userInfo.Id));
-            return Ok();
+            return await mediator.Send(new RemoveContentCommand(contentId, roomId, userInfo.Id));
+          
         }
 
+
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentRoomEditorUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/editor/{editorId:guid}")]
-        public async Task<IActionResult> InviteEditorInRoomEditor(Guid roomId, Guid editorId,
+        public async Task<Result> InviteEditorInRoomEditor(Guid roomId, Guid editorId,
             [FromBody] InviteEditorRequest inviteEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Publish(new InviteEditorCommand(roomId, editorId, inviteEditorRequest.EditorId, inviteEditorRequest.EditorName));
-            return Ok();
+            return await mediator.Send(new InviteEditorCommand(roomId, editorId, inviteEditorRequest.EditorId, inviteEditorRequest.EditorName));
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentRoomEditorUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/editor/{editorId:guid}")]
-        public async Task<IActionResult> KickEditorInRoomEditor(Guid roomId, Guid editorId)
+        public async Task<Result> KickEditorInRoomEditor(Guid roomId, Guid editorId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Publish(new KickEditorCommand(roomId, userInfo.Id, editorId));
-            return Ok();
+            return await mediator.Send(new KickEditorCommand(roomId, userInfo.Id, editorId));
+            
         }
     }
 }

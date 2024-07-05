@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.ContentRoomEditor.KickEditor
 {
-    public class KickEditorCommandHandler : IRequestHandler<KickEditorCommand>
+    public class KickEditorCommandHandler : IRequestHandler<KickEditorCommand, Result>
     {
         private readonly IContentEditorRoomRepository contentEditorRoomRepository;
 
@@ -10,15 +10,24 @@ namespace ContentRatingAPI.Application.ContentRoomEditor.KickEditor
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
-        public async Task Handle(KickEditorCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(KickEditorCommand request, CancellationToken cancellationToken)
         {
             var room = await contentEditorRoomRepository.GetRoom(request.RoomId);
-            var kickInitiator = room.TryGetEditorFromRoom(request.InitiatorId) ?? throw new ArgumentException("Unknown editor");
-            var editorForKick = room.TryGetEditorFromRoom(request.TargetEditorId) ?? throw new ArgumentException("Unknown editor for kick");
+            if (room is null)
+                return Result.NotFound();
+
+            var kickInitiator = room.TryGetEditorFromRoom(request.InitiatorId);
+            if (kickInitiator is null)
+                return Result.NotFound("Editor");
+
+            var editorForKick = room.TryGetEditorFromRoom(request.TargetEditorId);
+            if (editorForKick is null)
+                return Result.NotFound("Editor");
             room.KickEditor(kickInitiator, editorForKick);
 
             contentEditorRoomRepository.Update(room);
             await contentEditorRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
+            return Result.Success();
 
         }
     }

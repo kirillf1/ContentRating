@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.Identity.RegisterUser
 {
-    public class RegisterOrLoginOAuthUserCommandHandler : IRequestHandler<RegisterOrLoginOAuthUserCommand, LoginResult>
+    public class RegisterOrLoginOAuthUserCommandHandler : IRequestHandler<RegisterOrLoginOAuthUserCommand, Result<LoginResult>>
     {
         private readonly UserManager<ApplicationUser> userManager;
         private readonly IJwtProvider jwtProvider;
@@ -12,7 +12,7 @@ namespace ContentRatingAPI.Application.Identity.RegisterUser
             this.userManager = userManager;
             this.jwtProvider = jwtProvider;
         }
-        public async Task<LoginResult> Handle(RegisterOrLoginOAuthUserCommand request, CancellationToken cancellationToken)
+        public async Task<Result<LoginResult>> Handle(RegisterOrLoginOAuthUserCommand request, CancellationToken cancellationToken)
         {
             Guid userId;
             var user = await userManager.FindByEmailAsync(request.Email);

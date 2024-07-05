@@ -1,4 +1,5 @@
-﻿using Ardalis.Result;
+﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
+using ContentRating.Domain.Shared.RoomStates;
 using MediatR.Pipeline;
 using System.Reflection;
 
@@ -7,6 +8,9 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
     public class GlobalRequestExceptionHandler<TRequest, TResponse, TException> : IRequestExceptionHandler<TRequest, TResponse, TException>
        where TException : Exception
     {
+        private static IEnumerable<Type> InvalidResponseTypes = [typeof(ForbiddenRatingOperationException),
+            typeof(ForbiddenRoomOperationException), typeof(InvalidRoomStageOperationException)];
+
         private readonly ILogger<GlobalRequestExceptionHandler<TRequest, TResponse, TException>> _logger;
         public GlobalRequestExceptionHandler(
            ILogger<GlobalRequestExceptionHandler<TRequest, TResponse, TException>> logger)
@@ -17,27 +21,35 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
             CancellationToken cancellationToken)
         {
             _logger.LogError(exception, "Something went wrong while handling request of type {@requestType}", typeof(TRequest));
-            state.SetHandled(CreateErrorResult(typeof(TResponse), exception.Message));
+            state.SetHandled(CreateErrorResult(typeof(TResponse), exception)!);
             return Task.CompletedTask;
         }
-        private TResponse? GetExceptionResult(string requestName)
+
+        public static TResponse? CreateErrorResult(Type type, Exception exception)
         {
-            var resultType = typeof(TResponse);
+            object? result = default;
+            if (!type.GetInterfaces().Contains(typeof(Ardalis.Result.IResult)))          
+                return (TResponse?)result;
+            //TODO if need more exception update logic
+            var isInvalidException = InvalidResponseTypes.Contains(exception.GetType());
+            if (isInvalidException)
+            {
+                ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
+                result = ctor?.Invoke([ResultStatus.Invalid]);
 
-            return (TResponse?)Activator.CreateInstance(typeof(TResponse));
+                PropertyInfo errorsProperty = type.GetProperty("ValidationErrors")!;
+                errorsProperty?.SetValue(result, new ValidationError[] { new ValidationError(exception.Message) });
+            }
+            else
+            {
+                ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
+                result = ctor?.Invoke([ResultStatus.Error]);
 
-            return default;
-        }
-        public static TResponse? CreateErrorResult(Type type, string errorMessage)
-        {
-            //Type resultType = type.MakeGenericType(type);
-            ConstructorInfo ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
-            object result = ctor.Invoke(new object[] { ResultStatus.Error });
-
-            PropertyInfo errorsProperty = type.GetProperty("Errors");
-            errorsProperty.SetValue(result, new string[] { errorMessage });
-
-            return (TResponse)result;
+                PropertyInfo errorsProperty = type.GetProperty("Errors")!;
+                errorsProperty?.SetValue(result, new string[] { exception.Message });
+                
+            }
+            return (TResponse?)result;
         }
     }
 }

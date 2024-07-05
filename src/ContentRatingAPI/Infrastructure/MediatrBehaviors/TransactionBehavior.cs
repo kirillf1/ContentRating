@@ -26,7 +26,7 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
                 TResponse response = await next();
 
                 logger.LogInformation("Commit transaction {TransactionId} for {CommandName}", transaction.TransactionId, typeName);
-                await mongoContext.CommitAsync(transaction);
+                await mongoContext.CommitAsync(transaction, cancellationToken);
 
                 return response;
             }

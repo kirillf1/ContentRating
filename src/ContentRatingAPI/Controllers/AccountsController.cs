@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ContentRatingAPI.Application.Identity.RegisterUser;
 using ContentRatingAPI.Application.Identity.RefreshToken;
+using ContentRatingAPI.Application.Identity;
+using Ardalis.Result.AspNetCore;
 
 namespace ContentRatingAPI.Controllers
 {
@@ -19,41 +21,32 @@ namespace ContentRatingAPI.Controllers
             var props = new AuthenticationProperties { RedirectUri = Url.Action(nameof(GoogleSignInCallback)) };
             return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
-
+        [TranslateResultToActionResult()]
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest, [FromServices] IMediator mediator)
+        public async Task<Result<LoginResult>> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest, [FromServices] IMediator mediator)
         {
             var refreshTokenCommand = new RefreshTokenCommand(refreshTokenRequest.ExpiredAccessToken, refreshTokenRequest.RefreshToken);
-            var loginResult = await mediator.Send(refreshTokenCommand);
-            if (loginResult is null)
-                return BadRequest("Invalid token");
-
-            return Ok(loginResult);
+            return await mediator.Send(refreshTokenCommand);
         }
 
+        [TranslateResultToActionResult()]
         [HttpGet("signin-google")]
-        public async Task<IActionResult> GoogleSignInCallback([FromServices] IMediator mediator)
+        public async Task<Result<LoginResult>> GoogleSignInCallback([FromServices] IMediator mediator)
         {
-            try
-            {              
-                var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, "access_token");
+            var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, "access_token");
 
-                if (response.Principal == null) return BadRequest();
+            if (response.Principal == null)
+                return Result.Error();
 
-                var name = response.Principal.FindFirstValue(ClaimTypes.Name);
-              
-                var email = response.Principal.FindFirstValue(ClaimTypes.Email);
-                var loginResult = await mediator.Send(new RegisterOrLoginOAuthUserCommand(name, email, GoogleDefaults.AuthenticationScheme, accessToken));
+            var name = response.Principal.FindFirstValue(ClaimTypes.Name)!;
 
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                return Ok(loginResult);
+            var email = response.Principal.FindFirstValue(ClaimTypes.Email)!;
+            var loginResult = await mediator.Send(new RegisterOrLoginOAuthUserCommand(name, email, GoogleDefaults.AuthenticationScheme, accessToken));
 
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return loginResult;
+
         }
     }
 }

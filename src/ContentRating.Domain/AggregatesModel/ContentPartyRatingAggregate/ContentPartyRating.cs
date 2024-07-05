@@ -47,6 +47,8 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate
                     _raterScores[raterId] = newMinScore;
             }
         }
+        /// <param name="estimation"></param>
+        /// <exception cref="ForbiddenRatingOperationException"></exception>
         public void EstimateContent(Estimation estimation)
         {
             CheckEstimationIsCompleted();

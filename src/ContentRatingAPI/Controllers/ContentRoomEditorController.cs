@@ -1,6 +1,8 @@
 ﻿using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentRoomEditor.ContentModifications;
 using ContentRatingAPI.Application.ContentRoomEditor.CreateContentEditorRoom;
+using ContentRatingAPI.Application.ContentRoomEditor.GetContentRoomEditor;
+using ContentRatingAPI.Application.ContentRoomEditor.GetContentRoomEditorTitles;
 using ContentRatingAPI.Application.ContentRoomEditor.InviteEditor;
 using ContentRatingAPI.Application.ContentRoomEditor.KickEditor;
 using ContentRatingAPI.Infrastructure.Authorization;
@@ -22,18 +24,24 @@ namespace ContentRatingAPI.Controllers
             this.userInfoService = userInfoService;
         }
 
+        [TranslateResultToActionResult]
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetRooms()
+        public async Task<Result<IEnumerable<ContentRoomEditorTitle>>> GetRooms()
         {
-            return Ok();
+            var userInfo = userInfoService.TryGetUserInfo();
+            if (userInfo is null)
+                return Result.Forbidden();
+
+            return await mediator.Send(new GetContentEditorTitlesQuery(userInfo.Id));
         }
 
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentRoomEditorUserAccessPolicyName)]
         [HttpGet("{roomId:guid}")]
-        public async Task<IActionResult> GetRoomEditor(Guid roomId)
+        public async Task<Result<ContentRoomEditorResponse>> GetRoomEditor(Guid roomId)
         {
-            return Ok();
+            return await mediator.Send(new GetContentRoomEditorQuery(roomId));
         }
 
         [Authorize]

@@ -7,15 +7,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
 {
     public class ContentRoomEditor : Entity, IAggregateRoot
     {
-        public ContentRoomEditor(Guid id, Editor roomCreator, string name)
-        {
-            Id = id;
-            RoomCreator = roomCreator;
-            Name = name;
-            _addedContent = new();
-            _invitedEditors = new();
-            AddDomainEvent(new ContentRoomEditorCreatedDomainEvent(id, roomCreator, name));
-        }
+        
         public IReadOnlyCollection<Content> AddedContent
         {
             get { return _addedContent; }
@@ -124,19 +116,23 @@ namespace ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate
             }
             Name = roomName;
         }
-
-        public void CompleteContentEditing(Editor initiatingEditor, string contentListName)
-        {
-            if (initiatingEditor != RoomCreator)
-            {
-                throw new ForbiddenRoomOperationException("Only creator can start content evaluation");
-            }
-
-            AddDomainEvent(new ContentListCreatedDomainEvent(Id, RoomCreator, InvitedEditors, AddedContent, contentListName));
-        }
+      
         public void MarkDeleted()
         {
             AddDomainEvent(new RoomDeletedDomainEvent(Id));
+        }
+        internal ContentRoomEditor(Guid id, Editor roomCreator, string name)
+        {
+            Id = id;
+            RoomCreator = roomCreator;
+            Name = name;
+            _addedContent = new();
+            _invitedEditors = new();
+            AddDomainEvent(new ContentRoomEditorCreatedDomainEvent(id, roomCreator, name));
+        }
+        public static ContentRoomEditor Create(Guid id, Editor roomCreator, string name)
+        {
+            return new ContentRoomEditor(id, roomCreator, name);
         }
     }
 }

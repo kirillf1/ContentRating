@@ -113,7 +113,7 @@ namespace ContentRating.IntegrationTests
             var transaction = await mongoContext.BeginTransactionAsync();
             var id = Guid.NewGuid();
             var editor = new Editor(Guid.NewGuid(), "test");
-            var newRoom = new ContentRoomEditor(id, editor, "testRoom");
+            var newRoom = ContentRoomEditor.Create(id, editor, "testRoom");
             newRoom.CreateContent(editor, new ContentData(Guid.NewGuid(), "test", "test", ContentType.Image));
             rep.Add(newRoom);
 
@@ -145,7 +145,7 @@ namespace ContentRating.IntegrationTests
             var changeTracker = new InMemoryChangeTracker();
             var options = Options.Create(new MongoDBOptions
             {
-                Connection = "mongodb://localhost:27017",
+                Connection = "mongodb://10.1.1.41:27017",
                 DatabaseName = "MyTestDb",
                 ContentPartyEstimationRoomCollectionName = "PartyEstimation",
                 ContentPartyRatingCollectionName = "ContentPartyRating"
@@ -180,8 +180,8 @@ namespace ContentRating.IntegrationTests
             await rep.UnitOfWork.SaveChangesAsync();
             await mongoContext.CommitAsync(transaction);
             var r = await rep.GetContentRating(rating.Id);
-            var f = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
-            await Console.Out.WriteLineAsync();
+           
+                await Console.Out.WriteLineAsync();
         }
         [Fact]
         public async Task Test6()
@@ -208,14 +208,15 @@ namespace ContentRating.IntegrationTests
             });
             var mediatr = new Mock<IMediator>();
             var changeTracker = new InMemoryChangeTracker();
-            var options = Options.Create(new MongoDBOptions { Connection = "mongodb://localhost:27017", DatabaseName = "MyTestDb", 
+            var options = Options.Create(new MongoDBOptions { Connection = "mongodb://10.1.1.41:27017", DatabaseName = "MyTestDb", 
                 ContentPartyEstimationRoomCollectionName = "PartyEstimation", ContentPartyRatingCollectionName = "ContentPartyRating" });
             var client = new MongoClient(options.Value.Connection);
             var mongoContext = new MongoContext(options, changeTracker, mediatr.Object, client);
             var rep = new ContentPartyEstimationRoomRepository(mongoContext, options);;
             var id = Guid.NewGuid();
             var user = new Rater(Guid.NewGuid(), RoleType.Admin, "test");
-            var room = ContentPartyEstimationRoom.Create(id, user, [new ContentForEstimation(Guid.NewGuid(),"testName","/test/url", ContentType.Audio)]);
+            var contentId = Guid.NewGuid();
+            var room = ContentPartyEstimationRoom.Create(id, user, [new ContentForEstimation(contentId,"testName","/test/url", ContentType.Audio)], "test");
             room.InviteRater(new Rater(Guid.NewGuid(), RoleType.Admin, "test"), user.Id);
 
             rep.Add(room);
@@ -228,7 +229,7 @@ namespace ContentRating.IntegrationTests
             var id1 = Guid.NewGuid();
             var spec = new ContentRatingSpecification(new Score(0), new Score(10));
             var raters = new List<ContentRater> { new ContentRater(Guid.NewGuid(), RaterType.Admin), new ContentRater(Guid.NewGuid(), RaterType.Admin) };
-            var rating = ContentPartyRating.Create(id1, Guid.NewGuid(), spec);
+            var rating = ContentPartyRating.Create(contentId, id, spec);
             foreach (var rater in raters)
             {
                 rating.AddNewRaterInContentEstimation(rater);
@@ -240,6 +241,21 @@ namespace ContentRating.IntegrationTests
             var r1 = await rep1.GetContentRating(id1);
             var r = await rep.GetRoom(id);
             var res = await rep.HasRaterInRoom(id, user.Id);
+            
+            var partyRatingRoomCollection = mongoContext.GetCollection<ContentPartyEstimationRoom>(options.Value.ContentPartyEstimationRoomCollectionName);
+            var partyRatingCollection = mongoContext.GetCollection<ContentPartyRating>(options.Value.ContentPartyRatingCollectionName);
+
+            
+            
+            var q = from estimationRooms in partyRatingRoomCollection.AsQueryable().Where(c => c.Id == id).Where(c=>c.Raters.Any(c=> c.Id == user.Id))
+                    join ratings in partyRatingCollection.AsQueryable() on estimationRooms.Id equals ratings.RoomId
+                    select new
+                    {
+                        estimationRooms.Name,
+                        contentList = estimationRooms.ContentForEstimation.Select(c=> new {c.Name, c.Url, ratings.AverageContentScore })
+                    };
+
+            var queryRes = await q.ToListAsync();
             await Console.Out.WriteLineAsync();
         }
         [Fact]

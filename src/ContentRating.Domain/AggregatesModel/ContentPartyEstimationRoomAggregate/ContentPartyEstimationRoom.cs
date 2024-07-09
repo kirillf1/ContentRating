@@ -7,6 +7,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
     {
         public RoomControlSpecification RoomSpecification { get; private set; }
         public RatingRange RatingRange { get; private set; }
+        public string Name { get; private set; }
         public Rater RoomCreator { get; }
         public IReadOnlyCollection<Rater> Raters
         {
@@ -100,26 +101,32 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         }
 
         private ContentPartyEstimationRoom(Guid id, Rater creator, RoomControlSpecification specification, 
-            List<Rater> invitedUsersWithCreator, IEnumerable<ContentForEstimation> contentList, RatingRange ratingRange)
+            List<Rater> invitedUsersWithCreator, IEnumerable<ContentForEstimation> contentList, RatingRange ratingRange, string name)
         {
-            Id = id;
+            if (!contentList.Any())
+                throw new ArgumentException("Content list must not be empty");
+
             if (!invitedUsersWithCreator.Contains(creator))
                 invitedUsersWithCreator.Add(creator);
+
+            Id = id;
             RoomCreator = creator;
             IsAllContentEstimated = false;
             _raters = invitedUsersWithCreator;
             RatingRange = ratingRange;
+            Name = name;
             RoomSpecification = specification;
             _contentList = new(contentList);
+
             AddDomainEvent(new ContentEstimationStartedDomainEvent(Id, Raters, ContentForEstimation, RatingRange));
         }
-        public static ContentPartyEstimationRoom Create(Guid id, Rater creator, IEnumerable<ContentForEstimation> contentList, 
+        public static ContentPartyEstimationRoom Create(Guid id, Rater creator, IEnumerable<ContentForEstimation> contentList, string name,
             RatingRange? ratingRange = null, List<Rater>? otherInvitedRaters = null)
         {
             otherInvitedRaters ??= new List<Rater>();
             ratingRange ??= new RatingRange();
             otherInvitedRaters.Add(creator);
-            return new ContentPartyEstimationRoom(id, creator, new RoomControlSpecification(), otherInvitedRaters, contentList, ratingRange);
+            return new ContentPartyEstimationRoom(id, creator, new RoomControlSpecification(), otherInvitedRaters, contentList, ratingRange, name);
         }
     }
 }

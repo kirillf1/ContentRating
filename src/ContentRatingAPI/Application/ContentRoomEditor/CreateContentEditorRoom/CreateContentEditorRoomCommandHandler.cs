@@ -15,7 +15,7 @@ namespace ContentRatingAPI.Application.ContentRoomEditor.CreateContentEditorRoom
         public async Task<Result> Handle(CreateContentEditorRoomCommand request, CancellationToken cancellationToken)
         {
             var roomCreator = new Editor(request.CreatorId, request.CreatorName);
-            var newRoom = new ContentEditorRoomAggregate(request.Id, roomCreator, request.RoomName);
+            var newRoom = ContentEditorRoomAggregate.Create( request.Id, roomCreator, request.RoomName);
 
             contentEditorRoomRepository.Add(newRoom);
             await contentEditorRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);

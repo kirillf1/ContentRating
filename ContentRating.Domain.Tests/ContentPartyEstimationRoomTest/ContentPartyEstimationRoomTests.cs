@@ -11,7 +11,7 @@ namespace ContentRating.Domain.Tests.ContentPartyEstimationRoomTest
         public void InviteRater_ByAdmin_AddedUserInvitedEvent()
         {
             var creator = new Rater(Guid.NewGuid(), RoleType.Admin, "testName");
-            var contentPartyEstimationRoom = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, []);
+            var contentPartyEstimationRoom = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, GenerateContent(1), Guid.NewGuid().ToString());
 
             var newUser = new Rater(Guid.NewGuid(), RoleType.Default, "new_rater");
             contentPartyEstimationRoom.InviteRater(newUser, creator.Id);
@@ -28,7 +28,7 @@ namespace ContentRating.Domain.Tests.ContentPartyEstimationRoomTest
         {
             var creator = new Rater(Guid.NewGuid(), RoleType.Admin, "new_rater");
             var inviteInitiator = new Rater(Guid.NewGuid(), forbiddenInviteRole, "new_rater");
-            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, [], otherInvitedRaters: [inviteInitiator]);
+            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, GenerateContent(1), Guid.NewGuid().ToString(), otherInvitedRaters: [inviteInitiator]);
 
             var newUser = new Rater(Guid.NewGuid(), RoleType.Default, "new_rater");
 
@@ -40,7 +40,7 @@ namespace ContentRating.Domain.Tests.ContentPartyEstimationRoomTest
         {
             var creator = new Rater(Guid.NewGuid(), RoleType.Admin, "new_rater");
             var raterForKick = new Rater(Guid.NewGuid(), RoleType.Default, "new_rater");
-            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, [], otherInvitedRaters: [raterForKick]);
+            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, GenerateContent(1), Guid.NewGuid().ToString(), otherInvitedRaters: [raterForKick]);
 
             room.KickRater(raterForKick.Id, creator.Id);
 
@@ -56,7 +56,7 @@ namespace ContentRating.Domain.Tests.ContentPartyEstimationRoomTest
             var creator = new Rater(Guid.NewGuid(), RoleType.Admin, "new_rater");
             var kickInitiator = new Rater(Guid.NewGuid(), forbiddenInviteRole, "new_rater");
             var kickTarget = new Rater(Guid.NewGuid(), RoleType.Default, "new_rater");
-            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, [], otherInvitedRaters: [kickInitiator, kickTarget]);
+            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, GenerateContent(1), Guid.NewGuid().ToString(), otherInvitedRaters: [kickInitiator, kickTarget]);
 
             Assert.Throws<ForbiddenRoomOperationException>(() => room.KickRater(kickTarget.Id, kickInitiator.Id));
         }
@@ -66,11 +66,20 @@ namespace ContentRating.Domain.Tests.ContentPartyEstimationRoomTest
         {
             var creator = new Rater(Guid.NewGuid(), RoleType.Admin, "test");
             var userForKick = new Rater(Guid.NewGuid(), RoleType.Default, "test");
-            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, [], otherInvitedRaters: [userForKick]);
+            var room = ContentPartyEstimationRoom.Create(Guid.NewGuid(), creator, GenerateContent(1), Guid.NewGuid().ToString(), otherInvitedRaters: [userForKick]);
 
             room.CompleteContentEstimation(creator);
 
             Assert.Throws<InvalidRoomStageOperationException>(() => room.KickRater(userForKick.Id, creator.Id));
+        }
+
+        private static IEnumerable<ContentForEstimation> GenerateContent(int count) 
+        {
+            for (int i = 0; i < count; i++)
+            {
+                yield return new ContentForEstimation(Guid.NewGuid(), Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), Shared.Content.ContentType.Audio);
+            }
+          
         }
      
     }

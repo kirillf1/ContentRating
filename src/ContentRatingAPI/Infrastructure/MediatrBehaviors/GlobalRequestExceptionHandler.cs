@@ -9,7 +9,7 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
        where TException : Exception
     {
         private static IEnumerable<Type> InvalidResponseTypes = [typeof(ForbiddenRatingOperationException),
-            typeof(ForbiddenRoomOperationException), typeof(InvalidRoomStageOperationException)];
+            typeof(ForbiddenRoomOperationException), typeof(InvalidRoomStageOperationException), typeof(ArgumentException)];
 
         private readonly ILogger<GlobalRequestExceptionHandler<TRequest, TResponse, TException>> _logger;
         public GlobalRequestExceptionHandler(

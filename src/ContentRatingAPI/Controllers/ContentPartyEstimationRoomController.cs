@@ -1,6 +1,8 @@
 ﻿using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteContentEstimation;
+using ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstimationRoom;
+using ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstimationRoomTitles;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.KickRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.RemoveUnavailableContent;
@@ -23,17 +25,25 @@ namespace ContentRatingAPI.Controllers
             this.mediator = mediator;
             this.userInfoService = userInfoService;
         }
+        [TranslateResultToActionResult]
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetRooms()
+        public async Task<Result<IEnumerable<PartyEstimationTitle>>> GetRooms([FromQuery] GetPartyEstimationRoomTitlesRequest request)
         {
-            return Ok();
+            var userInfo = userInfoService.TryGetUserInfo();
+            if (userInfo is null)
+                return Result.Forbidden();
+
+            var query = new GetPartyEstimationRoomTitlesQuery(request.IncludeEstimated, request.IncludeNotEstimated, userInfo.Id);
+            return await mediator.Send(query);
         }
+
+        [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpGet("{roomId:guid}")]
-        public async Task<IActionResult> GetContentPartyEstimationRoom(Guid roomId)
+        public async Task<Result<PartyEstimationRoomResponse>> GetContentPartyEstimationRoom(Guid roomId)
         {
-            return Ok();
+            return await mediator.Send(new GetPartyEstimationRoomQuery(roomId));
         }
 
         [TranslateResultToActionResult]

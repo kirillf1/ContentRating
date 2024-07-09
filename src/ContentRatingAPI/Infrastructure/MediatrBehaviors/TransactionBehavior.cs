@@ -18,7 +18,7 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
             try
             {
                 if (mongoContext.HasActiveTransaction())
-                    return await next();
+                    return await next(); 
 
                 var transaction = await mongoContext.BeginTransactionAsync(cancellationToken);
                 logger.LogInformation("Begin transaction {TransactionId} for {CommandName} ({@Command})", transaction.TransactionId, typeName, request);

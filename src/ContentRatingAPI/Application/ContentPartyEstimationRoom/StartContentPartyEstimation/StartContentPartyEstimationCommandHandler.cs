@@ -24,7 +24,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPa
             if (existingRoom is not null)
                 return Result.Invalid(new ValidationError($"Room with id {request.RoomId} exists"));
 
-            var newRoom = ContentPartyEstimationRoomAggregate.Create(request.RoomId, creator, contentForEstimation, ratingRange);
+            var newRoom = ContentPartyEstimationRoomAggregate.Create(request.RoomId, creator, contentForEstimation,"test", ratingRange);
             roomRepository.Add(newRoom);
             await roomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
             return Result.Success();

@@ -38,10 +38,16 @@ namespace ContentRatingAPI.Infrastructure.Data
         {
             var conventionPack = new ConventionPack
             {
-                new MapReadOnlyPropertiesConvention()
+                new MapReadOnlyPropertiesConvention(),
+                new IgnoreIfNullConvention(true)
             };
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
-
+            BsonClassMap.RegisterClassMap<Entity>(cm => 
+            {
+                cm.AutoMap();
+                cm.UnmapMember(m => m.DomainEvents);
+                
+            });
             BsonClassMap.RegisterClassMap<ContentPartyEstimationRoom>(classMap =>
             {
                 classMap.AutoMap();

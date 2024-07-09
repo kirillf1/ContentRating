@@ -30,7 +30,7 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             mongoContext.AddCommand((s) => dbSet.DeleteOneAsync(s, Builders<ContentPartyEstimationRoom>.Filter.Eq(_ => _.Id, room.Id)), room);
         }
 
-        public async Task<ContentPartyEstimationRoom> GetRoom(Guid id)
+        public async Task<ContentPartyEstimationRoom?> GetRoom(Guid id)
         {
             return await dbSet.Find(Builders<ContentPartyEstimationRoom>.Filter.Eq(_ => _.Id, id)).SingleOrDefaultAsync();
         }

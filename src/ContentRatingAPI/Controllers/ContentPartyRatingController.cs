@@ -1,5 +1,6 @@
 ﻿using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentPartyRating.EstimateContent;
+using ContentRatingAPI.Application.ContentPartyRating.GetContentRating;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,14 @@ namespace ContentRatingAPI.Controllers
         }
 
         [TranslateResultToActionResult]
+        [HttpGet("{roomId:guid}/{contentRatingId:guid}")]
+        public async Task<Result<ContentPartyRatingResponse>> GetContentRating(Guid roomId, Guid contentRatingId)
+        {
+            return await mediator.Send(new GetContentRatingQuery(contentRatingId));
+
+        }
+
+        [TranslateResultToActionResult]
         [HttpPut("{roomId:guid}/{contentRatingId:guid}")]
         public async Task<Result> EstimateContent(Guid roomId, Guid contentRatingId,
             [FromBody] EstimateContentRequest request)
@@ -30,7 +39,7 @@ namespace ContentRatingAPI.Controllers
                 return Result.Forbidden();
 
             return await mediator.Send(new EstimateContentCommand(contentRatingId, userInfo.Id, request.RaterForChangeScoreId, request.NewScore));
-            
+
         }
 
     }

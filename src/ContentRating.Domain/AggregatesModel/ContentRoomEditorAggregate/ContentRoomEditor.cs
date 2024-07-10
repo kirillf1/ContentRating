@@ -1,5 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
-using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events;
+﻿using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Events;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate.Exceptions;
 using ContentRating.Domain.Shared.RoomStates;
 

@@ -19,17 +19,18 @@ namespace ContentRatingAPI.Infrastructure.Authorization
                 defaultAuthorizationPolicyBuilder =
                     defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
                 options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
-            });
-            builder.Services.AddAuthorizationBuilder()
-                .AddPolicy(Policies.ContentRoomEditorUserAccessPolicyName, policy =>
+                options.AddPolicy(Policies.ContentRoomEditorUserAccessPolicyName, policy =>
                 {
-                    policy.Requirements.Add(new ContentRoomEditorUserAccessRequirement());
-                    policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
-                }).AddPolicy(Policies.ContentEstimationRoomUserAccessPolicyName, policy =>
+                   policy.Requirements.Add(new ContentRoomEditorUserAccessRequirement());
+                   policy.AddAuthenticationSchemes(options.DefaultPolicy.AuthenticationSchemes.ToArray());
+                });
+                options.AddPolicy(Policies.ContentEstimationRoomUserAccessPolicyName, policy =>
                 {
                     policy.Requirements.Add(new ContentPartyEstimationRoomRaterAccessRequirement());
-                    policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+                    policy.AddAuthenticationSchemes(options.DefaultPolicy.AuthenticationSchemes.ToArray());
                 });
+            });
+          
 
             return builder.Services;
         }

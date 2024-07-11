@@ -4,7 +4,7 @@ using ContentRating.Domain.Shared.Content;
 
 namespace ContentRating.IntegrationTests.DataHelpers
 {
-    internal static class ContentPartyEstimationGenerator
+    internal static class ContentPartyEstimationRoomGenerator
     {
         private static Random _random = new Random();
         private static Faker faker = new Faker();
@@ -21,13 +21,14 @@ namespace ContentRating.IntegrationTests.DataHelpers
             return rooms;
         }
 
-        public static ContentPartyEstimationRoom GeneratePartyEstimationRoom(Guid? creatorId)
+        public static ContentPartyEstimationRoom GeneratePartyEstimationRoom(Guid? creatorId = null, Guid? roomId = null)
         {
-            var id = creatorId ?? Guid.NewGuid();
-            var creator = new Rater(Guid.NewGuid(), RoleType.Admin, faker.Person.UserName);
+            var id = roomId ?? Guid.NewGuid();
+            
+            var creator = new Rater(creatorId ?? Guid.NewGuid(), RoleType.Admin, faker.Person.UserName);
             var contentList = GenerateRandomContentForEstimationList(_random.Next(1, 10));
             var name = $"Sample Room Name {_random.Next(1000, 9999)}";
-            var ratingRange = new RatingRange(Rating.DefaultMinRating, Rating.DefaultMaxRating);
+            var ratingRange = new RatingRange(Rating.DefaultMaxRating, Rating.DefaultMinRating);
             var otherInvitedRaters = GenerateRandomRaters(_random.Next(1, 5));
 
             var room = ContentPartyEstimationRoom.Create(id, creator, contentList, name, ratingRange, otherInvitedRaters);
@@ -54,7 +55,8 @@ namespace ContentRating.IntegrationTests.DataHelpers
 
             for (int i = 0; i < count; i++)
             {
-                var rater = new Rater(Guid.NewGuid(), RoleType.Default, faker.Person.UserName);
+                var name = faker.Lorem.Sentence(3, 3);
+                var rater = new Rater(Guid.NewGuid(), RoleType.Default, name);
                 raters.Add(rater);
             }
 

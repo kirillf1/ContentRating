@@ -9,7 +9,7 @@ namespace ContentRatingAPI.Controllers
 {
     [Route("api/content-party-rating")]
     [ApiController]
-    [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
+    [Authorize]
     public class ContentPartyRatingController : ControllerBase
     {
         private readonly IMediator mediator;
@@ -22,16 +22,16 @@ namespace ContentRatingAPI.Controllers
         }
 
         [TranslateResultToActionResult]
-        [HttpGet("{roomId:guid}/{contentRatingId:guid}")]
-        public async Task<Result<ContentPartyRatingResponse>> GetContentRating(Guid roomId, Guid contentRatingId)
+        [HttpGet("{contentRatingId:guid}")]
+        public async Task<Result<ContentPartyRatingResponse>> GetContentRating(Guid contentRatingId)
         {
             return await mediator.Send(new GetContentRatingQuery(contentRatingId));
 
         }
 
         [TranslateResultToActionResult]
-        [HttpPut("{roomId:guid}/{contentRatingId:guid}")]
-        public async Task<Result> EstimateContent(Guid roomId, Guid contentRatingId,
+        [HttpPut("{contentRatingId:guid}")]
+        public async Task<Result> EstimateContent(Guid contentRatingId,
             [FromBody] EstimateContentRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();

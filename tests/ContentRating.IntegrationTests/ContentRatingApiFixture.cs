@@ -1,19 +1,11 @@
 ﻿using ContentRating.IntegrationTests.Auth;
-using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Policy;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ContentRating.IntegrationTests
 {
@@ -21,14 +13,13 @@ namespace ContentRating.IntegrationTests
     {
         protected override IHost CreateHost(IHostBuilder builder)
         {
-            //builder.ConfigureHostConfiguration(config =>
-            //{
-            //    config.AddInMemoryCollection(new Dictionary<string, string>
-            //{
-            //    { $"ConnectionStrings:{Postgres.Resource.Name}", _postgresConnectionString },
-            //    { "Identity:Url", IdentityApi.GetEndpoint("http").Url }
-            //});
-            //});
+            builder.ConfigureHostConfiguration(config =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string>
+            {
+
+                });
+            });
             builder.ConfigureServices(services =>
             {
                 services.AddAuthentication(defaultScheme: TestAuthHandler.SchemeName)
@@ -45,7 +36,13 @@ namespace ContentRating.IntegrationTests
             builder.UseEnvironment("Development");
             return base.CreateHost(builder);
         }
-        public static Guid UserId => Guid.Parse(TestAuthHandler.IDENTITY_ID);
+        public Guid UserId => Guid.Parse(TestAuthHandler.IDENTITY_ID);
+        private IServiceScope? _servicesScope;
+        public IServiceProvider GetServiceProvider()
+        {
+            _servicesScope ??= Services.CreateScope();
+            return _servicesScope.ServiceProvider;
+        }
         public Task InitializeAsync()
         {
             return Task.CompletedTask;
@@ -53,6 +50,7 @@ namespace ContentRating.IntegrationTests
 
         async Task IAsyncLifetime.DisposeAsync()
         {
+            _servicesScope?.Dispose();
             await base.DisposeAsync();
         }
        

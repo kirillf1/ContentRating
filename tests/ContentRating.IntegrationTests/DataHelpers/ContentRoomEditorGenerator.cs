@@ -1,17 +1,12 @@
 ﻿using Bogus;
 using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.Domain.Shared.Content;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ContentRating.IntegrationTests.DataHelpers
 {
     internal static class ContentRoomEditorGenerator
     {
-        private static readonly Faker _faker;
+        private static readonly Faker _faker = new Faker();
       
         public static List<ContentRoomEditor> GenerateContentRoomEditors(int count, Guid? editorId = null)
         {
@@ -19,7 +14,7 @@ namespace ContentRating.IntegrationTests.DataHelpers
 
             for (int i = 0; i < count; i++)
             {
-                ContentRoomEditor roomEditor = CreateContentRoomEditor(editorId);
+                ContentRoomEditor roomEditor = GenerateContentRoomEditor(editorId);
 
                 contentRoomEditors.Add(roomEditor);
             }
@@ -27,10 +22,10 @@ namespace ContentRating.IntegrationTests.DataHelpers
             return contentRoomEditors;
         }
 
-        public static ContentRoomEditor CreateContentRoomEditor(Guid? editorId = null)
+        public static ContentRoomEditor GenerateContentRoomEditor(Guid? editorId = null)
         {
-            var id = editorId ?? Guid.NewGuid();
-            var creator = GenerateEditor();
+            var id = Guid.NewGuid();
+            var creator = GenerateEditor(editorId);
             var name = _faker.Lorem.Sentence(3, 3);
             var roomEditor = ContentRoomEditor.Create(id, creator, name);
 
@@ -49,9 +44,10 @@ namespace ContentRating.IntegrationTests.DataHelpers
             return roomEditor;
         }
 
-        private static Editor GenerateEditor()
+        private static Editor GenerateEditor(Guid? editorId = null)
         {
-            return new Editor(Guid.NewGuid(), _faker.Name.FullName());
+            var id = editorId ?? Guid.NewGuid();
+            return new Editor(id, _faker.Name.FullName());
         }
 
         private static List<Editor> GenerateEditors(int count = 3)

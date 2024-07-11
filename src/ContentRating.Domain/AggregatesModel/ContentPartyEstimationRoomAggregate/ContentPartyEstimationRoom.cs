@@ -8,7 +8,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         public RoomControlSpecification RoomSpecification { get; private set; }
         public RatingRange RatingRange { get; private set; }
         public string Name { get; private set; }
-        public Rater RoomCreator { get; }
+        public Rater RoomCreator { get; private set; }
         public IReadOnlyCollection<Rater> Raters
         {
             get { return _raters; }
@@ -70,14 +70,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             if (IsAllContentEstimated)
                 throw new InvalidRoomStageOperationException("Сan't remove content when the room is not working");
 
-            var rater = _raters.Find(c => c.Id == removeContentInitiatorId) ?? throw new ArgumentException("Unknown rater");
+            var rater = _raters.Find(c => c.Id == removeContentInitiatorId) ?? throw new ArgumentNullException("Unknown rater");
 
             if (!RoomSpecification.CanEditContentList(rater))
                 throw new ForbiddenRoomOperationException("This rater does not have the access to remove content");
-            var content = _contentList.Find(c=> c.Id == contentId);
-            if (content is null)
-                return;
-
+            var content = _contentList.Find(c=> c.Id == contentId) ?? throw new ArgumentNullException("Unknown contentId");
             AddDomainEvent(new UnavailableContentRemovedDomainEvent(Id, content, rater));
 
         }

@@ -40,6 +40,13 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
                 PropertyInfo errorsProperty = type.GetProperty("ValidationErrors")!;
                 errorsProperty?.SetValue(result, new ValidationError[] { new ValidationError(exception.Message) });
             }
+            else if(exception.GetType() == typeof(ArgumentNullException))
+            {
+                ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
+                result = ctor?.Invoke([ResultStatus.NotFound]);
+                PropertyInfo errorsProperty = type.GetProperty("Errors")!;
+                errorsProperty?.SetValue(result, new string[] { exception.Message });
+            }
             else
             {
                 ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);

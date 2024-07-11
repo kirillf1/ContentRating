@@ -14,6 +14,8 @@ namespace ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyRatin
         public async Task<ContentRatersForEstimation> GetContentRatersForEstimation(Guid roomId, Guid initiatorRaterId, Guid targetRaterId)
         {
             var raters = await contentRaterAdapter.GetContentRates(roomId, initiatorRaterId, targetRaterId);
+            if (raters.Count == 1)
+                return new ContentRatersForEstimation(raters[0], raters[0]);
             return new ContentRatersForEstimation(raters[0], raters[1]);
         }
 

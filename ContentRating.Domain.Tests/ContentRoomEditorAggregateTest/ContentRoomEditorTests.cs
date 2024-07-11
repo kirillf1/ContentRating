@@ -109,7 +109,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
         private static ContentRoomEditor CreateEmptyRoomEditor()
         {
             var editor = new Editor(Guid.NewGuid(), "test");
-            return new ContentRoomEditor(Guid.NewGuid(), editor, random.Next().ToString());
+            return ContentRoomEditor.Create(Guid.NewGuid(), editor, random.Next().ToString());
         }
         private static ContentData CreateRandomContentData()
         {

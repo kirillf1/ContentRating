@@ -43,7 +43,7 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
 
         public async Task<IEnumerable<ContentRatingAggregate>> GetContentRatingsByRoom(Guid roomId)
         {
-            var ratings = await dbSet.Find(Builders<ContentRatingAggregate>.Filter.Eq(_ => _.Id, roomId)).ToListAsync();         
+            var ratings = await dbSet.Find(Builders<ContentRatingAggregate>.Filter.Eq(_ => _.RoomId, roomId)).ToListAsync();         
             return ratings;
         }
 

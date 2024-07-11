@@ -114,15 +114,15 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/rating-range")]
-        public async Task<IActionResult> ChangeRatingRange(Guid roomId, 
+        public async Task<Result> ChangeRatingRange(Guid roomId, 
             [FromBody] ChangeRatingRangeRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
-                return Forbid("Unknown user info");
+                return Result.Forbidden();
 
-            await mediator.Send(new ChangeRatingRangeCommand(roomId, userInfo.Id, request.MinRating, request.MaxRating));
-            return Ok();
+            return await mediator.Send(new ChangeRatingRangeCommand(roomId, userInfo.Id, request.MinRating, request.MaxRating));
+            
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
+using ContentRating.IntegrationTests.Fixtures;
 using ContentRatingAPI.Application.ContentPartyRating.EstimateContent;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +49,7 @@ namespace ContentRating.IntegrationTests
         [Fact]
         public async Task Put_EstimateContent_Success()
         {
-            var requestParams = await CreateEsimateContentRequest();
+            var requestParams = await CreateEstimateContentRequest();
             var request = requestParams.Item1;
             var ratingId = requestParams.Item2;
             var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
@@ -62,7 +63,7 @@ namespace ContentRating.IntegrationTests
         [Fact]
         public async Task Put_EstimateContentInvalidRating_BadRequest()
         {
-            var requestParams = await CreateEsimateContentRequest();
+            var requestParams = await CreateEstimateContentRequest();
             var request = requestParams.Item1;
             request.NewScore = -1;
             var ratingId = requestParams.Item2;
@@ -74,7 +75,7 @@ namespace ContentRating.IntegrationTests
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         }
-        private async Task<(EstimateContentRequest, Guid)> CreateEsimateContentRequest()
+        private async Task<(EstimateContentRequest, Guid)> CreateEstimateContentRequest()
         {
             var rating = await CreateContentPartyRating();
             return (new EstimateContentRequest() { RaterForChangeScoreId = _userId, NewScore = 4 }, rating.Id);

@@ -15,7 +15,6 @@ namespace ContentRatingAPI.Infrastructure.Authorization
         }
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ContentEstimationListEditorUserAccessRequirement requirement)
         {
-
             var httpContext = httpContextAccessor.HttpContext;
             var roomId = httpContext?.TryGetRoomIdFromHttpContext();
             if (!roomId.HasValue || !Guid.TryParse(httpContext?.User.GetUserId(), out var userId))

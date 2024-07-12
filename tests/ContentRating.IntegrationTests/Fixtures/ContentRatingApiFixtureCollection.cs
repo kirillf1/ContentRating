@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContentRating.IntegrationTests
+namespace ContentRating.IntegrationTests.Fixtures
 {
 
     [CollectionDefinition("ContentRating")]

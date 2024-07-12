@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace ContentRating.IntegrationTests
+namespace ContentRating.IntegrationTests.Fixtures
 {
     public class ContentRatingApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
     {
@@ -16,9 +16,9 @@ namespace ContentRating.IntegrationTests
             builder.ConfigureHostConfiguration(config =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string>
-            {
+                {
 
-            });
+                });
             });
             builder.ConfigureServices(services =>
             {
@@ -26,11 +26,11 @@ namespace ContentRating.IntegrationTests
                     .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, options => { });
                 services.AddSingleton<IAuthorizationPolicyProvider, TestPermissionAuthorizationPolicyProvider>();
                 services.AddAuthorization(opt =>
-                {                   
+                {
                     opt.DefaultPolicy = new AuthorizationPolicyBuilder()
                         .AddAuthenticationSchemes(TestAuthHandler.SchemeName)
                     .Combine(opt.DefaultPolicy)
-                    .Build();         
+                    .Build();
                 });
             });
             builder.UseEnvironment("Development");
@@ -53,6 +53,6 @@ namespace ContentRating.IntegrationTests
             _servicesScope?.Dispose();
             await base.DisposeAsync();
         }
-       
+
     }
 }

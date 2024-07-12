@@ -1,14 +1,13 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
-using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
+using ContentRating.IntegrationTests.Fixtures;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
-using System.Numerics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;

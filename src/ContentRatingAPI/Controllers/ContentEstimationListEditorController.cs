@@ -48,7 +48,7 @@ namespace ContentRatingAPI.Controllers
         [HttpPost()]
         [TranslateResultToActionResult]
         public async Task<Result> CreateContentRoomEditor(
-            [FromBody] CreateContentRoomEditorRequest createContentRoomEditorRequest)
+            [FromBody] CreateContentEstimationListEditorRequest createContentRoomEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -110,7 +110,7 @@ namespace ContentRatingAPI.Controllers
             if (userInfo is null)
                 return Result.Forbidden();
 
-            return await mediator.Send(new InviteEditorCommand(roomId, inviteEditorRequest.EditorId, inviteEditorRequest.EditorId, inviteEditorRequest.EditorName));
+            return await mediator.Send(new InviteEditorCommand(roomId, userInfo.Id, inviteEditorRequest.EditorId, inviteEditorRequest.EditorName));
         }
 
         [TranslateResultToActionResult]

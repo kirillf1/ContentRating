@@ -1,5 +1,4 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
-using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ContentRatingAPI.Infrastructure.Authorization

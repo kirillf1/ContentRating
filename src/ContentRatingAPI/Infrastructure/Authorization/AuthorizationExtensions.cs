@@ -10,7 +10,7 @@ namespace ContentRatingAPI.Infrastructure.Authorization
         public static IServiceCollection AddApplicationAuthorization(this IHostApplicationBuilder builder)
         {
             builder.Services.AddScoped<IUserInfoService, UserInfoService>();
-            builder.Services.AddScoped<IAuthorizationHandler, ContentRoomEditorUserAccessHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, ContentEstimationListEditorUserAccessHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, ContentPartyEstimationRoomRaterAccessHandler>();
             builder.Services.AddAuthorization(options =>
             {
@@ -19,18 +19,17 @@ namespace ContentRatingAPI.Infrastructure.Authorization
                 defaultAuthorizationPolicyBuilder =
                     defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
                 options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
-                options.AddPolicy(Policies.ContentRoomEditorUserAccessPolicyName, policy =>
+            });
+            builder.Services.AddAuthorizationBuilder()
+                .AddPolicy(Policies.ContentEstimationListEditorUserAccessPolicyName, policy =>
                 {
-                   policy.Requirements.Add(new ContentRoomEditorUserAccessRequirement());
-                   policy.AddAuthenticationSchemes(options.DefaultPolicy.AuthenticationSchemes.ToArray());
-                });
-                options.AddPolicy(Policies.ContentEstimationRoomUserAccessPolicyName, policy =>
+                    policy.Requirements.Add(new ContentEstimationListEditorUserAccessRequirement());
+                    policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+                }).AddPolicy(Policies.ContentEstimationRoomUserAccessPolicyName, policy =>
                 {
                     policy.Requirements.Add(new ContentPartyEstimationRoomRaterAccessRequirement());
-                    policy.AddAuthenticationSchemes(options.DefaultPolicy.AuthenticationSchemes.ToArray());
+                    policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
                 });
-            });
-          
 
             return builder.Services;
         }

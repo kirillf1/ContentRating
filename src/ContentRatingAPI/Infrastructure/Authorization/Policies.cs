@@ -2,7 +2,7 @@
 {
     public static class Policies
     {
-        public const string ContentRoomEditorUserAccessPolicyName = "ContentRoomEditorUserAccess";
+        public const string ContentEstimationListEditorUserAccessPolicyName = "ContentRoomEditorUserAccess";
         public const string ContentEstimationRoomUserAccessPolicyName = "ContentEstimationRoomUserAccess";
     }
 }

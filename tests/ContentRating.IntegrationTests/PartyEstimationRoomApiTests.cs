@@ -1,6 +1,6 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
-using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
@@ -105,9 +105,8 @@ namespace ContentRating.IntegrationTests
         {
             var request = await CreatePartyEstimationRoomRequestBody();
             var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-            var roomId = Guid.NewGuid();
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}", requestContent);
+            var response = await _httpClient.PostAsync($"api/content-party-estimation-room", requestContent);
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
@@ -118,9 +117,8 @@ namespace ContentRating.IntegrationTests
             request.MaxRating = 0;
             request.MinRating = 1;
             var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-            var roomId = Guid.NewGuid();
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}", requestContent);
+            var response = await _httpClient.PostAsync($"api/content-party-estimation-room", requestContent);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
@@ -131,9 +129,8 @@ namespace ContentRating.IntegrationTests
             var request = await CreatePartyEstimationRoomRequestBody();
             request.ContentListId = invalidContentListId;
             var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-            var roomId = Guid.NewGuid();
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}", requestContent);
+            var response = await _httpClient.PostAsync($"api/content-party-estimation-room", requestContent);
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.False(response.IsSuccessStatusCode);
@@ -145,10 +142,9 @@ namespace ContentRating.IntegrationTests
             var request = await CreateInviteRaterRequest(roomId);
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
-            var raterId = Guid.NewGuid();
             var requestContent = new StringContent(JsonSerializer.Serialize(request, jsonOptions), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}/rater/{raterId}", requestContent);
+            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}/rater", requestContent);
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -157,12 +153,12 @@ namespace ContentRating.IntegrationTests
         public async Task Post_InviteRaterSameRaterId_BadRequest()
         {
             var roomId = Guid.NewGuid();
-            var request = await CreateInviteRaterRequest(roomId);
+            var request = await CreateInviteRaterRequest(roomId, _userId);
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
             var requestContent = new StringContent(JsonSerializer.Serialize(request, jsonOptions), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}/rater/{_userId}", requestContent);
+            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}/rater", requestContent);
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -221,13 +217,14 @@ namespace ContentRating.IntegrationTests
         }
         private async Task<CreatePartyEstimationRoomRequest> CreatePartyEstimationRoomRequestBody()
         {
-            var repository = _serviceProvider.GetRequiredService<IContentEditorRoomRepository>();
-            var contentList = ContentRoomEditorGenerator.GenerateContentRoomEditor(_userId);
+            var repository = _serviceProvider.GetRequiredService<IContentEstimationListEditorRepository>();
+            var contentList = ContentEstimationListEditorGenerator.ContentEstimationListEditor(_userId);
             repository.Add(contentList);
             await repository.UnitOfWork.SaveChangesAsync();
 
             return new CreatePartyEstimationRoomRequest()
             {
+                RoomId = Guid.NewGuid(),
                 ContentListId = contentList.Id,
                 MaxRating = 10,
                 MinRating = 0,
@@ -235,10 +232,10 @@ namespace ContentRating.IntegrationTests
             };
 
         }
-        private async Task<InviteRaterRequest> CreateInviteRaterRequest(Guid roomId)
+        private async Task<InviteRaterRequest> CreateInviteRaterRequest(Guid roomId, Guid? raterId = null)
         {
             await CreatePartyEstimationRoom(roomId);
-            return new InviteRaterRequest { RaterName = Guid.NewGuid().ToString(), RoleType = RoleType.Default };
+            return new InviteRaterRequest { RaterName = Guid.NewGuid().ToString(), RoleType = RoleType.Default, RaterId = raterId ?? Guid.NewGuid() };
         }
         private async Task<ContentPartyEstimationRoom> CreatePartyEstimationRoom(Guid? roomId = null)
         {

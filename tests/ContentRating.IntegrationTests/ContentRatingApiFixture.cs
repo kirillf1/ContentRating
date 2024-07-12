@@ -18,7 +18,7 @@ namespace ContentRating.IntegrationTests
                 config.AddInMemoryCollection(new Dictionary<string, string>
             {
 
-                });
+            });
             });
             builder.ConfigureServices(services =>
             {

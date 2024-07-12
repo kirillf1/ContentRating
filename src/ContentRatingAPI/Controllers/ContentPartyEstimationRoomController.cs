@@ -48,31 +48,29 @@ namespace ContentRatingAPI.Controllers
 
         [TranslateResultToActionResult]
         [Authorize]
-        [HttpPost("{roomId:guid}")]
-        public async Task<Result> CreateEstimationRoom(Guid roomId, 
-            [FromBody] CreatePartyEstimationRoomRequest request)
+        [HttpPost()]
+        public async Task<Result> CreateEstimationRoom([FromBody] CreatePartyEstimationRoomRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
                 return Result.Forbidden();
 
-            return await mediator.Send(new StartContentPartyEstimationCommand(roomId, request.ContentListId, request.RoomName,
+            return await mediator.Send(new StartContentPartyEstimationCommand(request.RoomId, request.ContentListId, request.RoomName,
                 request.MinRating, request.MaxRating, userInfo.Id, userInfo.Name));
             
         }
 
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
-        [HttpPost("{roomId:guid}/rater/{raterId:guid}")]
+        [HttpPost("{roomId:guid}/rater")]
         [ExpectedFailures(ResultStatus.NotFound, ResultStatus.Invalid, ResultStatus.Error)]
-        public async Task<Result> InviteRaterToRoom(Guid roomId, Guid raterId,
-            [FromBody] InviteRaterRequest request)
+        public async Task<Result> InviteRaterToRoom(Guid roomId, [FromBody] InviteRaterRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
                 return Result.Forbidden();
 
-            return await mediator.Send(new InviteRaterCommand(roomId, userInfo.Id, raterId, request.RoleType, request.RaterName));
+            return await mediator.Send(new InviteRaterCommand(roomId, userInfo.Id, request.RaterId, request.RoleType, request.RaterName));
         }
 
         [TranslateResultToActionResult]

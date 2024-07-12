@@ -1,6 +1,5 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
-using ContentRating.Domain.AggregatesModel.ContentRoomEditorAggregate;
 using ContentRating.Domain.Shared;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
@@ -10,6 +9,7 @@ using MongoDB.Bson.Serialization.Options;
 using ContentRatingAPI.Application.ContentFileManager;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
+using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 
 namespace ContentRatingAPI.Infrastructure.Data
 {
@@ -29,7 +29,7 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddScoped<IChangeTracker, InMemoryChangeTracker>();
             
 
-            builder.Services.AddTransient<IContentEditorRoomRepository, ContentEditorRoomRepository>();
+            builder.Services.AddTransient<IContentEstimationListEditorRepository, ContentEstimationListEditorRepository>();
             builder.Services.AddTransient<IContentPartyEstimationRoomRepository, ContentPartyEstimationRoomRepository>();
             builder.Services.AddTransient<IContentPartyRatingRepository, ContentPartyRatingRepository>();
             return builder.Services;
@@ -60,7 +60,7 @@ namespace ContentRatingAPI.Infrastructure.Data
 
             });
 
-            BsonClassMap.RegisterClassMap<ContentRoomEditor>(classMap =>
+            BsonClassMap.RegisterClassMap<ContentEstimationListEditor>(classMap =>
             {
                 classMap.AutoMap();
             });

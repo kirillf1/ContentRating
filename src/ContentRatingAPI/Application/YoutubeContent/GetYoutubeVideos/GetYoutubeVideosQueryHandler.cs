@@ -1,5 +1,4 @@
-﻿
-using ContentRatingAPI.Application.Identity;
+﻿using ContentRatingAPI.Application.Identity;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 

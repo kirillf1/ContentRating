@@ -1,10 +1,7 @@
 ﻿using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Infrastructure.YoutubeClient.Models;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using static System.Net.WebRequestMethods;
 
 namespace ContentRatingAPI.Infrastructure.YoutubeClient
 {

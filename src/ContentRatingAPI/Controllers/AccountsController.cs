@@ -7,6 +7,9 @@ using ContentRatingAPI.Application.Identity.RegisterUser;
 using ContentRatingAPI.Application.Identity.RefreshToken;
 using ContentRatingAPI.Application.Identity;
 using Ardalis.Result.AspNetCore;
+using ContentRatingAPI.Application.Identity.GetAllUsers;
+using Microsoft.AspNetCore.Authorization;
+using ContentRatingAPI.Infrastructure.Authorization;
 
 namespace ContentRatingAPI.Controllers
 {
@@ -15,6 +18,16 @@ namespace ContentRatingAPI.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
+        [Authorize]
+        [TranslateResultToActionResult]
+        [HttpGet]
+        public async Task<Result<IEnumerable<UserResponse>>> GetUsers([FromServices] IMediator mediator, [FromServices] IUserInfoService userInfoService)
+        {
+            var userInfo = userInfoService.TryGetUserInfo();
+            if (userInfo is null)
+                return Result.Forbidden();
+            return await mediator.Send(new GetAllUsersQuery(userInfo.Id));
+        }
         [HttpGet("login-google")]
         public IActionResult Login()
         {

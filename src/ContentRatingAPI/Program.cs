@@ -1,5 +1,6 @@
 using Ardalis.Result.AspNetCore;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Infrastructure.AggregateIntegration;
 using ContentRatingAPI.Infrastructure.Authentication;
 using ContentRatingAPI.Infrastructure.Authorization;
@@ -7,6 +8,7 @@ using ContentRatingAPI.Infrastructure.ContentFileManagers;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
+using ContentRatingAPI.Infrastructure.YoutubeClient;
 using Serilog;
 using System.Net;
 using System.Text.Json.Serialization;
@@ -33,6 +35,8 @@ try
 
     // if more services add new extension
     builder.Services.AddScoped<ContentPartyRatingService>();
+    builder.Services.AddHttpClient();
+    builder.Services.AddTransient<IYoutubeClient, HttpYoutubeClient>();
     builder.AddContentFileManager();
 
     builder.Services.AddControllers(mvcOptions => mvcOptions
@@ -56,7 +60,9 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(options => 
+        { 
+        });
     }
 
     app.UseHttpsRedirection();

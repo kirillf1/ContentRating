@@ -35,9 +35,9 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
                 .ToListAsync();
         }
 
-        public async Task<SavedContentFileInfo> GetSavedContent(Guid Id)
+        public async Task<SavedContentFileInfo?> GetSavedContent(Guid Id)
         {
-            return await dbSet.AsQueryable().FirstAsync(c => c.Id == Id);
+            return await dbSet.AsQueryable().FirstOrDefaultAsync(c => c.Id == Id);
         }
 
         public async Task Update(SavedContentFileInfo file)

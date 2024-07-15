@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Cryptography;
+using Microsoft.OpenApi.Models;
 
 namespace ContentRatingAPI.Infrastructure.Authentication
 {
@@ -15,13 +16,43 @@ namespace ContentRatingAPI.Infrastructure.Authentication
             var services = builder.Services;
             var configuration = builder.Configuration;
             services.Configure<JwtOptions>(configuration.GetSection("Authentication:JWT"));
+            services.AddSwaggerGen(c =>
+            {
+
+                c.AddSecurityDefinition("Bearer", securityScheme: new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Description = "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    BearerFormat = "JWT",
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Name = "Bearer",
+                    In = ParameterLocation.Header,
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                new string[] { }
+            }
+        });
+            });
             builder.Services.AddTransient<IJwtProvider, JwtProvider>();
             builder.Services.ConfigureOptions<ConfigureJwtBearerOptions>();
-            
+
             builder.Services.AddIdentityMongoDbProvider<ApplicationUser, MongoRole<Guid>, Guid>(identity =>
                 {
                     identity.User.AllowedUserNameCharacters += " ";
-                    
+
                 },
                 mongo =>
                 {
@@ -36,7 +67,7 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                 options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
             })
-                .AddCookie(options=>
+                .AddCookie(options =>
                 {
                 })
                 .AddJwtBearer()

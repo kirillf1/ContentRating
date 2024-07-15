@@ -12,65 +12,116 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
         private readonly IOptions<ContentFileOptions> options;
         private readonly ISavedContentStorage savedContentStorage;
         private readonly IDictionary<ContentType, FileSaverBase> fileSavers;
+        private readonly ILogger<ContentFileMongoManager> logger;
 
-
-        public ContentFileMongoManager(IOptions<ContentFileOptions> options, ISavedContentStorage savedContentStorage, IDictionary<ContentType, FileSaverBase> fileSavers)
+        public ContentFileMongoManager(IOptions<ContentFileOptions> options, ISavedContentStorage savedContentStorage, IDictionary<ContentType, FileSaverBase> fileSavers,
+            ILogger<ContentFileMongoManager> logger)
         {
             this.options = options;
             this.savedContentStorage = savedContentStorage;
             this.fileSavers = fileSavers;
+            this.logger = logger;
         }
 
-        public async Task RemoveFile(Guid id, CancellationToken cancellationToken = default)
+        public async Task<Result> RemoveFile(Guid id, CancellationToken cancellationToken = default)
         {
-            var savedContent = await savedContentStorage.GetSavedContent(id);
-            if(cancellationToken.IsCancellationRequested) return;
-            await savedContentStorage.DeleteSavedContent(id);
-            // maybe should transfer delete logic in this class
-            savedContent.RemoveFile();
+            try
+            {
+                var savedContent = await savedContentStorage.GetSavedContent(id);
+                if (savedContent is null)
+                    return Result.NotFound();
+                cancellationToken.ThrowIfCancellationRequested();
+                await savedContentStorage.DeleteSavedContent(id);
+                // maybe should transfer delete logic in this class
+                savedContent.RemoveFile();
+                logger.LogInformation("File {fileName} deleted", savedContent.Path);
+                return Result.Success();
+            }
+            catch(Exception ex)
+            {
+                logger.LogError("Can't delete file with id {id}, error: {ex}", id, ex);
+                return Result.Error(ex.Message);
+            }
         }
 
-        public Task<int> RemoveUnusedSavedContentFiles(TimeSpan notUseMinTime, CancellationToken cancellationToken = default)
+        public Task<Result<int>> RemoveUnusedSavedContentFiles(TimeSpan notUseMinTime, CancellationToken cancellationToken = default)
         {
-            // should implement new class who by mongo collections find api path saved content in the end of 
-            throw new NotImplementedException();
+            try
+            {
+                // should implement new class who by mongo collections find api path saved content in the end of 
+                throw new NotImplementedException();
+            }
+            catch(Exception ex)
+            {
+                throw new NotImplementedException();
+            }
         }
 
-        public async Task<SavedContentFileInfo> SaveNewContentFile(string fileName, byte[] contentBytes, CancellationToken cancellationToken = default)
+        public async Task<Result<SavedContentFileInfo>> SaveNewContentFile(string fileName, byte[] contentBytes, CancellationToken cancellationToken = default)
         {
-            var contentType = GetContentTypeByFileName(fileName);
-            if (!fileSavers.TryGetValue(contentType, out FileSaverBase? value))
-                throw new NotImplementedException("Content type");
-            var fileSaver = value;
-            var newContent = await fileSaver.SaveFile(Guid.NewGuid(), Path.GetExtension(fileName), contentBytes, cancellationToken);
-            await savedContentStorage.Add(newContent);
-            return newContent;
+            try
+            {
+                var contentType = GetContentTypeByFileName(fileName);
+                if (!fileSavers.TryGetValue(contentType, out FileSaverBase? value))
+                    return Result.Invalid(new ValidationError("Unknown content type"));
+                var fileSaver = value;
+                var newContent = await fileSaver.SaveFile(Guid.NewGuid(), Path.GetExtension(fileName), contentBytes, cancellationToken);
+                await savedContentStorage.Add(newContent);
+                logger.LogInformation("Saved file: {fileName}, id: {id}", newContent.Path, newContent.Id);
+                return newContent;
+            }
+            catch(Exception ex)
+            {
+                logger.LogError("Can't save file: {fileName}, error: {ex}", fileName, ex);
+                return Result.Error(ex.Message);
+            }
         }
-        public async Task<ContentFile> GetFile(Guid id, string baseUrlForSegmentManifest, CancellationToken cancellationToken = default)
+        public async Task<Result<ContentFile>> GetFile(Guid id, string baseUrlForSegmentManifest, CancellationToken cancellationToken = default)
         {
-            var savedContentFile = await savedContentStorage.GetSavedContent(id);
-            var mimeType = MimeTypesMap.GetMimeType(savedContentFile.Path);
-            if (savedContentFile.IsSegmented)
-                return await CreateSegmentedFile(savedContentFile, mimeType, baseUrlForSegmentManifest, cancellationToken);
-            var fileBytes = await File.ReadAllBytesAsync(savedContentFile.Path, cancellationToken);
-            return new ContentFile(fileBytes, savedContentFile.Path, mimeType);
+            try
+            {
+                var savedContentFile = await savedContentStorage.GetSavedContent(id);
+                if (savedContentFile is null)
+                    return Result.NotFound();
+                var mimeType = MimeTypesMap.GetMimeType(savedContentFile.Path);
+                if (savedContentFile.IsSegmented)
+                    return await CreateSegmentedFile(savedContentFile, mimeType, baseUrlForSegmentManifest, cancellationToken);
+                var fileBytes = await File.ReadAllBytesAsync(savedContentFile.Path, cancellationToken);
+                return new ContentFile(fileBytes, savedContentFile.Path, mimeType);
+            }
+            catch(Exception ex)
+            {
+                logger.LogError("Can't get file with id: {id}, error: {ex}", id, ex);
+                return Result.Error(ex.Message);
+            }
 
         }
 
-        public async Task<ContentFile> GetFileSegment(Guid id, string segmentName, CancellationToken cancellationToken = default)
+        public async Task<Result<ContentFile>> GetFileSegment(Guid id, string segmentName, CancellationToken cancellationToken = default)
         {
-            var savedContentFile = await savedContentStorage.GetSavedContent(id);
-            if (!savedContentFile.IsSegmented)
-                throw new ArgumentException("File is not segmented");
-            var parentDirectoryPath = Directory.GetParent(savedContentFile.Path)!.ToString();
-            var fileNames = Directory.GetFiles(parentDirectoryPath);
-            var segmentFileName = fileNames.First(c => c.Contains(segmentName));
-            var mimeType = MimeTypesMap.GetMimeType(segmentFileName);
-            var fileBytes = await File.ReadAllBytesAsync(segmentFileName, cancellationToken);
-            return new ContentFile(fileBytes, segmentFileName, mimeType);
+            try
+            {
+                var savedContentFile = await savedContentStorage.GetSavedContent(id);
+                if (savedContentFile is null)
+                    return Result.NotFound();
+                if (!savedContentFile.IsSegmented)
+                    return Result.Invalid(new ValidationError("File is not segmented"));
+
+                var parentDirectoryPath = Directory.GetParent(savedContentFile.Path)!.ToString();
+                var fileNames = Directory.GetFiles(parentDirectoryPath);
+                var segmentFileName = fileNames.First(c => c.Contains(segmentName));
+                var mimeType = MimeTypesMap.GetMimeType(segmentFileName);
+                var fileBytes = await File.ReadAllBytesAsync(segmentFileName, cancellationToken);
+                return new ContentFile(fileBytes, segmentFileName, mimeType);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Can't get file with id: {id}, segment: {segment} error: {ex}", id, segmentName, ex);
+                return Result.Error(ex.Message);
+            } 
 
         }
-        private async Task<ContentFile> CreateSegmentedFile(SavedContentFileInfo savedContentFile, string mimeType, string baseUrlForSegmentManifest, CancellationToken cancellationToken)
+        private static async Task<ContentFile> CreateSegmentedFile(SavedContentFileInfo savedContentFile, string mimeType, string baseUrlForSegmentManifest, CancellationToken cancellationToken)
         {
             if (mimeType != "application/vnd.apple.mpegurl")
                 throw new NotSupportedException("Unknown format");

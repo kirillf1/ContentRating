@@ -29,7 +29,7 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
                     { ContentType.Audio, audioSaver },
                     { ContentType.Image, imageSaver },
                 };
-                return new ContentFileMongoManager(contentFileOptions, storage, fileSavers);
+                return new ContentFileMongoManager(contentFileOptions, storage, fileSavers, s.GetRequiredService<ILogger<ContentFileMongoManager>>());
             });
             return builder.Services;
         }

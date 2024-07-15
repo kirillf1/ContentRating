@@ -1,4 +1,5 @@
-﻿using ContentRatingAPI.Application.ContentFileManager;
+﻿using Ardalis.Result.AspNetCore;
+using ContentRatingAPI.Application.ContentFileManager;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,55 +17,64 @@ namespace ContentRatingAPI.Controllers
         {
             this.contentFileManager = contentFileManager;
         }
-        [AllowAnonymous]
         [HttpGet("{fileId:guid}")]
         public async Task<IActionResult> GetFile(Guid fileId)
         {
-            try
-            {
-                var baseUrlForManifest = Url.Action(nameof(GetFile), null, null, HttpContext.Request.Scheme, Request.Host.ToUriComponent());
-                var file = await contentFileManager.GetFile(fileId, baseUrlForManifest);
-                return File(file.Data, file.ContentType);
-            }
-            catch (Exception)
-            {
+            var baseUrlForManifest = Url.Action(nameof(GetFile), null, null, HttpContext.Request.Scheme, Request.Host.ToUriComponent());
+            var fileResult = await contentFileManager.GetFile(fileId, baseUrlForManifest);
+            if (fileResult.IsSuccess)
+                return File(fileResult.Value.Data, fileResult.Value.ContentType);
+            if (fileResult.IsNotFound())
                 return NotFound();
-            }
+            if (fileResult.IsInvalid())
+                return BadRequest(string.Join("\n\r", fileResult.ValidationErrors.Select(c => c.ErrorMessage)));
+            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
         }
         [AllowAnonymous]
         [HttpGet("{fileId:guid}/{segment}")]
         public async Task<IActionResult> GetFileSegment(Guid fileId, string segment)
         {
-            try
-            {
-                var fileSegment = await contentFileManager.GetFileSegment(fileId, segment);
-                return File(fileSegment.Data, fileSegment.ContentType);
-            }
-            catch (Exception)
-            {
+
+            var fileResult = await contentFileManager.GetFileSegment(fileId, segment);
+            if (fileResult.IsSuccess)
+                return File(fileResult.Value.Data, fileResult.Value.ContentType);
+            if (fileResult.IsNotFound())
                 return NotFound();
-            }
+            if (fileResult.IsInvalid())
+                return BadRequest(string.Join("\n\r", fileResult.ValidationErrors.Select(c => c.ErrorMessage)));
+            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+
         }
+        [TranslateResultToActionResult]
         [RequestSizeLimit(200_000_000)]
         [HttpPost]
-        public async Task<IActionResult> AddFile(IFormFile file)
+        public async Task<Result<SavedFileResponse>> AddFile(IFormFile file)
         {
             using var stream = file.OpenReadStream();
             var buffer = new byte[stream.Length];
             await stream.ReadAsync(buffer);
-            var newFileInfo = await contentFileManager.SaveNewContentFile(file.FileName, buffer);
-            var response = new SavedFileResponse
-            {
-                Id = newFileInfo.Id,
-                FileRoute = Url.Action(nameof(GetFile), null, new { fileId = newFileInfo.Id }, HttpContext.Request.Scheme, Request.Host.ToUriComponent())!
-            };
-            return Ok(response);
+            var newFileInfoResult = await contentFileManager.SaveNewContentFile(file.FileName, buffer);
+            if (newFileInfoResult.IsSuccess)
+            {          
+                var response = new SavedFileResponse
+                {
+                    Id = newFileInfoResult.Value.Id,
+                    FileRoute = Url.Action(nameof(GetFile), null, new { fileId = newFileInfoResult.Value.Id }, HttpContext.Request.Scheme, Request.Host.ToUriComponent())!
+                };
+                return response;
+            }
+            if (newFileInfoResult.IsInvalid())
+                return Result.Invalid(newFileInfoResult.ValidationErrors);
+            return Result.Error(new ErrorList(newFileInfoResult.Errors));
+
+
+
         }
+        [TranslateResultToActionResult]
         [HttpDelete("{fileId:guid}")]
-        public async Task<IActionResult> RemoveFile(Guid fileId)
+        public async Task<Result> RemoveFile(Guid fileId)
         {
-            await contentFileManager.RemoveFile(fileId);
-            return Ok();
+            return await contentFileManager.RemoveFile(fileId);
         }
 
     }

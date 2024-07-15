@@ -4,7 +4,7 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
 {
     public interface ISavedContentStorage
     {
-        Task<SavedContentFileInfo> GetSavedContent(Guid Id);
+        Task<SavedContentFileInfo?> GetSavedContent(Guid Id);
         Task<IEnumerable<SavedContentFileInfo>> GetOldCheckedOrUncheckedContent(TimeSpan checkInterval);
         Task Update(SavedContentFileInfo file);
         Task DeleteSavedContent(Guid Id);

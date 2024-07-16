@@ -47,8 +47,8 @@ namespace ContentRatingAPI.Infrastructure.YoutubeClient
             if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
                 return Result.Error(await response.Content.ReadAsStringAsync());
 
-            logger.LogWarning("Unknown response status code for request while getting youtube playlist, status code: {status code}, message {message}", response.StatusCode,
-                await response.Content.ReadAsStringAsync());
+            logger.LogWarning("Unknown response status code for request while getting youtube playlist, " +
+                "status code: {status code}, message {message}", response.StatusCode, await response.Content.ReadAsStringAsync());
             return Result.Error("Unknown error try later");
         }
 

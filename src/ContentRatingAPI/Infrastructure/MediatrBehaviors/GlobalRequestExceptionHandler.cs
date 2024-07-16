@@ -20,12 +20,12 @@ namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
         public Task Handle(TRequest request, TException exception, RequestExceptionHandlerState<TResponse> state,
             CancellationToken cancellationToken)
         {
-            _logger.LogError(exception, "Something went wrong while handling request of type {@requestType}", typeof(TRequest));
+            _logger.LogError(exception, "Something went wrong while handling command of type {CommandName} ({@Command}", typeof(TRequest), request);
             state.SetHandled(CreateErrorResult(typeof(TResponse), exception)!);
             return Task.CompletedTask;
         }
 
-        public static TResponse? CreateErrorResult(Type type, Exception exception)
+        private static TResponse? CreateErrorResult(Type type, Exception exception)
         {
             object? result = default;
             if (!type.GetInterfaces().Contains(typeof(Ardalis.Result.IResult)))          

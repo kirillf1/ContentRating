@@ -1,5 +1,4 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
-using ContentRating.Domain.Shared.RoomStates;
 using ContentEstimationListEditorAggregate = ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate.ContentEstimationListEditor;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor

@@ -92,6 +92,27 @@ namespace ContentRating.IntegrationTests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
         [Fact]
+        public async Task Put_UpdateContentWithInvalidParams_BadRequest()
+        {
+            var contentList = await CreateContentEstimationListEditor();
+            var content = contentList.AddedContent.First();
+            var request = new UpdateContentRequest
+            {
+                ContentType = Domain.Shared.Content.ContentType.Audio,
+                Name = string.Empty,
+                Path = string.Empty
+            };
+            JsonSerializerOptions jsonOptions = new();
+            jsonOptions.Converters.Add(new JsonStringEnumConverter());
+            var requestString = JsonSerializer.Serialize(request, jsonOptions);
+            var stringContent = new StringContent(requestString, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PutAsync($"api/content-estimation-list-editor/{contentList.Id}/content/{content.Id}", stringContent);
+            var r = await response.Content.ReadAsStringAsync();
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+        [Fact]
         public async Task Delete_Content_Success()
         {
             var contentList = await CreateContentEstimationListEditor();

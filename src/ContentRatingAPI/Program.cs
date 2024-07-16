@@ -1,5 +1,9 @@
 using Ardalis.Result.AspNetCore;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications;
+using ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor;
+using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
+using ContentRatingAPI.Application.Identity.RefreshToken;
 using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Infrastructure.AggregateIntegration;
 using ContentRatingAPI.Infrastructure.Authentication;
@@ -9,7 +13,11 @@ using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
+using FluentValidation;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Serilog;
+using System.Globalization;
 using System.Net;
 using System.Text.Json.Serialization;
 
@@ -24,9 +32,18 @@ try
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+        cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+        cfg.AddOpenBehavior(typeof(ValidatorBehavior<,>));
         cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+        
     }
     );
+
+    builder.Services.AddSingleton<IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
+    builder.Services.AddSingleton<IValidator<CreateContentEstimationListEditorCommand>, CreateContentEstimationListEditorCommandValidator>();
+    builder.Services.AddSingleton<IValidator<CreateContentCommand>,  CreateContentCommandValidator>();
+    builder.Services.AddSingleton<IValidator<UpdateContentCommand>,  UpdateContentCommandValidator>();
+    builder.Services.AddSingleton<IValidator<StartContentPartyEstimationCommand>, StartContentPartyEstimationCommandValidator>();
 
     builder.AddApplicationAuthentication();
     builder.AddMongoDbStorage();
@@ -35,6 +52,7 @@ try
 
     // if more services add new extension
     builder.Services.AddScoped<ContentPartyRatingService>();
+
     builder.Services.AddHttpClient();
     builder.Services.AddTransient<IYoutubeClient, HttpYoutubeClient>();
     builder.AddContentFileManager();
@@ -54,6 +72,16 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
+    builder.Services.Configure<RequestLocalizationOptions>(options =>
+    {
+        var supportedCultures = new[] { "en-US", "ru-RU" };
+        options.SetDefaultCulture(supportedCultures[0])
+            .AddSupportedCultures(supportedCultures)
+            .AddSupportedUICultures(supportedCultures);
+        options.ApplyCurrentCultureToResponseHeaders = true;
+
+    });
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -64,7 +92,7 @@ try
         { 
         });
     }
-
+    app.UseRequestLocalization();
     app.UseHttpsRedirection();
 
     app.UseSerilogRequestLogging();

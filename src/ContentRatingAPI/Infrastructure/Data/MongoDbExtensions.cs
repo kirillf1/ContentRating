@@ -10,6 +10,7 @@ using ContentRatingAPI.Application.ContentFileManager;
 using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+using ContentRatingAPI.Infrastructure.Data.Indexes;
 
 namespace ContentRatingAPI.Infrastructure.Data
 {
@@ -27,7 +28,10 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddScoped<IUnitOfWork, MongoContext>();
             builder.Services.AddScoped<MongoContext>();
             builder.Services.AddScoped<IChangeTracker, InMemoryChangeTracker>();
-            
+
+            builder.Services.AddHostedService<MongoIndexService>();
+            builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentPartyRatingIndexFactory>();
+            builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentPartyEstimationIndexFactory>();
 
             builder.Services.AddTransient<IContentEstimationListEditorRepository, ContentEstimationListEditorRepository>();
             builder.Services.AddTransient<IContentPartyEstimationRoomRepository, ContentPartyEstimationRoomRepository>();

@@ -15,6 +15,7 @@ using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
+using Microsoft.AspNetCore.Http.Connections;
 using Serilog;
 using System.Net;
 using System.Text.Json.Serialization;
@@ -100,7 +101,11 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-    app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub");
+    app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub", options =>
+    {
+        options.Transports =
+            HttpTransportType.WebSockets;
+    });
 
     app.Run();
     return 0;

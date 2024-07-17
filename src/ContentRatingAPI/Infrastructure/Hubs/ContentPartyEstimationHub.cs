@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ContentRatingAPI.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ContentRatingAPI.Infrastructure.Hubs
@@ -6,13 +8,16 @@ namespace ContentRatingAPI.Infrastructure.Hubs
     [Authorize]
     public class ContentPartyEstimationHub : Hub
     {
-        public ContentPartyEstimationHub()
+        private readonly IUserInfoService userInfoService;
+
+        public ContentPartyEstimationHub(IUserInfoService userInfoService)
         {
-            
+            this.userInfoService = userInfoService;
         }
         public async Task Test()
         {
-            await Clients.Caller.SendAsync("response");
+            var t =  userInfoService.TryGetUserInfo();
+            await Clients.Caller.SendAsync("ReceiveMessage", "hi");
         }
     }
 }

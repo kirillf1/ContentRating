@@ -1,5 +1,6 @@
 ﻿using ContentRating.Domain.Shared.Content;
 using ContentRatingAPI.Application.ContentFileManager;
+using ContentRatingAPI.Infrastructure.ContentFileManagers.ContentFilePathFinder;
 using ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers;
 using Microsoft.Extensions.Options;
 
@@ -12,6 +13,8 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
            
             builder.Services.Configure<ContentFileOptions>(builder.Configuration.GetSection("ContentFile"));
             builder.Services.Configure<FFMPEGOptions>(builder.Configuration.GetSection("FFMEPGOptions"));
+
+            builder.Services.AddScoped<IContentPathFinder, MongoContentPathFinder>();
 
             builder.Services.AddScoped<ISavedContentStorage, SavedContentMongoStorage>();
             builder.Services.AddScoped<ImageFileSaver>();
@@ -29,8 +32,11 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
                     { ContentType.Audio, audioSaver },
                     { ContentType.Image, imageSaver },
                 };
-                return new ContentFileMongoManager(contentFileOptions, storage, fileSavers, s.GetRequiredService<ILogger<ContentFileMongoManager>>());
+                return new ContentFileMongoManager(contentFileOptions, storage, fileSavers, 
+                    s.GetRequiredService<ILogger<ContentFileMongoManager>>(), s.GetRequiredService<IContentPathFinder>());
             });
+
+            builder.Services.AddHostedService<UnusedContentFileCleanerBackgroundService>();
             return builder.Services;
         }
     }

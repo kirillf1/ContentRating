@@ -10,14 +10,12 @@ using ContentRatingAPI.Infrastructure.Authentication;
 using ContentRatingAPI.Infrastructure.Authorization;
 using ContentRatingAPI.Infrastructure.ContentFileManagers;
 using ContentRatingAPI.Infrastructure.Data;
+using ContentRatingAPI.Infrastructure.Hubs;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Localization;
 using Serilog;
-using System.Globalization;
 using System.Net;
 using System.Text.Json.Serialization;
 
@@ -82,6 +80,8 @@ try
 
     });
 
+    builder.Services.AddSignalR();
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -100,7 +100,7 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-
+    app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub");
 
     app.Run();
     return 0;

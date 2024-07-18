@@ -63,7 +63,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
 
             _raters.Add(newRater);
 
-            AddDomainEvent(new RaterInvitedDomainEvent(newRater, Id));
+            AddDomainEvent(new RaterInvitedDomainEvent(newRater, Id, RatingRange.MinRating));
         }
         public void RemoveUnavailableContent(Guid removeContentInitiatorId, Guid contentId)
         {

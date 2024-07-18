@@ -37,7 +37,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             }
             _addedContent.Add(newContent);
 
-            AddDomainEvent(new ContentAddedToRoomDomainEvent(newContent, Id));
+            AddDomainEvent(new ContentAddedToListDomainEvent(newContent, Id));
         }
 
         public void UpdateContent(ContentEditor editor, ContentData contentModification)
@@ -56,7 +56,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 
             oldContent.ModifyContent(contentModification);
 
-            AddDomainEvent(new ContentUpdatedInRoomDomainEvent(oldContent, Id));
+            AddDomainEvent(new ContentUpdatedDomainEvent(oldContent, Id));
         }
         public bool RemoveContent(ContentEditor editor, Content content)
         {
@@ -72,7 +72,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             var isRemoved = _addedContent.Remove(content);
             if (isRemoved)
             {
-                AddDomainEvent(new ContentRemovedFromRoomDomainEvent(content, Id));
+                AddDomainEvent(new ContentRemovedFromListDomainEvent(content, Id));
             }
             return isRemoved;
         }

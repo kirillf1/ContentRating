@@ -2,9 +2,9 @@
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications
 {
-    public class ContentUpdatedInRoomDomainEventHandler : INotificationHandler<ContentUpdatedInRoomDomainEvent>
+    public class ContentAddedToListDomainEventHandler : INotificationHandler<ContentAddedToListDomainEvent>
     {
-        public Task Handle(ContentUpdatedInRoomDomainEvent notification, CancellationToken cancellationToken)
+        public Task Handle(ContentAddedToListDomainEvent notification, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }

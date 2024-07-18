@@ -21,7 +21,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
 
             room.InviteEditor(room.RoomCreator, editor);
             room.CreateContent(editor, newContentData);
-            var contentAddedEvent = room.DomainEvents.OfType<ContentAddedToRoomDomainEvent>().FirstOrDefault();
+            var contentAddedEvent = room.DomainEvents.OfType<ContentAddedToListDomainEvent>().FirstOrDefault();
 
             Assert.NotNull(contentAddedEvent);
             Assert.Equal(newContentData.Id, contentAddedEvent.NewContent.Id);
@@ -63,7 +63,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
 
             var newContentData = new ContentData(contentData.Id, "new_name", "/new_path", ContentType.Image);
             room.UpdateContent(editor, newContentData);
-            var contentUpdatedEvent = room.DomainEvents.OfType<ContentUpdatedInRoomDomainEvent>().FirstOrDefault();
+            var contentUpdatedEvent = room.DomainEvents.OfType<ContentUpdatedDomainEvent>().FirstOrDefault();
 
             Assert.NotNull(contentUpdatedEvent);
             Assert.Equal(newContentData.Name, contentUpdatedEvent.UpdatedContent.Name);
@@ -83,7 +83,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
 
             var newContentData = new ContentData(contentData.Id, "new_name", "/new_path", ContentType.Image);
             room.UpdateContent(room.RoomCreator, newContentData);
-            var contentUpdatedEvent = room.DomainEvents.OfType<ContentUpdatedInRoomDomainEvent>().FirstOrDefault();
+            var contentUpdatedEvent = room.DomainEvents.OfType<ContentUpdatedDomainEvent>().FirstOrDefault();
 
             Assert.NotNull(contentUpdatedEvent);
             Assert.Equal(newContentData.Name, contentUpdatedEvent.UpdatedContent.Name);

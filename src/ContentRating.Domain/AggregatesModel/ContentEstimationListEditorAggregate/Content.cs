@@ -4,13 +4,13 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 {
     public class Content : Entity
     {
-        public Content(Guid id, string path, string name, ContentType type, ContentModificationHistory contentCreator)
+        public Content(Guid id, string path, string name, ContentType type, ContentModificationHistory contentModificationHistory)
         {
             Id = id;
             Path = path;
             Name = name;
             Type = type;
-            ContentModificationHistory = contentCreator;
+            ContentModificationHistory = contentModificationHistory;
         }
 
         public string Path { get; private set; }

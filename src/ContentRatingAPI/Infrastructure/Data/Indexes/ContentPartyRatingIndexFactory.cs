@@ -31,7 +31,6 @@ namespace ContentRatingAPI.Infrastructure.Data.Indexes
             indexModel = new CreateIndexModel<ContentPartyRating>(contentPartyRatingIndexDefinition.Descending(c => c.ContentId), contentPartyRatingOptions);
             await collection.Indexes.CreateOneAsync(indexModel);
             logger.LogInformation("Index for {property} created", nameof(ContentPartyRating.ContentId));
-
         }
     }
 }

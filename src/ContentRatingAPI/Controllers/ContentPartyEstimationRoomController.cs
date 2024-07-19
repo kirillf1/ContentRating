@@ -49,7 +49,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize]
         [HttpPost()]
-        public async Task<Result> CreateEstimationRoom([FromBody] CreatePartyEstimationRoomRequest request)
+        public async Task<Result<bool>> CreateEstimationRoom([FromBody] CreatePartyEstimationRoomRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -63,8 +63,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/rater")]
-        [ExpectedFailures(ResultStatus.NotFound, ResultStatus.Invalid, ResultStatus.Error)]
-        public async Task<Result> InviteRaterToRoom(Guid roomId, [FromBody] InviteRaterRequest request)
+        public async Task<Result<bool>> InviteRaterToRoom(Guid roomId, [FromBody] InviteRaterRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -76,7 +75,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/rater/{raterId:guid}")]
-        public async Task<Result> KickRater(Guid roomId, Guid raterId)
+        public async Task<Result<bool>> KickRater(Guid roomId, Guid raterId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -88,7 +87,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/complete-estimation")]
-        public async Task<Result> CompleteRoomEstimation(Guid roomId)
+        public async Task<Result<bool>> CompleteRoomEstimation(Guid roomId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -100,7 +99,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<Result> DeleteUnavailableContent(Guid roomId, Guid contentId)
+        public async Task<Result<bool>> DeleteUnavailableContent(Guid roomId, Guid contentId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -112,7 +111,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/rating-range")]
-        public async Task<Result> ChangeRatingRange(Guid roomId, 
+        public async Task<Result<bool>> ChangeRatingRange(Guid roomId, 
             [FromBody] ChangeRatingRangeRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();

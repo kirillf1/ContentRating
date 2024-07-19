@@ -4,19 +4,26 @@ using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModificati
 using ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
 using ContentRatingAPI.Application.Identity.RefreshToken;
+using ContentRatingAPI.Application.Notifications.IContentEstimationListEditorNotifications;
+using ContentRatingAPI.Application.Notifications.IContentPartyEstimationNotifications;
 using ContentRatingAPI.Application.YoutubeContent;
+using ContentRatingAPI.Hubs;
+using ContentRatingAPI.Hubs.Filters;
+using ContentRatingAPI.Hubs.NotificationServices;
 using ContentRatingAPI.Infrastructure.AggregateIntegration;
 using ContentRatingAPI.Infrastructure.Authentication;
 using ContentRatingAPI.Infrastructure.Authorization;
 using ContentRatingAPI.Infrastructure.ContentFileManagers;
 using ContentRatingAPI.Infrastructure.Data;
-using ContentRatingAPI.Infrastructure.Hubs;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.Connections;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Net;
 using System.Text.Json.Serialization;
 
@@ -81,7 +88,9 @@ try
 
     });
 
-    builder.Services.AddSignalR();
+    builder.Services.AddSignalR(options => options.AddFilter<LoggingHubFilter>());
+    builder.Services.AddTransient<IContentPartyEstimationNotificationService, ContentPartyEstimationNotificationHubService>();
+    builder.Services.AddTransient<IContentEstimationListEditorNotificationService, ContentEstimationListEditorNotificationHubService>();
 
     var app = builder.Build();
 
@@ -101,11 +110,7 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-    app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub", options =>
-    {
-        options.Transports =
-            HttpTransportType.WebSockets;
-    });
+    app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub");
 
     app.Run();
     return 0;

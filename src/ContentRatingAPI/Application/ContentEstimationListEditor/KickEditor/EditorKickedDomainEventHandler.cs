@@ -1,5 +1,4 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
-using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate.Events;
+﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate.Events;
 using ContentRatingAPI.Application.Notifications.IContentEstimationListEditorNotifications;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.KickEditor
@@ -14,7 +13,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.KickEditor
         }
         public async Task Handle(EditorKickedDomainEvent notification, CancellationToken cancellationToken)
         {
-            await notificationService.NotifyEditorKicked(notification.ContentListId, notification.KickedEditor.Id);
+            await notificationService.NotifyEditorKicked(notification.ContentListId, notification.KickedEditor.Id, notification.Initiator.Id);
         }
     }
 }

@@ -25,7 +25,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
 
             Assert.NotNull(contentAddedEvent);
             Assert.Equal(newContentData.Id, contentAddedEvent.NewContent.Id);
-            Assert.Equal(room.Id, contentAddedEvent.RoomId);
+            Assert.Equal(room.Id, contentAddedEvent.ContentListId);
         }
         [Fact]
         public void CreateContent_ExistingContent_ThrowContentAlreadyAddedException()

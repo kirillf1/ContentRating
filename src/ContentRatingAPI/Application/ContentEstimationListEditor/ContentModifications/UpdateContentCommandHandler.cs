@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications
 {
-    public class UpdateContentCommandHandler : IRequestHandler<UpdateContentCommand, Result>
+    public class UpdateContentCommandHandler : IRequestHandler<UpdateContentCommand, Result<bool>>
     {
         private readonly IContentEstimationListEditorRepository contentEditorRoomRepository;
 
@@ -10,13 +10,13 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifi
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
-        public async Task<Result> Handle(UpdateContentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(UpdateContentCommand request, CancellationToken cancellationToken)
         {
             var room = await contentEditorRoomRepository.GetContentEstimationListEditor(request.RoomId);
             if (room is null)
                 return Result.NotFound();
 
-            var newContentData = new ContentData(request.Id, request.Name, request.Path, request.ContentType);
+            var newContentData = new ContentData(request.Id, request.Name, request.Url, request.ContentType);
             var editor = room.TryGetEditorFromRoom(request.EditorId);
             if (editor is null)
                 return Result.NotFound("Editor");
@@ -25,7 +25,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifi
 
             contentEditorRoomRepository.Update(room);
             await contentEditorRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

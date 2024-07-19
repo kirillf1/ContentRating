@@ -4,7 +4,7 @@ using ContentRatingAPI.Application.ContentPartyRating.ContentRaterService;
 
 namespace ContentRatingAPI.Application.ContentPartyRating.EstimateContent
 {
-    public class EstimateContentCommandHandler : IRequestHandler<EstimateContentCommand, Result>
+    public class EstimateContentCommandHandler : IRequestHandler<EstimateContentCommand, Result<bool>>
     {
         private readonly IContentPartyRatingRepository contentRatingRepository;
         private readonly IContentRaterService contentRaterService;
@@ -14,7 +14,7 @@ namespace ContentRatingAPI.Application.ContentPartyRating.EstimateContent
             this.contentRatingRepository = contentRatingRepository;
             this.contentRaterService = contentRaterService;
         }
-        public async Task<Result> Handle(EstimateContentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(EstimateContentCommand request, CancellationToken cancellationToken)
         {
             try
             {
@@ -28,7 +28,7 @@ namespace ContentRatingAPI.Application.ContentPartyRating.EstimateContent
                 contentRating.EstimateContent(estimation);
                 contentRatingRepository.Update(contentRating);
                 await contentRatingRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-                return Result.Success();
+                return Result.Success(true);
             }
             catch (ForbiddenRatingOperationException ex)
             {

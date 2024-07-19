@@ -3,7 +3,7 @@ using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.RemoveUnavailableContent
 {
-    public class RemoveUnavailableContentCommandHandler : IRequestHandler<RemoveUnavailableContentCommand, Result>
+    public class RemoveUnavailableContentCommandHandler : IRequestHandler<RemoveUnavailableContentCommand, Result<bool>>
     {
         private readonly IContentPartyEstimationRoomRepository contentPartyEstimationRoomRepository;
 
@@ -11,7 +11,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.RemoveUnavaila
         {
             this.contentPartyEstimationRoomRepository = contentPartyEstimationRoomRepository;
         }
-        public async Task<Result> Handle(RemoveUnavailableContentCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(RemoveUnavailableContentCommand request, CancellationToken cancellationToken)
         {
             var room = await contentPartyEstimationRoomRepository.GetRoom(request.RoomId);
             if(room is null)
@@ -20,7 +20,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.RemoveUnavaila
             room.RemoveUnavailableContent(request.RemoveContentInitiatorId, request.ContentId);
 
             await contentPartyEstimationRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

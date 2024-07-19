@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater
 {
-    public class InviteRaterCommandHandler : IRequestHandler<InviteRaterCommand, Result>
+    public class InviteRaterCommandHandler : IRequestHandler<InviteRaterCommand, Result<bool>>
     {
         private readonly IContentPartyEstimationRoomRepository partyEstimationRoomRepository;
 
@@ -10,7 +10,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater
         {
             this.partyEstimationRoomRepository = partyEstimationRoomRepository;
         }
-        public async Task<Result> Handle(InviteRaterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(InviteRaterCommand request, CancellationToken cancellationToken)
         {
             var room = await partyEstimationRoomRepository.GetRoom(request.RoomId);
             if (room is null)
@@ -20,7 +20,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater
 
             partyEstimationRoomRepository.Update(room);
             await partyEstimationRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

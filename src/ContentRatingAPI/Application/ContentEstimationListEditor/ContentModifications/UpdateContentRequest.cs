@@ -5,7 +5,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifi
     public class UpdateContentRequest
     {
         public required string Name { get; set; }
-        public required string Path { get; set; }
+        public required string Url { get; set; }
         public required ContentType ContentType { get; set; }
     }
 }

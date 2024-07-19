@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteContentEstimation
 {
-    public class CompleteContentEstimationCommandHandler : IRequestHandler<CompleteContentEstimationCommand, Result>
+    public class CompleteContentEstimationCommandHandler : IRequestHandler<CompleteContentEstimationCommand, Result<bool>>
     {
         private readonly IContentPartyEstimationRoomRepository contentPartyEstimationRoomRepository;
 
@@ -10,7 +10,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteConten
         {
             this.contentPartyEstimationRoomRepository = contentPartyEstimationRoomRepository;
         }
-        public async Task<Result> Handle(CompleteContentEstimationCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(CompleteContentEstimationCommand request, CancellationToken cancellationToken)
         {
             var room = await contentPartyEstimationRoomRepository.GetRoom(request.RoomId);
             if(room is null)
@@ -20,7 +20,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteConten
 
             contentPartyEstimationRoomRepository.Update(room);
             await contentPartyEstimationRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return true;
         }
     }
 }

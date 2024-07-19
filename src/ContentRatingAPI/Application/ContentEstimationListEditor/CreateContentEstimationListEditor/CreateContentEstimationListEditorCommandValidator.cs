@@ -1,6 +1,4 @@
 ﻿using FluentValidation;
-using Microsoft.Extensions.Localization;
-using System;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor
 {

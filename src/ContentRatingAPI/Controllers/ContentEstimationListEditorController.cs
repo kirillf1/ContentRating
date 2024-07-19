@@ -45,9 +45,9 @@ namespace ContentRatingAPI.Controllers
         }
 
         [Authorize]
-        [HttpPost()]
+        [HttpPost]
         [TranslateResultToActionResult]
-        public async Task<Result> CreateContentRoomEditor(
+        public async Task<Result<bool>> CreateContentRoomEditor(
             [FromBody] CreateContentEstimationListEditorRequest createContentRoomEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
@@ -62,21 +62,21 @@ namespace ContentRatingAPI.Controllers
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/content")]
         [TranslateResultToActionResult]
-        public async Task<Result> AddContentInRoomEditor(Guid roomId, [FromBody] CreateContentRequest createContentRequest)
+        public async Task<Result<bool>> AddContentInRoomEditor(Guid roomId, [FromBody] CreateContentRequest createContentRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
                 return Result.Forbidden();
 
            return await mediator.Send(new CreateContentCommand(roomId, userInfo.Id, createContentRequest.Id,
-                createContentRequest.Name, createContentRequest.Path, createContentRequest.ContentType));
+                createContentRequest.Name, createContentRequest.Url, createContentRequest.ContentType));
            
         }
 
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/content/{contentId:guid}")]
         [TranslateResultToActionResult]
-        public async Task<Result> UpdateContentInRoomEditor(Guid roomId, Guid contentId,
+        public async Task<Result<bool>> UpdateContentInRoomEditor(Guid roomId, Guid contentId,
             [FromBody] UpdateContentRequest updateContentRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
@@ -84,13 +84,13 @@ namespace ContentRatingAPI.Controllers
                 return Result.Forbidden();
 
            return await mediator.Send(new UpdateContentCommand(contentId, roomId, userInfo.Id, updateContentRequest.Name,
-                updateContentRequest.Path, updateContentRequest.ContentType));
+                updateContentRequest.Url, updateContentRequest.ContentType));
         }
 
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<Result> DeleteContentInRoomEditor(Guid roomId, Guid contentId)
+        public async Task<Result<bool>> DeleteContentInRoomEditor(Guid roomId, Guid contentId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
@@ -103,7 +103,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/editor")]
-        public async Task<Result> InviteEditorInRoomEditor(Guid roomId,
+        public async Task<Result<bool>> InviteEditorInRoomEditor(Guid roomId,
             [FromBody] InviteEditorRequest inviteEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
@@ -116,7 +116,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/editor/{editorId:guid}")]
-        public async Task<Result> KickEditorInRoomEditor(Guid roomId, Guid editorId)
+        public async Task<Result<bool>> KickEditorInRoomEditor(Guid roomId, Guid editorId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)

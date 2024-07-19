@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange
 {
-    public class ChangeRatingRangeCommandHandler : IRequestHandler<ChangeRatingRangeCommand, Result>
+    public class ChangeRatingRangeCommandHandler : IRequestHandler<ChangeRatingRangeCommand, Result<bool>>
     {
         private readonly IContentPartyEstimationRoomRepository partyEstimationRoomRepository;
 
@@ -10,7 +10,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRa
         {
             this.partyEstimationRoomRepository = partyEstimationRoomRepository;
         }
-        public async Task<Result> Handle(ChangeRatingRangeCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(ChangeRatingRangeCommand request, CancellationToken cancellationToken)
         {
             var room = await partyEstimationRoomRepository.GetRoom(request.RoomId);
             if (room is null)
@@ -20,7 +20,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRa
 
             partyEstimationRoomRepository.Update(room);
             await partyEstimationRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

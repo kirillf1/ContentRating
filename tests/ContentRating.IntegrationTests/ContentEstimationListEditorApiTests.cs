@@ -80,7 +80,7 @@ namespace ContentRating.IntegrationTests
             {
                 ContentType = Domain.Shared.Content.ContentType.Audio,
                 Name = Guid.NewGuid().ToString(),
-                Path = $"https://localhost/{Guid.NewGuid()}"
+                Url = $"https://localhost/{Guid.NewGuid()}"
             };
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
@@ -88,6 +88,7 @@ namespace ContentRating.IntegrationTests
             var stringContent = new StringContent(requestString, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync($"api/content-estimation-list-editor/{contentList.Id}/content/{content.Id}", stringContent);
+            var r = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
@@ -100,7 +101,7 @@ namespace ContentRating.IntegrationTests
             {
                 ContentType = Domain.Shared.Content.ContentType.Audio,
                 Name = string.Empty,
-                Path = string.Empty
+                Url = string.Empty
             };
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
@@ -165,7 +166,7 @@ namespace ContentRating.IntegrationTests
                 Id = contentId ?? Guid.NewGuid(),
                 ContentType = Domain.Shared.Content.ContentType.Audio,
                 Name = Guid.NewGuid().ToString(),
-                Path = $"https://localhost/{Guid.NewGuid()}"
+                Url = $"https://localhost/{Guid.NewGuid()}"
 
             };
             JsonSerializerOptions jsonOptions = new();

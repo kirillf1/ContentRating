@@ -3,7 +3,7 @@
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.InviteEditor
 {
-    public class InviteEditorCommandHandler : IRequestHandler<InviteEditorCommand, Result>
+    public class InviteEditorCommandHandler : IRequestHandler<InviteEditorCommand, Result<bool>>
     {
         private readonly IContentEstimationListEditorRepository contentEditorRoomRepository;
 
@@ -11,7 +11,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.InviteEditor
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
-        public async Task<Result> Handle(InviteEditorCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(InviteEditorCommand request, CancellationToken cancellationToken)
         {
             var room = await contentEditorRoomRepository.GetContentEstimationListEditor(request.RoomId);
             if (room is null)
@@ -26,7 +26,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.InviteEditor
 
             contentEditorRoomRepository.Update(room);
             await contentEditorRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

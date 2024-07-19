@@ -2,7 +2,7 @@
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.KickRater
 {
-    public class KickRaterCommandHandler : IRequestHandler<KickRaterCommand, Result>
+    public class KickRaterCommandHandler : IRequestHandler<KickRaterCommand, Result<bool>>
     {
         private readonly IContentPartyEstimationRoomRepository partyEstimationRoomRepository;
 
@@ -10,7 +10,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.KickRater
         {
             this.partyEstimationRoomRepository = partyEstimationRoomRepository;
         }
-        public async Task<Result> Handle(KickRaterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(KickRaterCommand request, CancellationToken cancellationToken)
         {
             var room = await partyEstimationRoomRepository.GetRoom(request.RoomId);
             if(room is null)
@@ -19,7 +19,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.KickRater
 
             partyEstimationRoomRepository.Update(room);
             await partyEstimationRoomRepository.UnitOfWork.SaveChangesAsync();
-            return Result.Success();
+            return Result.Success(true);
         }
     }
 }

@@ -3,7 +3,7 @@
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.KickEditor
 {
-    public class KickEditorCommandHandler : IRequestHandler<KickEditorCommand, Result>
+    public class KickEditorCommandHandler : IRequestHandler<KickEditorCommand, Result<bool>>
     {
         private readonly IContentEstimationListEditorRepository contentEditorRoomRepository;
 
@@ -11,7 +11,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.KickEditor
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
-        public async Task<Result> Handle(KickEditorCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(KickEditorCommand request, CancellationToken cancellationToken)
         {
             var room = await contentEditorRoomRepository.GetContentEstimationListEditor(request.RoomId);
             if (room is null)

@@ -3,7 +3,7 @@ using ContentEstimationListEditorAggregate = ContentRating.Domain.AggregatesMode
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor
 {
-    public class CreateContentEstimationListEditorCommandHandler : IRequestHandler<CreateContentEstimationListEditorCommand, Result>
+    public class CreateContentEstimationListEditorCommandHandler : IRequestHandler<CreateContentEstimationListEditorCommand, Result<bool>>
     {
         private readonly IContentEstimationListEditorRepository contentEditorRoomRepository;
 
@@ -11,14 +11,14 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.CreateContent
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
-        public async Task<Result> Handle(CreateContentEstimationListEditorCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(CreateContentEstimationListEditorCommand request, CancellationToken cancellationToken)
         {
             var roomCreator = new ContentEditor(request.CreatorId, request.CreatorName);
             var newRoom = ContentEstimationListEditorAggregate.Create(request.Id, roomCreator, request.RoomName);
 
             contentEditorRoomRepository.Add(newRoom);
             await contentEditorRoomRepository.UnitOfWork.SaveChangesAsync(cancellationToken);
-            return Result.Success();
+            return Result.Success(true);
 
         }
     }

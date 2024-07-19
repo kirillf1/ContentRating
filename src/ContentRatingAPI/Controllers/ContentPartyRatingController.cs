@@ -31,7 +31,7 @@ namespace ContentRatingAPI.Controllers
 
         [TranslateResultToActionResult]
         [HttpPut("{contentRatingId:guid}")]
-        public async Task<Result> EstimateContent(Guid contentRatingId,
+        public async Task<Result<bool>> EstimateContent(Guid contentRatingId,
             [FromBody] EstimateContentRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();

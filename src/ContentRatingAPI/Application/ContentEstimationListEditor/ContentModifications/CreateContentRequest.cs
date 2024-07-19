@@ -6,7 +6,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifi
     {
         public required Guid Id { get; set; }
         public required string Name { get; set; }
-        public required string Path { get; set; }
+        public required string Url { get; set; }
         public required ContentType ContentType { get; set; }
     }
 }

@@ -90,7 +90,7 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpDelete("{roomId:guid}/content/{contentId:guid}")]
-        public async Task<Result<bool>> DeleteContentInRoomEditor(Guid roomId, Guid contentId)
+        public async Task<Result> DeleteContentInRoomEditor(Guid roomId, Guid contentId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)

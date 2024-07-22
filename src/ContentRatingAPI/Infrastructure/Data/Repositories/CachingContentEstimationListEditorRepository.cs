@@ -15,7 +15,10 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
         {
             this.baseRepository = baseRepository;
             this.memoryCache = memoryCache;
-            cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+            cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
+                .SetSize(2000)
+                .SetSlidingExpiration(TimeSpan.FromSeconds(60));
         }
         public IUnitOfWork UnitOfWork => baseRepository.UnitOfWork;
 
@@ -33,17 +36,17 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
         public async Task<ContentEstimationListEditor?> GetContentEstimationListEditor(Guid id)
         {
             return await memoryCache.GetOrCreateAsync(GetKeyById(id), async entry =>
-                {
-                    entry.SetOptions(cacheEntryOptions);
-                    return await baseRepository.GetContentEstimationListEditor(id);
-                });
+            {
+                entry.SetOptions(cacheEntryOptions);
+                return await baseRepository.GetContentEstimationListEditor(id);
+            });
         }
 
         public async Task<bool> HasEditorInContentEstimationList(Guid listId, Guid editorId)
         {
-            if (memoryCache.TryGetValue(GetKeyById(listId), out ContentEstimationListEditor? contentEstimationListEditor))
+            if (memoryCache.TryGetValue(GetKeyById(listId), out ContentEstimationListEditor? contentEstimationListEditor) && contentEstimationListEditor is not null)
             {
-                return contentEstimationListEditor!.RoomCreator.Id == editorId || contentEstimationListEditor.InvitedEditors.Any(c => c.Id == editorId);
+                return contentEstimationListEditor!.ContentListCreator.Id == editorId || contentEstimationListEditor.InvitedEditors.Any(c => c.Id == editorId);
             }
             return await baseRepository.HasEditorInContentEstimationList(listId, editorId);
         }

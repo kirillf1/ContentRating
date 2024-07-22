@@ -43,7 +43,7 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
 
         public async Task<bool> HasEditorInContentEstimationList(Guid listId, Guid editorId)
         {
-            return await dbSet.AsQueryable().AnyAsync(c => c.Id == listId && (c.RoomCreator.Id == editorId || c.InvitedEditors.Any(c=> c.Id == editorId)));
+            return await dbSet.AsQueryable().AnyAsync(c => c.Id == listId && (c.ContentListCreator.Id == editorId || c.InvitedEditors.Any(c=> c.Id == editorId)));
         }
     }
 }

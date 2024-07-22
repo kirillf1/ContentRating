@@ -16,7 +16,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEst
         public async Task<Result<IEnumerable<ContentEstimationListEditorTitle>>> Handle(GetContentEstimationListEditorTitlesQuery request, CancellationToken cancellationToken)
         {
             return await collection.AsQueryable()
-                 .Where(c => c.InvitedEditors.Any(c => c.Id == request.EditorId) || c.RoomCreator.Id == request.EditorId)
+                 .Where(c => c.InvitedEditors.Any(c => c.Id == request.EditorId) || c.ContentListCreator.Id == request.EditorId)
                  .Select(c => new ContentEstimationListEditorTitle(c.Id, c.Name, c.AddedContent.Count, c.Name))
                  .ToListAsync(cancellationToken);
         }

@@ -127,7 +127,7 @@ namespace ContentRating.IntegrationTests
         public async Task Delete_Editor_Success()
         {
             var contentList = await CreateContentEstimationListEditor();
-            var editorId = contentList.InvitedEditors.First(c => c.Id != contentList.RoomCreator.Id).Id;
+            var editorId = contentList.InvitedEditors.First(c => c.Id != contentList.ContentListCreator.Id).Id;
 
             var response = await _httpClient.DeleteAsync($"api/content-estimation-list-editor/{contentList.Id}/editor/{editorId}");
 

@@ -20,8 +20,8 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEst
                 .Select(c => new ContentEstimationListEditorResponse(
                     c.Id,
                     c.Name,
-                    c.RoomCreator.Name,
-                    c.RoomCreator.Id,
+                    c.ContentListCreator.Name,
+                    c.ContentListCreator.Id,
                     c.AddedContent.Select(a => new ContentResponse(
                         a.Id,
                         a.Path,

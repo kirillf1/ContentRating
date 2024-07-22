@@ -19,7 +19,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
             var newContentData = CreateRandomContentData();
             var editor = new ContentEditor(Guid.NewGuid(), "new_editor");
 
-            room.InviteEditor(room.RoomCreator, editor);
+            room.InviteEditor(room.ContentListCreator, editor);
             room.CreateContent(editor, newContentData);
             var contentAddedEvent = room.DomainEvents.OfType<ContentAddedToListDomainEvent>().FirstOrDefault();
 
@@ -32,7 +32,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
         {
             var room = CreateEmptyRoomEditor();
             var newContentData = CreateRandomContentData();
-            var editor = room.RoomCreator;
+            var editor = room.ContentListCreator;
 
             room.CreateContent(editor, newContentData);
 
@@ -46,8 +46,8 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
             var newContentData = CreateRandomContentData();
             var editor = new ContentEditor(Guid.NewGuid(), "unknown");
 
-            room.InviteEditor(room.RoomCreator, editor);
-            room.KickEditor(room.RoomCreator, editor);
+            room.InviteEditor(room.ContentListCreator, editor);
+            room.KickEditor(room.ContentListCreator, editor);
 
             Assert.Throws<ForbiddenRoomOperationException>(() => room.CreateContent(editor, newContentData));
         }
@@ -58,7 +58,7 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
             var room = CreateEmptyRoomEditor();
             var contentData = CreateRandomContentData();
             var editor = new ContentEditor(Guid.NewGuid(), "new_editor");
-            room.InviteEditor(room.RoomCreator, editor);
+            room.InviteEditor(room.ContentListCreator, editor);
             room.CreateContent(editor, contentData);
 
             var newContentData = new ContentData(contentData.Id, "new_name", "/new_path", ContentType.Image);
@@ -78,11 +78,11 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
             var room = CreateEmptyRoomEditor();
             var contentData = CreateRandomContentData();
             var editor = new ContentEditor(Guid.NewGuid(), "new_editor");
-            room.InviteEditor(room.RoomCreator, editor);
+            room.InviteEditor(room.ContentListCreator, editor);
             room.CreateContent(editor, contentData);
 
             var newContentData = new ContentData(contentData.Id, "new_name", "/new_path", ContentType.Image);
-            room.UpdateContent(room.RoomCreator, newContentData);
+            room.UpdateContent(room.ContentListCreator, newContentData);
             var contentUpdatedEvent = room.DomainEvents.OfType<ContentUpdatedDomainEvent>().FirstOrDefault();
 
             Assert.NotNull(contentUpdatedEvent);
@@ -98,9 +98,9 @@ namespace ContentRating.Domain.Tests.ContentRoomEditorAggregateTest
             var room = CreateEmptyRoomEditor();
             var contentData = CreateRandomContentData();
             var foreignEditor = new ContentEditor(Guid.NewGuid(), "new_editor");
-            room.InviteEditor(room.RoomCreator, foreignEditor);
+            room.InviteEditor(room.ContentListCreator, foreignEditor);
 
-            room.CreateContent(room.RoomCreator, contentData);
+            room.CreateContent(room.ContentListCreator, contentData);
             var newContentData = new ContentData(contentData.Id, "new_name", "/new_path", ContentType.Image);
 
             Assert.Throws<ForbiddenRoomOperationException>(() => room.UpdateContent(foreignEditor, newContentData));

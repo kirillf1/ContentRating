@@ -9,7 +9,7 @@ export let options = {
     contacts: {
       executor: 'constant-vus',
       vus: 40,
-      duration: '10m',
+      duration: '20m',
     },
   },
     // insecureSkipTLSVerify: true,
@@ -29,32 +29,28 @@ const SLEEP_DURATION = 0.5;
 export default function () {
     let headers = { 'Content-Type': 'application/json', 'Authorization': `${__ENV.APIKEY}`, "Accept": "application/json"};
     let listId = uuidv4();
-    
-    group("createlisteditor", () => {
+    postContentEstimationListEditor(listId, headers);
+    sleep(SLEEP_DURATION);
+    postContentEstimationListEditorNewContent(randomIntBetween(3,40), listId, headers);
+    const contentListEditor = getContentListEditor(listId, headers);
+    sleep(SLEEP_DURATION);
+    putContentListEditorContent(listId, contentListEditor.content[0], headers);
+    // getContentListEditors(1, headers);
+    sleep(SLEEP_DURATION);
+    deleteContentFromList(listId, contentListEditor.content[1].id, headers);
+    sleep(SLEEP_DURATION);
+  
+    let roomId = postContentPartyEstimationRoom(listId, headers);
+    sleep(SLEEP_DURATION);
+    // getContentPartyEstimationRooms(headers);
+    // sleep(SLEEP_DURATION);
+    let room = getContentPartyEstimationRoom(roomId, headers);
+    sleep(SLEEP_DURATION);
+    putEstimateContentList(room.contentRatings, room.raters[0].id,headers);
+    sleep(SLEEP_DURATION)
+    putCompleteContentEstimation(roomId, headers)
         
-        postContentEstimationListEditor(listId, headers);
-        sleep(SLEEP_DURATION);
-        postContentEstimationListEditorNewContent(randomIntBetween(3,40), listId, headers);
-        const contentListEditor = getContentListEditor(listId, headers);
-        sleep(SLEEP_DURATION);
-        putContentListEditorContent(listId, contentListEditor.content[0], headers);
-        // getContentListEditors(1, headers);
-        sleep(SLEEP_DURATION);
-        deleteContentFromList(listId, contentListEditor.content[1].id, headers);
-        sleep(SLEEP_DURATION);
-    });
-    group("estimateContent", () => {
-        let roomId = postContentPartyEstimationRoom(listId, headers);
-        sleep(SLEEP_DURATION);
-        // getContentPartyEstimationRooms(headers);
-        // sleep(SLEEP_DURATION);
-        let room = getContentPartyEstimationRoom(roomId, headers);
-        sleep(SLEEP_DURATION);
-        putEstimateContentList(room.contentRatings, room.raters[0].id,headers);
-        sleep(SLEEP_DURATION)
-        putCompleteContentEstimation(roomId, headers)
-        
-    });
+
 
 }
 function postContentEstimationListEditor(contentListId, headers){

@@ -43,6 +43,7 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddTransient<IContentEstimationListEditorRepository, ContentEstimationListEditorRepository>();
             builder.Services.Decorate<IContentEstimationListEditorRepository, CachingContentEstimationListEditorRepository>();
             builder.Services.AddTransient<IContentPartyEstimationRoomRepository, ContentPartyEstimationRoomRepository>();
+            builder.Services.Decorate<IContentPartyEstimationRoomRepository, CachingPartyEstimationRoomRepository>();
             builder.Services.AddTransient<IContentPartyRatingRepository, ContentPartyRatingRepository>();
             return builder.Services;
         }

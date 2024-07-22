@@ -17,7 +17,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             get { return _invitedEditors; }
             private set { _invitedEditors = value.ToList(); }
         }
-        public ContentEditor RoomCreator { get; private set; }
+        public ContentEditor ContentListCreator { get; private set; }
         public string Name { get; private set; }
 
         private List<Content> _addedContent;
@@ -25,7 +25,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 
         public void CreateContent(ContentEditor editor, ContentData contentData)
         {
-            if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
+            if (!_invitedEditors.Contains(editor) && editor != ContentListCreator)
             {
                 throw new ForbiddenRoomOperationException("Editor don't exist in this room");
             }
@@ -42,14 +42,14 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 
         public void UpdateContent(ContentEditor editor, ContentData contentModification)
         {
-            if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
+            if (!_invitedEditors.Contains(editor) && editor != ContentListCreator)
             {
                 throw new ForbiddenRoomOperationException("Editor don't exist in this room");
             }
 
             var oldContent = _addedContent.Single(c => c.Id == contentModification.Id);
             var contentEditor = oldContent.ContentModificationHistory.EditorId;
-            if (contentEditor != editor.Id && RoomCreator != editor)
+            if (contentEditor != editor.Id && ContentListCreator != editor)
             {
                 throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
@@ -60,11 +60,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         }
         public bool RemoveContent(ContentEditor editor, Content content)
         {
-            if (!_invitedEditors.Contains(editor) && editor != RoomCreator)
+            if (!_invitedEditors.Contains(editor) && editor != ContentListCreator)
             {
                 throw new ForbiddenRoomOperationException("Editor don't exist in this room");
             }
-            if (content.ContentModificationHistory.EditorId != editor.Id && RoomCreator != editor)
+            if (content.ContentModificationHistory.EditorId != editor.Id && ContentListCreator != editor)
             {
                 throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
@@ -78,7 +78,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         }
         public void InviteEditor(ContentEditor inviter, ContentEditor newEditor)
         {
-            if (inviter != RoomCreator)
+            if (inviter != ContentListCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can invite editors");
             }
@@ -91,7 +91,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         }
         public void KickEditor(ContentEditor initiator, ContentEditor editorForKick)
         {
-            if (initiator != RoomCreator)
+            if (initiator != ContentListCreator)
             {
                 throw new ForbiddenRoomOperationException("Only creator can kick editors");
             }
@@ -108,7 +108,6 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         }
         public void SetNewRoomName(string roomName)
         {
-
             if (roomName.Length < 3 || roomName.Length > 300)
             {
                 throw new ArgumentException("Room name must be more than 3 and less than 300 symbols");
@@ -123,7 +122,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         internal ContentEstimationListEditor(Guid id, ContentEditor roomCreator, string name)
         {
             Id = id;
-            RoomCreator = roomCreator;
+            ContentListCreator = roomCreator;
             Name = name;
             _addedContent = new();
             _invitedEditors = new();

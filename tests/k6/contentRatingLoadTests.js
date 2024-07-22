@@ -5,15 +5,13 @@ import http from "k6/http";
 import { group, check, sleep } from "k6";
 
 export let options = {
-    scenarios: {
-        my_web_test: {
-
-          
-          executor: 'constant-vus',
-          vus: 5,
-          duration: '10m',
-        },
-      },
+  scenarios: {
+    contacts: {
+      executor: 'constant-vus',
+      vus: 40,
+      duration: '10m',
+    },
+  },
     // insecureSkipTLSVerify: true,
     // // vus: 1,
     // duration: '10s',
@@ -23,7 +21,7 @@ export let options = {
   const BASE_URL = "https://localhost:7247"
 // Sleep duration between successive requests.
 // You might want to edit the value of this variable or remove calls to the sleep function on the script.
-const SLEEP_DURATION = 0.3;
+const SLEEP_DURATION = 0.5;
 // Global variables should be initialized.
 
 
@@ -31,38 +29,32 @@ const SLEEP_DURATION = 0.3;
 export default function () {
     let headers = { 'Content-Type': 'application/json', 'Authorization': `${__ENV.APIKEY}`, "Accept": "application/json"};
     let listId = uuidv4();
-    postContentEstimationListEditor(listId, headers);
-    postContentEstimationListEditorNewContent(randomIntBetween(2,30), listId, headers);
-    const contentListEditor = getContentListEditor(listId, headers);
-    putContentListEditorContent(listId, contentListEditor.content[0], headers);
-    getContentListEditors(10, headers);
-    deleteContentFromList(listId, contentListEditor.content[1].id, headers)
-
-    let roomId = postContentPartyEstimationRoom(listId, headers);
-    sleep(SLEEP_DURATION);
-    getContentPartyEstimationRooms(headers);
-    sleep(SLEEP_DURATION);
-    let room = getContentPartyEstimationRoom(roomId, headers);
-    putEstimateContentList(room.contentRatings, room.raters[0].id,headers)
-
-    // group("createlisteditor", () => {
+    
+    group("createlisteditor", () => {
         
-    //     postContentEstimationListEditor(listId, headers);
-    //     postContentEstimationListEditorNewContent(randomIntBetween(2,30), listId, headers);
-    //     const contentListEditor = getContentListEditor(listId, headers);
-    //     putContentListEditorContent(listId, contentListEditor.content[0], headers);
-    //     getContentListEditors(10, headers);
-    //     deleteContentFromList(listId, contentListEditor.content[1].id, headers)
-    // });
-    // group("estimateContent", () => {
-    //     let roomId = postContentPartyEstimationRoom(listId, headers);
-    //     sleep(SLEEP_DURATION);
-    //     getContentPartyEstimationRooms(headers);
-    //     sleep(SLEEP_DURATION);
-    //     let room = getContentPartyEstimationRoom(roomId, headers);
-    //     putEstimateContentList(room.contentRatings, room.raters[0].id,headers)
+        postContentEstimationListEditor(listId, headers);
+        sleep(SLEEP_DURATION);
+        postContentEstimationListEditorNewContent(randomIntBetween(3,40), listId, headers);
+        const contentListEditor = getContentListEditor(listId, headers);
+        sleep(SLEEP_DURATION);
+        putContentListEditorContent(listId, contentListEditor.content[0], headers);
+        // getContentListEditors(1, headers);
+        sleep(SLEEP_DURATION);
+        deleteContentFromList(listId, contentListEditor.content[1].id, headers);
+        sleep(SLEEP_DURATION);
+    });
+    group("estimateContent", () => {
+        let roomId = postContentPartyEstimationRoom(listId, headers);
+        sleep(SLEEP_DURATION);
+        // getContentPartyEstimationRooms(headers);
+        // sleep(SLEEP_DURATION);
+        let room = getContentPartyEstimationRoom(roomId, headers);
+        sleep(SLEEP_DURATION);
+        putEstimateContentList(room.contentRatings, room.raters[0].id,headers);
+        sleep(SLEEP_DURATION)
+        putCompleteContentEstimation(roomId, headers)
         
-    // });
+    });
 
 }
 function postContentEstimationListEditor(contentListId, headers){
@@ -89,7 +81,7 @@ function postContentEstimationListEditorNewContent(count, contentListId, headers
       check(request, {
         "Created": (r) => r.status === 201
     });
-    sleep(1);
+    sleep(SLEEP_DURATION);
 }
 }
 function getContentListEditor(listId, headers){
@@ -185,5 +177,13 @@ function putEstimateContentList(contentList, raterId, headers){
           });
           sleep(SLEEP_DURATION)
     });
+}
+function putCompleteContentEstimation(roomId ,headers){
+  let url = BASE_URL + `/api/content-party-estimation-room/${roomId}`;
+  let params = { headers };
+  let res = http.put(url, null, params);
+  check(res, {
+    'status was 200': (r) => r.status === 200,
+  });
 }
 

@@ -55,6 +55,7 @@ try
     builder.AddMongoDbStorage();
     builder.AddAggregateIntegrations();
     builder.AddApplicationAuthorization();
+    builder.AddTelemetry();
 
     // if more services add new extension
     builder.Services.AddScoped<ContentPartyRatingService>();

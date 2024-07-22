@@ -11,6 +11,7 @@ using MongoDB.Driver;
 using Microsoft.Extensions.Options;
 using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRatingAPI.Infrastructure.Data.Indexes;
+using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 
 namespace ContentRatingAPI.Infrastructure.Data
 {
@@ -22,8 +23,12 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddSingleton<IMongoClient>(c =>
             {
                 var options = c.GetRequiredService<IOptions<MongoDBOptions>>();
-                return new MongoClient(options.Value.Connection);
+                var clientSettings = MongoClientSettings.FromConnectionString(options.Value.Connection);
+                var instrumentationOptions = new InstrumentationOptions { CaptureCommandText = true };
+                clientSettings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber(instrumentationOptions));
+                return new MongoClient(clientSettings);
             });
+            
             builder.Services.Configure<MongoDBOptions>(builder.Configuration.GetSection(MongoDBOptions.Position));
             builder.Services.AddScoped<IUnitOfWork, MongoContext>();
             builder.Services.AddScoped<MongoContext>();
@@ -33,7 +38,10 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentPartyRatingIndexFactory>();
             builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentPartyEstimationIndexFactory>();
 
+
+            builder.Services.AddMemoryCache();
             builder.Services.AddTransient<IContentEstimationListEditorRepository, ContentEstimationListEditorRepository>();
+            builder.Services.Decorate<IContentEstimationListEditorRepository, CachingContentEstimationListEditorRepository>();
             builder.Services.AddTransient<IContentPartyEstimationRoomRepository, ContentPartyEstimationRoomRepository>();
             builder.Services.AddTransient<IContentPartyRatingRepository, ContentPartyRatingRepository>();
             return builder.Services;

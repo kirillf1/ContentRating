@@ -1,54 +1,50 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.Shared;
-using Microsoft.Extensions.Caching.Memory;
+using ContentRatingAPI.Infrastructure.Data.Caching;
 
 namespace ContentRatingAPI.Infrastructure.Data.Repositories
 {
     public class CachingPartyEstimationRoomRepository : IContentPartyEstimationRoomRepository
     {
-        public readonly static string ContentPartyEstimationKey = nameof(ContentPartyEstimationRoom);
         private readonly IContentPartyEstimationRoomRepository baseRepository;
-        private readonly IMemoryCache memoryCache;
-        private readonly MemoryCacheEntryOptions cacheEntryOptions;
-        public CachingPartyEstimationRoomRepository(IContentPartyEstimationRoomRepository baseRepository, IMemoryCache memoryCache)
+        private readonly GenericCacheBase<ContentPartyEstimationRoom> cache;
+
+        public CachingPartyEstimationRoomRepository(IContentPartyEstimationRoomRepository baseRepository, GenericCacheBase<ContentPartyEstimationRoom> genericCache)
         {
             this.baseRepository = baseRepository;
-            this.memoryCache = memoryCache;
-            cacheEntryOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
-                .SetSize(2000)
-                .SetSlidingExpiration(TimeSpan.FromSeconds(60));
+            cache = genericCache;
+          
         }
         public IUnitOfWork UnitOfWork => baseRepository.UnitOfWork;
 
         public ContentPartyEstimationRoom Add(ContentPartyEstimationRoom room)
         {
-            memoryCache.Set(GetKeyById(room.Id), room, cacheEntryOptions);
+            cache.Set(room.Id, room);
             return baseRepository.Add(room);
         }
 
         public void Delete(ContentPartyEstimationRoom room)
         {
-            memoryCache.Remove(GetKeyById(room.Id));
+            cache.Remove(room.Id);
             baseRepository.Delete(room);
         }
 
         public async Task<ContentPartyEstimationRoom?> GetRoom(Guid id)
         {
-            if (memoryCache.TryGetValue(GetKeyById(id), out ContentPartyEstimationRoom? room) && room is not null)
+            if (cache.TryGetValue(id, out ContentPartyEstimationRoom? room) && room is not null)
                 return room;
 
             room = await baseRepository.GetRoom(id);
 
             if (room is not null)
-                memoryCache.Set(GetKeyById(id), room, cacheEntryOptions);
+                cache.Set(id, room);
 
             return room;
         }
 
         public async Task<bool> HasRaterInRoom(Guid roomId, Guid raterId)
         {
-            if (memoryCache.TryGetValue(GetKeyById(roomId), out ContentPartyEstimationRoom? partyEstimationRoom) && partyEstimationRoom is not null)
+            if (cache.TryGetValue(roomId, out ContentPartyEstimationRoom? partyEstimationRoom) && partyEstimationRoom is not null)
             {
                 return partyEstimationRoom!.RoomCreator.Id == raterId || partyEstimationRoom.Raters.Any(c => c.Id == raterId);
             }
@@ -57,12 +53,9 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
 
         public ContentPartyEstimationRoom Update(ContentPartyEstimationRoom room)
         {
-            memoryCache.Set(GetKeyById(room.Id), room, cacheEntryOptions);
+            cache.Set(room.Id, room);
             return baseRepository.Update(room);
         }
-        private static string GetKeyById(Guid id)
-        {
-            return ContentPartyEstimationKey + id.ToString();
-        }
+       
     }
 }

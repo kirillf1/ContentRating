@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRatingAPI.Infrastructure.Data.Indexes;
 using MongoDB.Driver.Core.Extensions.DiagnosticSources;
+using ContentRatingAPI.Infrastructure.Data.Caching;
 
 namespace ContentRatingAPI.Infrastructure.Data
 {
@@ -40,6 +41,10 @@ namespace ContentRatingAPI.Infrastructure.Data
 
 
             builder.Services.AddMemoryCache();
+            builder.Services.AddTransient<GenericCacheBase<ContentPartyEstimationRoom>, GenericInMemoryCache<ContentPartyEstimationRoom>>();
+            builder.Services.AddTransient<GenericCacheBase<ContentEstimationListEditor>, GenericInMemoryCache<ContentEstimationListEditor>>();
+            builder.Services.AddTransient<GenericCacheBase<ContentPartyRating>, GenericInMemoryCache<ContentPartyRating>>();
+
             builder.Services.AddTransient<IContentEstimationListEditorRepository, ContentEstimationListEditorRepository>();
             builder.Services.Decorate<IContentEstimationListEditorRepository, CachingContentEstimationListEditorRepository>();
             builder.Services.AddTransient<IContentPartyEstimationRoomRepository, ContentPartyEstimationRoomRepository>();

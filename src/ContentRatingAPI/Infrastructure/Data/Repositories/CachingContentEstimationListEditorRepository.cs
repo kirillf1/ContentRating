@@ -1,50 +1,50 @@
 ﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.Domain.Shared;
-using Microsoft.Extensions.Caching.Memory;
+using ContentRatingAPI.Infrastructure.Data.Caching;
 
 namespace ContentRatingAPI.Infrastructure.Data.Repositories
 {
     public class CachingContentEstimationListEditorRepository : IContentEstimationListEditorRepository
     {
-        public readonly static string ContentListEditorKey = nameof(ContentEstimationListEditor);
         private readonly IContentEstimationListEditorRepository baseRepository;
-        private readonly IMemoryCache memoryCache;
-        private readonly MemoryCacheEntryOptions cacheEntryOptions;
+        private readonly GenericCacheBase<ContentEstimationListEditor> cache;
 
-        public CachingContentEstimationListEditorRepository(IContentEstimationListEditorRepository baseRepository, IMemoryCache memoryCache)
+        public CachingContentEstimationListEditorRepository(IContentEstimationListEditorRepository baseRepository, GenericCacheBase<ContentEstimationListEditor> cacheBase)
         {
             this.baseRepository = baseRepository;
-            this.memoryCache = memoryCache;
-            cacheEntryOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromMinutes(2))
-                .SetSize(2000)
-                .SetSlidingExpiration(TimeSpan.FromSeconds(60));
+            cache = cacheBase;
+            
         }
         public IUnitOfWork UnitOfWork => baseRepository.UnitOfWork;
 
         public ContentEstimationListEditor Add(ContentEstimationListEditor editor)
         {
+            cache.Set(editor.Id, editor);
             return baseRepository.Add(editor);
         }
 
         public void Delete(ContentEstimationListEditor editor)
         {
-            memoryCache.Remove(GetKeyById(editor.Id));
+            cache.Remove(editor.Id);
             baseRepository.Delete(editor);
         }
 
         public async Task<ContentEstimationListEditor?> GetContentEstimationListEditor(Guid id)
         {
-            return await memoryCache.GetOrCreateAsync(GetKeyById(id), async entry =>
-            {
-                entry.SetOptions(cacheEntryOptions);
-                return await baseRepository.GetContentEstimationListEditor(id);
-            });
+            if (cache.TryGetValue(id, out ContentEstimationListEditor? listEditor) && listEditor is not null)
+                return listEditor;
+
+            listEditor = await baseRepository.GetContentEstimationListEditor(id);
+
+            if (listEditor is not null)
+                cache.Set(id, listEditor);
+
+            return listEditor;
         }
 
         public async Task<bool> HasEditorInContentEstimationList(Guid listId, Guid editorId)
         {
-            if (memoryCache.TryGetValue(GetKeyById(listId), out ContentEstimationListEditor? contentEstimationListEditor) && contentEstimationListEditor is not null)
+            if (cache.TryGetValue(listId, out ContentEstimationListEditor? contentEstimationListEditor) && contentEstimationListEditor is not null)
             {
                 return contentEstimationListEditor!.ContentListCreator.Id == editorId || contentEstimationListEditor.InvitedEditors.Any(c => c.Id == editorId);
             }
@@ -54,10 +54,6 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
         public ContentEstimationListEditor Update(ContentEstimationListEditor editor)
         {
             return baseRepository.Update(editor);
-        }
-        private static string GetKeyById(Guid id)
-        {
-            return ContentListEditorKey + id.ToString();
         }
     }
 }

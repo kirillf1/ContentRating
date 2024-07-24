@@ -19,20 +19,27 @@ using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
-using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.OpenApi.Models;
 using Serilog;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Net;
 using System.Text.Json.Serialization;
 
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true)
+    .AddEnvironmentVariables()
+    .AddUserSecrets(typeof(Program).Assembly)
+    .Build();
+
 // add configuration if needed
-Log.Logger = LoggingExtensions.CreateSerilogLogger();
+Log.Logger = LoggingExtensions.CreateSerilogLogger(configuration, environment);
 
 try
 {
-    Log.Information("Starting host");
+    Log.Information("Starting host. Environment: {env}", environment);
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog(Log.Logger);
     builder.Services.AddMediatR(cfg =>

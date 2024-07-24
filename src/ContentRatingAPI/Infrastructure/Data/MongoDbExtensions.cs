@@ -27,6 +27,7 @@ namespace ContentRatingAPI.Infrastructure.Data
                 var clientSettings = MongoClientSettings.FromConnectionString(options.Value.Connection);
                 var instrumentationOptions = new InstrumentationOptions { CaptureCommandText = true };
                 clientSettings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber(instrumentationOptions));
+                clientSettings.MaxConnectionPoolSize = 200;
                 return new MongoClient(clientSettings);
             });
             
@@ -38,7 +39,7 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddHostedService<MongoIndexService>();
             builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentPartyRatingIndexFactory>();
             builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentPartyEstimationIndexFactory>();
-
+            builder.Services.AddTransient<IMongoCollectionIndexFactory, ContentEstimationListIndexFactory>();
 
             builder.Services.AddMemoryCache();
             builder.Services.AddTransient<GenericCacheBase<ContentPartyEstimationRoom>, GenericInMemoryCache<ContentPartyEstimationRoom>>();

@@ -8,7 +8,7 @@ export let options = {
   scenarios: {
     contacts: {
       executor: 'constant-vus',
-      vus: 40,
+      vus: 200,
       duration: '20m',
     },
   },
@@ -21,7 +21,7 @@ export let options = {
   const BASE_URL = "https://localhost:7247"
 // Sleep duration between successive requests.
 // You might want to edit the value of this variable or remove calls to the sleep function on the script.
-const SLEEP_DURATION = 0.5;
+const SLEEP_DURATION = 0.3;
 // Global variables should be initialized.
 
 
@@ -43,7 +43,7 @@ export default function () {
     let roomId = postContentPartyEstimationRoom(listId, headers);
     sleep(SLEEP_DURATION);
     // getContentPartyEstimationRooms(headers);
-    // sleep(SLEEP_DURATION);
+    sleep(SLEEP_DURATION);
     let room = getContentPartyEstimationRoom(roomId, headers);
     sleep(SLEEP_DURATION);
     putEstimateContentList(room.contentRatings, room.raters[0].id,headers);

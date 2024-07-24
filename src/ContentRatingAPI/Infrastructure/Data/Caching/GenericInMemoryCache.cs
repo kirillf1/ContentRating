@@ -27,7 +27,7 @@ namespace ContentRatingAPI.Infrastructure.Data.Caching
 
         public override T Set<K>(K id, T value)
         {
-            return memoryCache.Set(GetKey(id), value);
+            return memoryCache.Set(GetKey(id), value, cacheEntryOptions);
         }
 
         public override bool TryGetValue<K>(K id, out T? value)

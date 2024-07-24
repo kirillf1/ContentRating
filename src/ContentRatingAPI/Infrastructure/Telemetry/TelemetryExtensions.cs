@@ -1,7 +1,6 @@
 ﻿using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using System.Diagnostics;
 
 namespace ContentRatingAPI.Infrastructure.Telemetry
 {
@@ -12,7 +11,10 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
         {
             var otel = builder.Services.AddOpenTelemetry();
             var configuration = builder.Configuration;
-            if (bool.TryParse(configuration["Telemetry:Tracing:enabled"], out var isTracingEnabled) && isTracingEnabled)
+
+            var tracingAddress = configuration["Telemetry:Tracing:CollectorAddress"];
+
+            if (!string.IsNullOrEmpty(tracingAddress))
             {
                 otel.WithTracing(builder =>
                 {
@@ -20,29 +22,32 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
                         .AddHttpClientInstrumentation()
                         .AddSource("MongoDB.Driver.Core.Extensions.DiagnosticSources")
                         .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                                .AddService(serviceName: configuration["AppName"] ?? "ContentRating", autoGenerateServiceInstanceId: false,
-                                        serviceInstanceId: configuration["Instance"] ?? "ContentRatingProd"))
+                                .AddService(serviceName: configuration["Application:Name"] ?? "ContentRating", autoGenerateServiceInstanceId: false,
+                                        serviceInstanceId: configuration["Application:Instance"] ?? "ContentRatingProd"))
                         .AddAspNetCoreInstrumentation()
                         .AddOtlpExporter(opts =>
                         {
                             opts.Endpoint =
-                                new Uri(configuration["Telemetry:Tracing:collector_address"]);
+                                new Uri(configuration["Telemetry:Tracing:CollectorAddress"]);
                         });
                 });
             }
-            if (bool.TryParse(configuration["Telemetry:Metrics:enabled"], out var isMetricsEnabled) && isMetricsEnabled)
+
+            var metricsAddress = configuration["Telemetry:Metrics:CollectorAddress"];
+
+            if (!string.IsNullOrEmpty(metricsAddress))
             {
                 otel.WithMetrics(opts => opts
                .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                                .AddService(serviceName: configuration["AppName"] ?? "ContentRating", autoGenerateServiceInstanceId: false,
-                                        serviceInstanceId: configuration["Instance"] ?? "ContentRatingProd"))
+                                .AddService(serviceName: configuration["Application:Name"] ?? "ContentRating", autoGenerateServiceInstanceId: false,
+                                        serviceInstanceId: configuration["Application:Instance"] ?? "ContentRatingProd"))
                 .AddProcessInstrumentation()
                 .AddAspNetCoreInstrumentation()
                 .AddRuntimeInstrumentation()
                 .AddOtlpExporter(opts =>
                 {
                     opts.Endpoint =
-                        new Uri(configuration["Telemetry:Metrics:collector_address"]);
+                        new Uri(configuration["Telemetry:Metrics:CollectorAddress"]);
                 })
             );
             }

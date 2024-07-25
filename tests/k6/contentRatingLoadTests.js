@@ -8,7 +8,7 @@ export let options = {
   scenarios: {
     contacts: {
       executor: 'constant-vus',
-      vus: 200,
+      vus: 100,
       duration: '20m',
     },
   },
@@ -175,7 +175,7 @@ function putEstimateContentList(contentList, raterId, headers){
     });
 }
 function putCompleteContentEstimation(roomId ,headers){
-  let url = BASE_URL + `/api/content-party-estimation-room/${roomId}`;
+  let url = BASE_URL + `/api/content-party-estimation-room/${roomId}/complete-estimation`;
   let params = { headers };
   let res = http.put(url, null, params);
   check(res, {

@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C4607094-550
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3C18C9C1-700A-4F94-BB86-A7A618770460}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContentRating.Domain.Tests", "ContentRating.Domain.Tests\ContentRating.Domain.Tests.csproj", "{C2225D78-ABC2-4369-89E4-CC35DBDEAB25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContentRating.Domain.Tests", "tests\ContentRating.Domain.Tests\ContentRating.Domain.Tests.csproj", "{C2225D78-ABC2-4369-89E4-CC35DBDEAB25}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentRating.IntegrationTests", "tests\ContentRating.IntegrationTests\ContentRating.IntegrationTests.csproj", "{AEAE436A-95EC-4004-BF4C-6E287886ABFF}"
 EndProject

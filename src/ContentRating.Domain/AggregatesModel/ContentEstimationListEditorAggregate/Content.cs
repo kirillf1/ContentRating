@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.Shared.Content;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.Shared.Content;
 
 namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate
 {
@@ -25,16 +29,23 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             Type = contentModification.Type;
             ContentModificationHistory = ContentModificationHistory.MarkContentModification();
         }
+
         public override bool Equals(object obj)
         {
             if (obj == null || obj is not Content)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, obj))
+            {
                 return true;
+            }
 
             if (GetType() != obj.GetType())
+            {
                 return false;
+            }
 
             Content item = (Content)obj;
 

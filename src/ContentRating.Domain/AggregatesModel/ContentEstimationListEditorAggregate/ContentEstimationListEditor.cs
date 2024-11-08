@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate.Events;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate.Events;
 using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate.Exceptions;
 using ContentRating.Domain.Shared.RoomStates;
 
@@ -6,7 +10,6 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 {
     public class ContentEstimationListEditor : Entity, IAggregateRoot
     {
-
         public IReadOnlyCollection<Content> AddedContent
         {
             get { return _addedContent; }
@@ -58,6 +61,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 
             AddDomainEvent(new ContentUpdatedDomainEvent(oldContent, Id));
         }
+
         public bool RemoveContent(ContentEditor editor, Content content)
         {
             if (!_invitedEditors.Contains(editor) && editor != ContentListCreator)
@@ -76,6 +80,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             }
             return isRemoved;
         }
+
         public void InviteEditor(ContentEditor inviter, ContentEditor newEditor)
         {
             if (inviter != ContentListCreator)
@@ -89,6 +94,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             _invitedEditors.Add(newEditor);
             AddDomainEvent(new EditorInvitedDomainEvent(Id, inviter, newEditor));
         }
+
         public void KickEditor(ContentEditor initiator, ContentEditor editorForKick)
         {
             if (initiator != ContentListCreator)
@@ -106,6 +112,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             _invitedEditors.Remove(editorForKick);
             AddDomainEvent(new EditorKickedDomainEvent(Id, initiator, editorForKick));
         }
+
         public void SetNewRoomName(string roomName)
         {
             if (roomName.Length < 3 || roomName.Length > 300)
@@ -119,6 +126,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         {
             AddDomainEvent(new RoomDeletedDomainEvent(Id));
         }
+
         internal ContentEstimationListEditor(Guid id, ContentEditor roomCreator, string name)
         {
             Id = id;
@@ -128,6 +136,7 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             _invitedEditors = new();
             AddDomainEvent(new ContentRoomEditorCreatedDomainEvent(id, roomCreator, name));
         }
+
         public static ContentEstimationListEditor Create(Guid id, ContentEditor roomCreator, string name)
         {
             return new ContentEstimationListEditor(id, roomCreator, name);

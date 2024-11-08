@@ -1,21 +1,29 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 
 namespace ContentRating.IntegrationTests.Auth
 {
-    public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    public class TestAuthHandler
+        : AuthenticationHandler<AuthenticationSchemeOptions>
     {
         public const string SchemeName = "IntegrationTests";
-        public const string IDENTITY_ID = "fb252f79-1728-49f4-b6a0-b211719e4be1";
-        public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger, UrlEncoder encoder)
-            : base(options, logger, encoder)
-        {
-        }
+        public const string IDENTITY_ID =
+            "fb252f79-1728-49f4-b6a0-b211719e4be1";
+
+        public TestAuthHandler(
+            IOptionsMonitor<AuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            UrlEncoder encoder
+        )
+            : base(options, logger, encoder) { }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
@@ -23,10 +31,22 @@ namespace ContentRating.IntegrationTests.Auth
             identity.AddClaim(new Claim("sub", IDENTITY_ID));
             identity.AddClaim(new Claim("name", IDENTITY_ID));
             identity.AddClaim(new Claim("email", "testmail@gmail.com"));
-            identity.AddClaim(new Claim("exp", TimeProvider.System.GetUtcNow().AddDays(1).ToUnixTimeSeconds().ToString()));
+            identity.AddClaim(
+                new Claim(
+                    "exp",
+                    TimeProvider
+                        .System.GetUtcNow()
+                        .AddDays(1)
+                        .ToUnixTimeSeconds()
+                        .ToString()
+                )
+            );
 
             var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, JwtBearerDefaults.AuthenticationScheme);
+            var ticket = new AuthenticationTicket(
+                principal,
+                JwtBearerDefaults.AuthenticationScheme
+            );
 
             var result = AuthenticateResult.Success(ticket);
 

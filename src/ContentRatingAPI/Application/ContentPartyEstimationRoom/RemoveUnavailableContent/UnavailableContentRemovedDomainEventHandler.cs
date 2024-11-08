@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate.Events;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate.Events;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRatingAPI.Application.Notifications.IContentPartyEstimationNotifications;
 
@@ -9,11 +13,15 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.RemoveUnavaila
         private readonly IContentPartyRatingRepository contentPartyRatingRepository;
         private readonly IContentPartyEstimationNotificationService notificationService;
 
-        public UnavailableContentRemovedDomainEventHandler(IContentPartyRatingRepository contentPartyRatingRepository, IContentPartyEstimationNotificationService notificationService)
+        public UnavailableContentRemovedDomainEventHandler(
+            IContentPartyRatingRepository contentPartyRatingRepository,
+            IContentPartyEstimationNotificationService notificationService
+        )
         {
             this.contentPartyRatingRepository = contentPartyRatingRepository;
             this.notificationService = notificationService;
         }
+
         public async Task Handle(UnavailableContentRemovedDomainEvent notification, CancellationToken cancellationToken)
         {
             var contentRating = await contentPartyRatingRepository.GetContentRating(notification.RoomId, notification.RemovedContent.Id);

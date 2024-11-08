@@ -1,10 +1,22 @@
-﻿using ContentRating.Domain.Shared.Content;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.Shared.Content;
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstimationRoom
 {
     public class ContentRatingResponse
     {
-        public ContentRatingResponse(Guid ratingId, Guid contentId, string name, string address, ContentType contentType, IEnumerable<RatingByRaterResponse> ratings, double averageRating)
+        public ContentRatingResponse(
+            Guid ratingId,
+            Guid contentId,
+            string name,
+            string address,
+            ContentType contentType,
+            IEnumerable<RatingByRaterResponse> ratings,
+            double averageRating
+        )
         {
             RatingId = ratingId;
             ContentId = contentId;
@@ -23,5 +35,4 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstima
         public IEnumerable<RatingByRaterResponse> Ratings { get; }
         public double AverageRating { get; }
     }
-   
 }

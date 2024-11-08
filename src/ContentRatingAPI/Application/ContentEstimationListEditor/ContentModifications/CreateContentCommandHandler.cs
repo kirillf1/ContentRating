@@ -1,5 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
 
+using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications
 {
@@ -11,11 +14,14 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifi
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
+
         public async Task<Result<bool>> Handle(CreateContentCommand request, CancellationToken cancellationToken)
         {
             var room = await contentEditorRoomRepository.GetContentEstimationListEditor(request.RoomId);
             if (room is null)
+            {
                 return Result.NotFound();
+            }
 
             var newContentData = new ContentData(request.ContentId, request.Name, request.Url, request.ContentType);
             var editor = room.TryGetEditorFromRoom(request.EditorId) ?? throw new ArgumentException("Unknown editor");

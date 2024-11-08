@@ -1,60 +1,80 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Reflection;
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
 using ContentRating.Domain.Shared.RoomStates;
 using MediatR.Pipeline;
-using System.Reflection;
 
 namespace ContentRatingAPI.Infrastructure.MediatrBehaviors
 {
     public class GlobalRequestExceptionHandler<TRequest, TResponse, TException> : IRequestExceptionHandler<TRequest, TResponse, TException>
-       where TException : Exception
+        where TException : Exception
     {
-        private static IEnumerable<Type> InvalidResponseTypes = [typeof(ForbiddenRatingOperationException),
-            typeof(ForbiddenRoomOperationException), typeof(InvalidRoomStageOperationException), typeof(ArgumentException)];
+        private static IEnumerable<Type> InvalidResponseTypes =
+        [
+            typeof(ForbiddenRatingOperationException),
+            typeof(ForbiddenRoomOperationException),
+            typeof(InvalidRoomStageOperationException),
+            typeof(ArgumentException),
+        ];
 
         private readonly ILogger<GlobalRequestExceptionHandler<TRequest, TResponse, TException>> _logger;
-        public GlobalRequestExceptionHandler(
-           ILogger<GlobalRequestExceptionHandler<TRequest, TResponse, TException>> logger)
+
+        public GlobalRequestExceptionHandler(ILogger<GlobalRequestExceptionHandler<TRequest, TResponse, TException>> logger)
         {
             _logger = logger;
         }
-        public Task Handle(TRequest request, TException exception, RequestExceptionHandlerState<TResponse> state,
-            CancellationToken cancellationToken)
+
+        public Task Handle(TRequest request, TException exception, RequestExceptionHandlerState<TResponse> state, CancellationToken cancellationToken)
         {
             _logger.LogError(exception, "Something went wrong while handling command of type {CommandName} ({@Command}", typeof(TRequest), request);
             state.SetHandled(CreateErrorResult(typeof(TResponse), exception)!);
             return Task.CompletedTask;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
+            Justification = "<Ожидание>"
+        )]
         private static TResponse? CreateErrorResult(Type type, Exception exception)
         {
             object? result = default;
-            if (!type.GetInterfaces().Contains(typeof(Ardalis.Result.IResult)))          
+            if (!type.GetInterfaces().Contains(typeof(Ardalis.Result.IResult)))
+            {
                 return (TResponse?)result;
-            //TODO if need more exception update logic
+            }
+
             var isInvalidException = InvalidResponseTypes.Contains(exception.GetType());
             if (isInvalidException)
             {
-                ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
+                var ctor = type.GetConstructor(
+                    bindingAttr: BindingFlags.NonPublic | BindingFlags.Instance,
+                    null,
+                    new[] { typeof(ResultStatus) },
+                    null
+                );
                 result = ctor?.Invoke([ResultStatus.Invalid]);
 
-                PropertyInfo errorsProperty = type.GetProperty("ValidationErrors")!;
+                var errorsProperty = type.GetProperty("ValidationErrors")!;
                 errorsProperty?.SetValue(result, new ValidationError[] { new ValidationError(exception.Message) });
             }
-            else if(exception.GetType() == typeof(ArgumentNullException))
+            else if (exception.GetType() == typeof(ArgumentNullException))
             {
-                ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
+                var ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
                 result = ctor?.Invoke([ResultStatus.NotFound]);
-                PropertyInfo errorsProperty = type.GetProperty("Errors")!;
+                var errorsProperty = type.GetProperty("Errors")!;
                 errorsProperty?.SetValue(result, new string[] { exception.Message });
             }
             else
             {
-                ConstructorInfo? ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
+                var ctor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(ResultStatus) }, null);
                 result = ctor?.Invoke([ResultStatus.Error]);
 
-                PropertyInfo errorsProperty = type.GetProperty("Errors")!;
+                var errorsProperty = type.GetProperty("Errors")!;
                 errorsProperty?.SetValue(result, new string[] { exception.Message });
-                
             }
             return (TResponse?)result;
         }

@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ContentRatingAPI.Infrastructure.Authorization
@@ -8,17 +12,23 @@ namespace ContentRatingAPI.Infrastructure.Authorization
         private readonly IContentPartyEstimationRoomRepository contentPartyEstimationRoomRepository;
         private readonly IHttpContextAccessor httpContextAccessor;
 
-        public ContentPartyEstimationRoomRaterAccessHandler(IContentPartyEstimationRoomRepository contentPartyEstimationRoomRepository, IHttpContextAccessor httpContextAccessor)
+        public ContentPartyEstimationRoomRaterAccessHandler(
+            IContentPartyEstimationRoomRepository contentPartyEstimationRoomRepository,
+            IHttpContextAccessor httpContextAccessor
+        )
         {
             this.contentPartyEstimationRoomRepository = contentPartyEstimationRoomRepository;
             this.httpContextAccessor = httpContextAccessor;
         }
 
-        protected async override Task HandleRequirementAsync(AuthorizationHandlerContext context, ContentPartyEstimationRoomRaterAccessRequirement requirement)
+        protected override async Task HandleRequirementAsync(
+            AuthorizationHandlerContext context,
+            ContentPartyEstimationRoomRaterAccessRequirement requirement
+        )
         {
             var httpContext = httpContextAccessor.HttpContext;
             var roomId = httpContext?.TryGetRoomIdFromHttpContext();
-            if (!roomId.HasValue || !Guid.TryParse(httpContext?.User.GetUserId(), out var userId))
+            if (!roomId.HasValue || !Guid.TryParse(httpContext!.User?.GetUserId(), out var userId))
             {
                 context.Fail();
                 return;
@@ -29,7 +39,6 @@ namespace ContentRatingAPI.Infrastructure.Authorization
                 return;
             }
             context.Succeed(requirement);
-
         }
     }
 }

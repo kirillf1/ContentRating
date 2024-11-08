@@ -1,4 +1,8 @@
-﻿using Ardalis.Result.AspNetCore;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteContentEstimation;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstimationRoom;
@@ -25,6 +29,7 @@ namespace ContentRatingAPI.Controllers
             this.mediator = mediator;
             this.userInfoService = userInfoService;
         }
+
         [TranslateResultToActionResult]
         [HttpGet]
         [Authorize]
@@ -32,7 +37,9 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             var query = new GetPartyEstimationRoomTitlesQuery(request.IncludeEstimated, request.IncludeNotEstimated, userInfo.Id);
             return await mediator.Send(query);
@@ -53,11 +60,21 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
-            return await mediator.Send(new StartContentPartyEstimationCommand(request.RoomId, request.ContentListId, request.RoomName,
-                request.MinRating, request.MaxRating, userInfo.Id, userInfo.Name));
-            
+            return await mediator.Send(
+                new StartContentPartyEstimationCommand(
+                    request.RoomId,
+                    request.ContentListId,
+                    request.RoomName,
+                    request.MinRating,
+                    request.MaxRating,
+                    userInfo.Id,
+                    userInfo.Name
+                )
+            );
         }
 
         [TranslateResultToActionResult]
@@ -67,7 +84,9 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new InviteRaterCommand(roomId, userInfo.Id, request.RaterId, request.RoleType, request.RaterName));
         }
@@ -79,7 +98,9 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new KickRaterCommand(roomId, userInfo.Id, raterId));
         }
@@ -91,7 +112,9 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new CompleteContentEstimationCommand(userInfo.Id, roomId));
         }
@@ -103,7 +126,9 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new RemoveUnavailableContentCommand(roomId, contentId, userInfo.Id));
         }
@@ -111,15 +136,15 @@ namespace ContentRatingAPI.Controllers
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationRoomUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/rating-range")]
-        public async Task<Result<bool>> ChangeRatingRange(Guid roomId, 
-            [FromBody] ChangeRatingRangeRequest request)
+        public async Task<Result<bool>> ChangeRatingRange(Guid roomId, [FromBody] ChangeRatingRangeRequest request)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new ChangeRatingRangeCommand(roomId, userInfo.Id, request.MinRating, request.MaxRating));
-            
         }
     }
 }

@@ -1,4 +1,8 @@
-﻿using OpenTelemetry.Metrics;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -6,7 +10,6 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
 {
     public static class TelemetryExtensions
     {
-
         public static IServiceCollection AddTelemetry(this IHostApplicationBuilder builder)
         {
             var otel = builder.Services.AddOpenTelemetry();
@@ -18,17 +21,23 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
             {
                 otel.WithTracing(builder =>
                 {
-                    builder.AddAspNetCoreInstrumentation()
+                    builder
+                        .AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()
                         .AddSource("MongoDB.Driver.Core.Extensions.DiagnosticSources")
-                        .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                                .AddService(serviceName: configuration["Application:Name"] ?? "ContentRating", autoGenerateServiceInstanceId: false,
-                                        serviceInstanceId: configuration["Application:Instance"] ?? "ContentRatingProd"))
+                        .SetResourceBuilder(
+                            ResourceBuilder
+                                .CreateDefault()
+                                .AddService(
+                                    serviceName: configuration["Application:Name"] ?? "ContentRating",
+                                    autoGenerateServiceInstanceId: false,
+                                    serviceInstanceId: configuration["Application:Instance"] ?? "ContentRatingProd"
+                                )
+                        )
                         .AddAspNetCoreInstrumentation()
                         .AddOtlpExporter(opts =>
                         {
-                            opts.Endpoint =
-                                new Uri(configuration["Telemetry:Tracing:CollectorAddress"]);
+                            opts.Endpoint = new Uri(configuration["Telemetry:Tracing:CollectorAddress"]);
                         });
                 });
             }
@@ -37,19 +46,24 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
 
             if (!string.IsNullOrEmpty(metricsAddress))
             {
-                otel.WithMetrics(opts => opts
-               .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                                .AddService(serviceName: configuration["Application:Name"] ?? "ContentRating", autoGenerateServiceInstanceId: false,
-                                        serviceInstanceId: configuration["Application:Instance"] ?? "ContentRatingProd"))
-                .AddProcessInstrumentation()
-                .AddAspNetCoreInstrumentation()
-                .AddRuntimeInstrumentation()
-                .AddOtlpExporter(opts =>
-                {
-                    opts.Endpoint =
-                        new Uri(configuration["Telemetry:Metrics:CollectorAddress"]);
-                })
-            );
+                _ = otel.WithMetrics(opts =>
+                    opts.SetResourceBuilder(
+                            ResourceBuilder
+                                .CreateDefault()
+                                .AddService(
+                                    serviceName: configuration["Application:Name"] ?? "ContentRating",
+                                    autoGenerateServiceInstanceId: false,
+                                    serviceInstanceId: configuration["Application:Instance"] ?? "ContentRatingProd"
+                                )
+                        )
+                        .AddProcessInstrumentation()
+                        .AddAspNetCoreInstrumentation()
+                        .AddRuntimeInstrumentation()
+                        .AddOtlpExporter(opts =>
+                        {
+                            opts.Endpoint = new Uri(configuration["Telemetry:Metrics:CollectorAddress"]);
+                        })
+                );
             }
             return builder.Services;
         }

@@ -1,3 +1,9 @@
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Net;
+using System.Text.Json.Serialization;
 using Ardalis.Result.AspNetCore;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications;
@@ -21,8 +27,6 @@ using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
 using Microsoft.AspNetCore.SignalR;
 using Serilog;
-using System.Net;
-using System.Text.Json.Serialization;
 
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
 
@@ -39,7 +43,7 @@ Log.Logger = LoggingExtensions.CreateSerilogLogger(configuration, environment);
 
 try
 {
-    Log.Information("Starting host. Environment: {env}", environment);
+    Log.Information("Starting host. Environment: {Env}", environment);
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog(Log.Logger);
     builder.Services.AddMediatR(cfg =>
@@ -48,14 +52,12 @@ try
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         cfg.AddOpenBehavior(typeof(ValidatorBehavior<,>));
         cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
-        
-    }
-    );
+    });
 
     builder.Services.AddSingleton<IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
     builder.Services.AddSingleton<IValidator<CreateContentEstimationListEditorCommand>, CreateContentEstimationListEditorCommandValidator>();
-    builder.Services.AddSingleton<IValidator<CreateContentCommand>,  CreateContentCommandValidator>();
-    builder.Services.AddSingleton<IValidator<UpdateContentCommand>,  UpdateContentCommandValidator>();
+    builder.Services.AddSingleton<IValidator<CreateContentCommand>, CreateContentCommandValidator>();
+    builder.Services.AddSingleton<IValidator<UpdateContentCommand>, UpdateContentCommandValidator>();
     builder.Services.AddSingleton<IValidator<StartContentPartyEstimationCommand>, StartContentPartyEstimationCommandValidator>();
 
     builder.AddApplicationAuthentication();
@@ -71,17 +73,23 @@ try
     builder.Services.AddTransient<IYoutubeClient, HttpYoutubeClient>();
     builder.AddContentFileManager();
 
-    builder.Services.AddControllers(mvcOptions => mvcOptions
-    .AddResultConvention(resultStatusMap => resultStatusMap
-        .AddDefaultMap()
-        .For(ResultStatus.Ok, HttpStatusCode.OK, resultStatusOptions => resultStatusOptions
-            .For("POST", HttpStatusCode.Created)
-            .For("DELETE", HttpStatusCode.NoContent))
-        .For(ResultStatus.Error, HttpStatusCode.InternalServerError)
-    )).AddJsonOptions(x =>
-    {
-        x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
+    builder
+        .Services.AddControllers(mvcOptions =>
+            mvcOptions.AddResultConvention(resultStatusMap =>
+                resultStatusMap
+                    .AddDefaultMap()
+                    .For(
+                        ResultStatus.Ok,
+                        HttpStatusCode.OK,
+                        resultStatusOptions => resultStatusOptions.For("POST", HttpStatusCode.Created).For("DELETE", HttpStatusCode.NoContent)
+                    )
+                    .For(ResultStatus.Error, HttpStatusCode.InternalServerError)
+            )
+        )
+        .AddJsonOptions(x =>
+        {
+            x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
 
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
@@ -89,11 +97,8 @@ try
     builder.Services.Configure<RequestLocalizationOptions>(options =>
     {
         var supportedCultures = new[] { "en-US", "ru-RU" };
-        options.SetDefaultCulture(supportedCultures[0])
-            .AddSupportedCultures(supportedCultures)
-            .AddSupportedUICultures(supportedCultures);
+        options.SetDefaultCulture(supportedCultures[0]).AddSupportedCultures(supportedCultures).AddSupportedUICultures(supportedCultures);
         options.ApplyCurrentCultureToResponseHeaders = true;
-
     });
 
     builder.Services.AddSignalR(options => options.AddFilter<LoggingHubFilter>());
@@ -106,9 +111,7 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI(options => 
-        { 
-        });
+        app.UseSwaggerUI(options => { });
     }
     app.UseRequestLocalization();
     app.UseHttpsRedirection();
@@ -120,7 +123,7 @@ try
     app.MapControllers();
     app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub");
 
-    app.Run();
+    await app.RunAsync();
     return 0;
 }
 catch (Exception ex)
@@ -130,6 +133,12 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }
+
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Major Code Smell",
+    "S1118:Utility classes should not have public constructors",
+    Justification = "<Ожидание>"
+)]
 public partial class Program { }

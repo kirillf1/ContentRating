@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.Shared;
 using ContentRatingAPI.Infrastructure.Data.Caching;
 
@@ -8,11 +12,13 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
     {
         private readonly IContentPartyRatingRepository baseRepository;
         private readonly GenericCacheBase<ContentPartyRating> cache;
+
         public CachingContentPartyRatingRepository(IContentPartyRatingRepository baseRepository, GenericCacheBase<ContentPartyRating> genericCache)
         {
             this.baseRepository = baseRepository;
             cache = genericCache;
         }
+
         public IUnitOfWork UnitOfWork => baseRepository.UnitOfWork;
 
         public ContentPartyRating Add(ContentPartyRating contentRating)
@@ -29,13 +35,17 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
 
         public async Task<ContentPartyRating?> GetContentRating(Guid id)
         {
-            if (cache.TryGetValue(id, out ContentPartyRating? rating) && rating is not null)
+            if (cache.TryGetValue(id, out var rating) && rating is not null)
+            {
                 return rating;
+            }
 
             rating = await baseRepository.GetContentRating(id);
 
             if (rating is not null)
+            {
                 cache.Set(id, rating);
+            }
 
             return rating;
         }
@@ -55,6 +65,5 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             cache.Set(contentRating.Id, contentRating);
             return baseRepository.Update(contentRating);
         }
-
     }
 }

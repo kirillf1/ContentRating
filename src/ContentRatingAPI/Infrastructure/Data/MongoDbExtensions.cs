@@ -1,18 +1,22 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.Shared;
+using ContentRatingAPI.Application.ContentFileManager;
+using ContentRatingAPI.Infrastructure.Data.Caching;
+using ContentRatingAPI.Infrastructure.Data.Indexes;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
-using MongoDB.Bson.Serialization.Conventions;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Options;
-using ContentRatingAPI.Application.ContentFileManager;
-using MongoDB.Driver;
 using Microsoft.Extensions.Options;
-using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
-using ContentRatingAPI.Infrastructure.Data.Indexes;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Bson.Serialization.Options;
+using MongoDB.Driver;
 using MongoDB.Driver.Core.Extensions.DiagnosticSources;
-using ContentRatingAPI.Infrastructure.Data.Caching;
 
 namespace ContentRatingAPI.Infrastructure.Data
 {
@@ -30,7 +34,7 @@ namespace ContentRatingAPI.Infrastructure.Data
                 clientSettings.MaxConnectionPoolSize = 200;
                 return new MongoClient(clientSettings);
             });
-            
+
             builder.Services.Configure<MongoDBOptions>(builder.Configuration.GetSection(MongoDBOptions.Position));
             builder.Services.AddScoped<IUnitOfWork, MongoContext>();
             builder.Services.AddScoped<MongoContext>();
@@ -53,19 +57,15 @@ namespace ContentRatingAPI.Infrastructure.Data
             builder.Services.AddTransient<IContentPartyRatingRepository, ContentPartyRatingRepository>();
             return builder.Services;
         }
+
         private static void RegisterEntityClassMap()
         {
-            var conventionPack = new ConventionPack
-            {
-                new MapReadOnlyPropertiesConvention(),
-                new IgnoreIfNullConvention(true)
-            };
+            var conventionPack = new ConventionPack { new MapReadOnlyPropertiesConvention(), new IgnoreIfNullConvention(true) };
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
-            BsonClassMap.RegisterClassMap<Entity>(cm => 
+            BsonClassMap.RegisterClassMap<Entity>(cm =>
             {
                 cm.AutoMap();
                 cm.UnmapMember(m => m.DomainEvents);
-                
             });
             BsonClassMap.RegisterClassMap<ContentPartyEstimationRoom>(classMap =>
             {
@@ -76,14 +76,13 @@ namespace ContentRatingAPI.Infrastructure.Data
             {
                 classMap.AutoMap();
                 classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
-
             });
 
             BsonClassMap.RegisterClassMap<ContentEstimationListEditor>(classMap =>
             {
                 classMap.AutoMap();
             });
-            
+
             BsonClassMap.RegisterClassMap<SavedContentFileInfo>(classMap =>
             {
                 classMap.AutoMap();

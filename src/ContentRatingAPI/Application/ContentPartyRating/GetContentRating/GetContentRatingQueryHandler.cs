@@ -1,4 +1,8 @@
-﻿using ContentRatingAPI.Infrastructure.Data;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRatingAPI.Infrastructure.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
@@ -14,16 +18,24 @@ namespace ContentRatingAPI.Application.ContentPartyRating.GetContentRating
         {
             collection = mongoContext.GetCollection<ContentPartyRatingAggregate>(options.Value.ContentPartyRatingCollectionName);
         }
+
         public async Task<Result<ContentPartyRatingResponse>> Handle(GetContentRatingQuery request, CancellationToken cancellationToken)
         {
-            var rating = await collection.AsQueryable()
+            var rating = await collection
+                .AsQueryable()
                 .Where(c => c.Id == request.RatingId)
-                .Select(c => new ContentPartyRatingResponse(c.Id, c.AverageContentScore.Value,
-                    c.RaterScores.Select(r => new RatingResponse(r.Key, r.Value.Value))))
+                .Select(c => new ContentPartyRatingResponse(
+                    c.Id,
+                    c.AverageContentScore.Value,
+                    c.RaterScores.Select(r => new RatingResponse(r.Key, r.Value.Value))
+                ))
                 .FirstOrDefaultAsync();
 
             if (rating is null)
+            {
                 return Result.NotFound();
+            }
+
             return rating;
         }
     }

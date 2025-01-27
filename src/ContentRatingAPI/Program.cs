@@ -62,6 +62,8 @@ try
 
     builder.Services.AddSingleton<IValidator<UpdateContentCommand>, UpdateContentCommandValidator>();
 
+
+
     builder.Services.AddSingleton<IValidator<StartContentPartyEstimationCommand>, StartContentPartyEstimationCommandValidator>();
 
     builder.AddApplicationAuthentication();

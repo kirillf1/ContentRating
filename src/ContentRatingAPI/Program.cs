@@ -55,9 +55,13 @@ try
     });
 
     builder.Services.AddSingleton<IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
+
     builder.Services.AddSingleton<IValidator<CreateContentEstimationListEditorCommand>, CreateContentEstimationListEditorCommandValidator>();
+
     builder.Services.AddSingleton<IValidator<CreateContentCommand>, CreateContentCommandValidator>();
+
     builder.Services.AddSingleton<IValidator<UpdateContentCommand>, UpdateContentCommandValidator>();
+
     builder.Services.AddSingleton<IValidator<StartContentPartyEstimationCommand>, StartContentPartyEstimationCommandValidator>();
 
     builder.AddApplicationAuthentication();

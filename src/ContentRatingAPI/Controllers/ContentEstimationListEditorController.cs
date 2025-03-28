@@ -1,4 +1,8 @@
-﻿using Ardalis.Result.AspNetCore;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications;
 using ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor;
 using ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEstimationListEditor;
@@ -31,7 +35,9 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new GetContentEstimationListEditorTitlesQuery(userInfo.Id));
         }
@@ -47,16 +53,22 @@ namespace ContentRatingAPI.Controllers
         [Authorize]
         [HttpPost]
         [TranslateResultToActionResult]
-        public async Task<Result<bool>> CreateContentRoomEditor(
-            [FromBody] CreateContentEstimationListEditorRequest createContentRoomEditorRequest)
+        public async Task<Result<bool>> CreateContentRoomEditor([FromBody] CreateContentEstimationListEditorRequest createContentRoomEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
-            return await mediator.Send(new CreateContentEstimationListEditorCommand(createContentRoomEditorRequest.Id, userInfo.Id, userInfo.Name, 
-                createContentRoomEditorRequest.RoomName));
-            
+            return await mediator.Send(
+                new CreateContentEstimationListEditorCommand(
+                    createContentRoomEditorRequest.Id,
+                    userInfo.Id,
+                    userInfo.Name,
+                    createContentRoomEditorRequest.RoomName
+                )
+            );
         }
 
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
@@ -66,25 +78,43 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
-           return await mediator.Send(new CreateContentCommand(roomId, userInfo.Id, createContentRequest.Id,
-                createContentRequest.Name, createContentRequest.Url, createContentRequest.ContentType));
-           
+            return await mediator.Send(
+                new CreateContentCommand(
+                    roomId,
+                    userInfo.Id,
+                    createContentRequest.Id,
+                    createContentRequest.Name,
+                    createContentRequest.Url,
+                    createContentRequest.ContentType
+                )
+            );
         }
 
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpPut("{roomId:guid}/content/{contentId:guid}")]
         [TranslateResultToActionResult]
-        public async Task<Result<bool>> UpdateContentInRoomEditor(Guid roomId, Guid contentId,
-            [FromBody] UpdateContentRequest updateContentRequest)
+        public async Task<Result<bool>> UpdateContentInRoomEditor(Guid roomId, Guid contentId, [FromBody] UpdateContentRequest updateContentRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
-           return await mediator.Send(new UpdateContentCommand(contentId, roomId, userInfo.Id, updateContentRequest.Name,
-                updateContentRequest.Url, updateContentRequest.ContentType));
+            return await mediator.Send(
+                new UpdateContentCommand(
+                    contentId,
+                    roomId,
+                    userInfo.Id,
+                    updateContentRequest.Name,
+                    updateContentRequest.Url,
+                    updateContentRequest.ContentType
+                )
+            );
         }
 
         [TranslateResultToActionResult]
@@ -94,21 +124,23 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new RemoveContentCommand(contentId, roomId, userInfo.Id));
-          
         }
 
         [TranslateResultToActionResult]
         [Authorize(policy: Policies.ContentEstimationListEditorUserAccessPolicyName)]
         [HttpPost("{roomId:guid}/editor")]
-        public async Task<Result<bool>> InviteEditorInRoomEditor(Guid roomId,
-            [FromBody] InviteEditorRequest inviteEditorRequest)
+        public async Task<Result<bool>> InviteEditorInRoomEditor(Guid roomId, [FromBody] InviteEditorRequest inviteEditorRequest)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new InviteEditorCommand(roomId, userInfo.Id, inviteEditorRequest.EditorId, inviteEditorRequest.EditorName));
         }
@@ -120,10 +152,11 @@ namespace ContentRatingAPI.Controllers
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
 
             return await mediator.Send(new KickEditorCommand(roomId, userInfo.Id, editorId));
-            
         }
     }
 }

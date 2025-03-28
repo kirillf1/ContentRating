@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography;
 
 namespace ContentRatingAPI.Infrastructure.Authentication
 {
@@ -19,7 +23,7 @@ namespace ContentRatingAPI.Infrastructure.Authentication
         public void Configure(JwtBearerOptions options)
         {
             var key = new RsaSecurityKey(rsa);
-            
+
             options.TokenValidationParameters = new TokenValidationParameters()
             {
                 ValidateIssuer = false,
@@ -29,7 +33,7 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                 ValidateAudience = false,
                 ValidateIssuerSigningKey = true,
                 ClockSkew = TimeSpan.Zero,
-                IssuerSigningKey = key
+                IssuerSigningKey = key,
             };
             options.MapInboundClaims = false;
             options.SaveToken = true;

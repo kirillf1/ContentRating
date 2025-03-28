@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ContentRatingAPI.Infrastructure.Authorization
@@ -8,12 +12,19 @@ namespace ContentRatingAPI.Infrastructure.Authorization
         private readonly IContentEstimationListEditorRepository editorRoomRepository;
         private readonly IHttpContextAccessor httpContextAccessor;
 
-        public ContentEstimationListEditorUserAccessHandler(IContentEstimationListEditorRepository editorRoomRepository, IHttpContextAccessor httpContextAccessor)
+        public ContentEstimationListEditorUserAccessHandler(
+            IContentEstimationListEditorRepository editorRoomRepository,
+            IHttpContextAccessor httpContextAccessor
+        )
         {
             this.editorRoomRepository = editorRoomRepository;
             this.httpContextAccessor = httpContextAccessor;
         }
-        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ContentEstimationListEditorUserAccessRequirement requirement)
+
+        protected override async Task HandleRequirementAsync(
+            AuthorizationHandlerContext context,
+            ContentEstimationListEditorUserAccessRequirement requirement
+        )
         {
             var httpContext = httpContextAccessor.HttpContext;
             var roomId = httpContext?.TryGetRoomIdFromHttpContext();
@@ -28,7 +39,6 @@ namespace ContentRatingAPI.Infrastructure.Authorization
                 return;
             }
             context.Succeed(requirement);
-
         }
     }
 }

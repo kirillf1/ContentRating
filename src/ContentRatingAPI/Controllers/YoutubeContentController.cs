@@ -1,4 +1,8 @@
-﻿using Ardalis.Result.AspNetCore;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubePlayLists;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubeVideos;
@@ -19,21 +23,29 @@ namespace ContentRatingAPI.Controllers
             this.mediator = mediator;
             this.userInfoService = userInfoService;
         }
+
         [HttpGet]
         [TranslateResultToActionResult]
         public async Task<Result<IEnumerable<YoutubePlaylist>>> GetYoutubePlaylists()
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
-           return await mediator.Send(new GetYoutubePlayListsQuery(userInfo.Id));
+            }
+
+            return await mediator.Send(new GetYoutubePlayListsQuery(userInfo.Id));
         }
+
         [HttpGet("{playlistId}")]
         public async Task<Result<IEnumerable<YoutubeVideo>>> GetVideosByPlaylist(string playlistId)
         {
             var userInfo = userInfoService.TryGetUserInfo();
             if (userInfo is null)
+            {
                 return Result.Forbidden();
+            }
+
             return await mediator.Send(new GetYoutubeVideosQuery(userInfo.Id, playlistId));
         }
     }

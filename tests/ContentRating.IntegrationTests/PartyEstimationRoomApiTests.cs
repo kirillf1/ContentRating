@@ -1,4 +1,12 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
 using ContentRating.IntegrationTests.Fixtures;
@@ -7,10 +15,6 @@ using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ContentRating.IntegrationTests
 {
@@ -21,9 +25,10 @@ namespace ContentRating.IntegrationTests
         private readonly HttpClient _httpClient;
         private readonly IServiceProvider _serviceProvider;
         private readonly Guid _userId;
+
         public PartyEstimationRoomApiTests(ContentRatingApiFixture fixture)
         {
-            _userId = fixture.UserId;
+            _userId = ContentRatingApiFixture.UserId;
             _webApplicationFactory = fixture;
             _httpClient = _webApplicationFactory.CreateDefaultClient();
             _serviceProvider = fixture.GetServiceProvider();
@@ -34,106 +39,151 @@ namespace ContentRating.IntegrationTests
         {
             var room = await CreatePartyEstimationRoom();
 
-            var response = await _httpClient.GetAsync($"api/content-party-estimation-room/{room.Id}");
+            var response = await _httpClient.GetAsync(
+                $"api/content-party-estimation-room/{room.Id}"
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
         }
+
         [Fact]
         public async Task Get_NotRelatedUserForPartyEstimationRoom_Failed()
         {
             var unknownId = Guid.NewGuid();
 
-            var response = await _httpClient.GetAsync($"api/content-party-estimation-room/{unknownId}");
+            var response = await _httpClient.GetAsync(
+                $"api/content-party-estimation-room/{unknownId}"
+            );
 
             Assert.False(response.IsSuccessStatusCode);
         }
+
         [Fact]
         public async Task Get_PartyEstimationRooms_Success()
         {
             await CreatePartyEstimationRoom();
 
-            var response = await _httpClient.GetAsync($"api/content-party-estimation-room");
+            var response = await _httpClient.GetAsync(
+                $"api/content-party-estimation-room"
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
+
         [Fact]
         public async Task Delete_UnusedContent_Success()
         {
             var room = await CreatePartyEstimationRoom();
 
-            var response = await _httpClient.DeleteAsync($"api/content-party-estimation-room/{room.Id}/content/{room.ContentForEstimation.First().Id}");
+            var response = await _httpClient.DeleteAsync(
+                $"api/content-party-estimation-room/{room.Id}/content/{room.ContentForEstimation.First().Id}"
+            );
 
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-
         }
+
         [Fact]
         public async Task Delete_UnknownUnusedContent_NotFound()
         {
             var room = await CreatePartyEstimationRoom();
             var unknownContentId = Guid.NewGuid();
 
-            var response = await _httpClient.DeleteAsync($"api/content-party-estimation-room/{room.Id}/content/{unknownContentId}");
+            var response = await _httpClient.DeleteAsync(
+                $"api/content-party-estimation-room/{room.Id}/content/{unknownContentId}"
+            );
 
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
+
         [Fact]
         public async Task Delete_RaterFromRoom_Success()
         {
             var room = await CreatePartyEstimationRoom();
-            var raterForKickId = room.Raters.First(c => c.Id != room.RoomCreator.Id).Id;
+            var raterForKickId = room
+                .Raters.First(c => c.Id != room.RoomCreator.Id)
+                .Id;
 
-            var response = await _httpClient.DeleteAsync($"api/content-party-estimation-room/{room.Id}/rater/{raterForKickId}");
+            var response = await _httpClient.DeleteAsync(
+                $"api/content-party-estimation-room/{room.Id}/rater/{raterForKickId}"
+            );
 
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
+
         [Fact]
         public async Task Delete_UnknownRaterFromRoom_Failed()
         {
             var room = await CreatePartyEstimationRoom();
             var unknownRater = Guid.NewGuid();
 
-            var response = await _httpClient.DeleteAsync($"api/content-party-estimation-room/{room.Id}/rater/{unknownRater}");
+            var response = await _httpClient.DeleteAsync(
+                $"api/content-party-estimation-room/{room.Id}/rater/{unknownRater}"
+            );
 
             Assert.False(response.IsSuccessStatusCode);
         }
+
         [Fact]
         public async Task Post_CreatePartyEstimationRoom_Success()
         {
             var request = await CreatePartyEstimationRoomRequestBody();
-            var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room", requestContent);
+            var response = await _httpClient.PostAsync(
+                $"api/content-party-estimation-room",
+                requestContent
+            );
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
+
         [Fact]
         public async Task Post_InvalidCreatePartyEstimationRoom_BadRequest()
         {
             var request = await CreatePartyEstimationRoomRequestBody();
             request.MaxRating = 0;
             request.MinRating = 1;
-            var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room", requestContent);
+            var response = await _httpClient.PostAsync(
+                $"api/content-party-estimation-room",
+                requestContent
+            );
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
+
         [Fact]
         public async Task Post_InvalidContentListForCreatePartyEstimationRoom_Failed()
         {
             var invalidContentListId = Guid.NewGuid();
             var request = await CreatePartyEstimationRoomRequestBody();
             request.ContentListId = invalidContentListId;
-            var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room", requestContent);
+            var response = await _httpClient.PostAsync(
+                $"api/content-party-estimation-room",
+                requestContent
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.False(response.IsSuccessStatusCode);
         }
+
         [Fact]
         public async Task Post_InviteRater_Success()
         {
@@ -141,13 +191,21 @@ namespace ContentRating.IntegrationTests
             var request = await CreateInviteRaterRequest(roomId);
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
-            var requestContent = new StringContent(JsonSerializer.Serialize(request, jsonOptions), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request, jsonOptions),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}/rater", requestContent);
+            var response = await _httpClient.PostAsync(
+                $"api/content-party-estimation-room/{roomId}/rater",
+                requestContent
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
+
         [Fact]
         public async Task Post_InviteRaterSameRaterId_BadRequest()
         {
@@ -155,69 +213,110 @@ namespace ContentRating.IntegrationTests
             var request = await CreateInviteRaterRequest(roomId, _userId);
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
-            var requestContent = new StringContent(JsonSerializer.Serialize(request, jsonOptions), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request, jsonOptions),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PostAsync($"api/content-party-estimation-room/{roomId}/rater", requestContent);
+            var response = await _httpClient.PostAsync(
+                $"api/content-party-estimation-room/{roomId}/rater",
+                requestContent
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
+
         [Fact]
         public async Task Put_ChangeRatingRange_Success()
         {
             var roomId = Guid.NewGuid();
             var request = await CreateChangeRatingRangeRequest(roomId);
-            var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PutAsync($"api/content-party-estimation-room/{roomId}/rating-range", requestContent);
+            var response = await _httpClient.PutAsync(
+                $"api/content-party-estimation-room/{roomId}/rating-range",
+                requestContent
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
+
         [Fact]
         public async Task Put_ChangeInvalidRatingRange_BadRequest()
         {
             var roomId = Guid.NewGuid();
             var request = await CreateChangeRatingRangeRequest(roomId);
             request.MinRating = request.MaxRating + 1;
-            var requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(request),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-            var response = await _httpClient.PutAsync($"api/content-party-estimation-room/{roomId}/rating-range", requestContent);
+            var response = await _httpClient.PutAsync(
+                $"api/content-party-estimation-room/{roomId}/rating-range",
+                requestContent
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
+
         [Fact]
         public async Task Put_CompleteContentEstimation_Success()
         {
             var room = await CreatePartyEstimationRoom();
-           
-            var response = await _httpClient.PutAsync($"api/content-party-estimation-room/{room.Id}/complete-estimation", null);
+
+            var response = await _httpClient.PutAsync(
+                $"api/content-party-estimation-room/{room.Id}/complete-estimation",
+                null
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
         }
+
         [Fact]
         public async Task Put_CompleteContentEstimationUnknownRoom_Success()
         {
             var unknownRoomId = Guid.NewGuid();
 
-            var response = await _httpClient.PutAsync($"api/content-party-estimation-room/{unknownRoomId}/complete-estimation", null);
+            var response = await _httpClient.PutAsync(
+                $"api/content-party-estimation-room/{unknownRoomId}/complete-estimation",
+                null
+            );
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.False(response.IsSuccessStatusCode);
-
         }
-        private async Task<ChangeRatingRangeRequest> CreateChangeRatingRangeRequest(Guid roomId)
+
+        private async Task<ChangeRatingRangeRequest> CreateChangeRatingRangeRequest(
+            Guid roomId
+        )
         {
             await CreatePartyEstimationRoom(roomId);
-            return new ChangeRatingRangeRequest() { MaxRating = 10, MinRating = 0 };
+            return new ChangeRatingRangeRequest()
+            {
+                MaxRating = 10,
+                MinRating = 0,
+            };
         }
+
         private async Task<CreatePartyEstimationRoomRequest> CreatePartyEstimationRoomRequestBody()
         {
-            var repository = _serviceProvider.GetRequiredService<IContentEstimationListEditorRepository>();
-            var contentList = ContentEstimationListEditorGenerator.ContentEstimationListEditor(_userId);
+            var repository =
+                _serviceProvider.GetRequiredService<IContentEstimationListEditorRepository>();
+            var contentList =
+                ContentEstimationListEditorGenerator.ContentEstimationListEditor(
+                    _userId
+                );
             repository.Add(contentList);
             await repository.UnitOfWork.SaveChangesAsync();
 
@@ -227,19 +326,35 @@ namespace ContentRating.IntegrationTests
                 ContentListId = contentList.Id,
                 MaxRating = 10,
                 MinRating = 0,
-                RoomName = Guid.NewGuid().ToString()
+                RoomName = Guid.NewGuid().ToString(),
             };
-
         }
-        private async Task<InviteRaterRequest> CreateInviteRaterRequest(Guid roomId, Guid? raterId = null)
+
+        private async Task<InviteRaterRequest> CreateInviteRaterRequest(
+            Guid roomId,
+            Guid? raterId = null
+        )
         {
             await CreatePartyEstimationRoom(roomId);
-            return new InviteRaterRequest { RaterName = Guid.NewGuid().ToString(), RoleType = RoleType.Default, RaterId = raterId ?? Guid.NewGuid() };
+            return new InviteRaterRequest
+            {
+                RaterName = Guid.NewGuid().ToString(),
+                RoleType = RoleType.Default,
+                RaterId = raterId ?? Guid.NewGuid(),
+            };
         }
-        private async Task<ContentPartyEstimationRoom> CreatePartyEstimationRoom(Guid? roomId = null)
+
+        private async Task<ContentPartyEstimationRoom> CreatePartyEstimationRoom(
+            Guid? roomId = null
+        )
         {
-            var repository = _serviceProvider.GetRequiredService<IContentPartyEstimationRoomRepository>();
-            var room = ContentPartyEstimationRoomGenerator.GeneratePartyEstimationRoom(_userId, roomId);
+            var repository =
+                _serviceProvider.GetRequiredService<IContentPartyEstimationRoomRepository>();
+            var room =
+                ContentPartyEstimationRoomGenerator.GeneratePartyEstimationRoom(
+                    _userId,
+                    roomId
+                );
             repository.Add(room);
             await repository.UnitOfWork.SaveChangesAsync();
             return room;

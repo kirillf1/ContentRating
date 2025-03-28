@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.Shared;
 using ContentRatingAPI.Infrastructure.Data.Caching;
 
@@ -9,12 +13,15 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
         private readonly IContentPartyEstimationRoomRepository baseRepository;
         private readonly GenericCacheBase<ContentPartyEstimationRoom> cache;
 
-        public CachingPartyEstimationRoomRepository(IContentPartyEstimationRoomRepository baseRepository, GenericCacheBase<ContentPartyEstimationRoom> genericCache)
+        public CachingPartyEstimationRoomRepository(
+            IContentPartyEstimationRoomRepository baseRepository,
+            GenericCacheBase<ContentPartyEstimationRoom> genericCache
+        )
         {
             this.baseRepository = baseRepository;
             cache = genericCache;
-          
         }
+
         public IUnitOfWork UnitOfWork => baseRepository.UnitOfWork;
 
         public ContentPartyEstimationRoom Add(ContentPartyEstimationRoom room)
@@ -31,20 +38,24 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
 
         public async Task<ContentPartyEstimationRoom?> GetRoom(Guid id)
         {
-            if (cache.TryGetValue(id, out ContentPartyEstimationRoom? room) && room is not null)
+            if (cache.TryGetValue(id, out var room) && room is not null)
+            {
                 return room;
+            }
 
             room = await baseRepository.GetRoom(id);
 
             if (room is not null)
+            {
                 cache.Set(id, room);
+            }
 
             return room;
         }
 
         public async Task<bool> HasRaterInRoom(Guid roomId, Guid raterId)
         {
-            if (cache.TryGetValue(roomId, out ContentPartyEstimationRoom? partyEstimationRoom) && partyEstimationRoom is not null)
+            if (cache.TryGetValue(roomId, out var partyEstimationRoom) && partyEstimationRoom is not null)
             {
                 return partyEstimationRoom!.RoomCreator.Id == raterId || partyEstimationRoom.Raters.Any(c => c.Id == raterId);
             }
@@ -56,6 +67,5 @@ namespace ContentRatingAPI.Infrastructure.Data.Repositories
             cache.Set(room.Id, room);
             return baseRepository.Update(room);
         }
-       
     }
 }

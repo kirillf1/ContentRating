@@ -1,9 +1,13 @@
-﻿using Serilog.Events;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using Serilog;
 using Serilog.Core;
 using Serilog.Enrichers.Sensitive;
-using Serilog.Sinks.Grafana.Loki;
 using Serilog.Enrichers.Span;
+using Serilog.Events;
+using Serilog.Sinks.Grafana.Loki;
 
 namespace ContentRatingAPI.Infrastructure.Telemetry
 {
@@ -14,10 +18,10 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
             var isDevelopment = environment.Equals("Development", StringComparison.OrdinalIgnoreCase);
 
             var logBuilder = new LoggerConfiguration()
-              .Enrich.WithSpan()
-              .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-              .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-              .Enrich.FromLogContext();
+                .Enrich.WithSpan()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                .Enrich.FromLogContext();
 
             if (isDevelopment)
             {
@@ -25,8 +29,11 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
             }
             else
             {
-                logBuilder = logBuilder.WriteTo.Async(c=> c.Console(restrictedToMinimumLevel: LogEventLevel.Information))
-                    .Enrich.WithSensitiveDataMasking(options => options.MaskProperties.AddRange(["email", "token", "accesstoken", "refreshtoken", "password"]));
+                logBuilder = logBuilder
+                    .WriteTo.Async(c => c.Console(restrictedToMinimumLevel: LogEventLevel.Information))
+                    .Enrich.WithSensitiveDataMasking(options =>
+                        options.MaskProperties.AddRange(["email", "token", "accesstoken", "refreshtoken", "password"])
+                    );
             }
             var lokiAddress = configuration["Telemetry:Logging:LokiAddress"];
             if (!string.IsNullOrEmpty(lokiAddress))
@@ -37,7 +44,7 @@ namespace ContentRatingAPI.Infrastructure.Telemetry
                     restrictedToMinimumLevel: LogEventLevel.Information,
                     labels: [new LokiLabel { Key = "app", Value = instanceName }],
                     propertiesAsLabels: ["level"]
-                   );
+                );
             }
             return logBuilder.CreateLogger();
         }

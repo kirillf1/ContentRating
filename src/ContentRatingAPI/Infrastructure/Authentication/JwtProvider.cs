@@ -1,9 +1,13 @@
-﻿using ContentRatingAPI.Application.Identity;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using ContentRatingAPI.Application.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ContentRatingAPI.Infrastructure.Authentication
 {
@@ -17,13 +21,14 @@ namespace ContentRatingAPI.Infrastructure.Authentication
             this.Rsa = Rsa;
             this.options = options;
         }
+
         public Task<TokenResponse> Generate(Guid userId, string email, string name)
         {
             var claims = new Claim[]
             {
                 new(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new(JwtRegisteredClaimNames.Email, email),
-                new(JwtRegisteredClaimNames.Name, name)
+                new(JwtRegisteredClaimNames.Name, name),
             };
             var key = new RsaSecurityKey(Rsa);
             var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
@@ -34,16 +39,18 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                 claims,
                 null,
                 DateTime.UtcNow.AddSeconds(options.Value.TokenLiveTimeSeconds),
-                signingCredentials);
+                signingCredentials
+            );
 
             var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
 
             return Task.FromResult(new TokenResponse(tokenValue, GenerateRefreshToken()));
         }
+
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var key = new RsaSecurityKey(Rsa);
-           
+
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = false,
@@ -52,16 +59,20 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                 IssuerSigningKey = key,
                 ValidateLifetime = false,
             };
-            var tokenHandler = new JwtSecurityTokenHandler()
-            {
-                MapInboundClaims = false,
-            };
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            var tokenHandler = new JwtSecurityTokenHandler() { MapInboundClaims = false };
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
             var jwtSecurityToken = securityToken as JwtSecurityToken;
-            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.RsaSha256, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                jwtSecurityToken == null
+                || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.RsaSha256, StringComparison.InvariantCultureIgnoreCase)
+            )
+            {
                 throw new SecurityTokenException("Invalid token");
+            }
+
             return principal;
         }
+
         private static string GenerateRefreshToken()
         {
             var randomNumbers = new byte[64];
@@ -69,6 +80,5 @@ namespace ContentRatingAPI.Infrastructure.Authentication
             numberGenerator.GetBytes(randomNumbers);
             return Convert.ToBase64String(randomNumbers);
         }
-
     }
 }

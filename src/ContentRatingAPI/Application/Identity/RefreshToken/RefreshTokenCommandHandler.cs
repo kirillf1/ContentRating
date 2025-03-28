@@ -1,4 +1,7 @@
-﻿using Ardalis.Result;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Identity;
 
@@ -20,16 +23,20 @@ namespace ContentRatingAPI.Application.Identity.RefreshToken
             var principal = jwtProvider.GetPrincipalFromExpiredToken(request.AccessToken);
 
             var email = principal.GetUserEmail();
-            if(email is null)
+            if (email is null)
+            {
                 return Result.Invalid(new ValidationError("Unknown email"));
+            }
 
             var user = await userManager.FindByEmailAsync(email);
-            if(user is null || user.RefreshTokenExpirationDate <= DateTime.UtcNow || user.RefreshToken != request.RefreshToken)
+            if (user is null || user.RefreshTokenExpirationDate <= DateTime.UtcNow || user.RefreshToken != request.RefreshToken)
+            {
                 return Result.Invalid(new ValidationError("Invalid refresh token"));
+            }
 
             var newToken = await jwtProvider.Generate(user.Id, user.Email!, user.UserName!);
             user.RefreshToken = newToken.RefreshToken;
-            await userManager.UpdateAsync(user);
+            _ = await userManager.UpdateAsync(user);
             return new LoginResult(user.Id, newToken.Token, user.RefreshToken);
         }
     }

@@ -1,10 +1,14 @@
-﻿using Ardalis.Result.FluentValidation;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using Ardalis.Result.FluentValidation;
 using FluentValidation;
-using System.Globalization;
 
 namespace ContentRatingAPI.Infrastructure.MediatrBehaviors;
 
-public class ValidatorBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
+public class ValidatorBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
 {
     private readonly ILogger<ValidatorBehavior<TRequest, TResponse>> _logger;
     private readonly IEnumerable<IValidator<TRequest>> _validators;
@@ -34,16 +38,14 @@ public class ValidatorBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest
             if (typeof(TResponse).IsGenericType && typeof(TResponse).GetGenericTypeDefinition() == typeof(Result<>))
             {
                 var resultType = typeof(TResponse).GetGenericArguments()[0];
-                var invalidMethod = typeof(Result<>)
-                    .MakeGenericType(resultType)
-                    .GetMethod(nameof(Result.Invalid), [typeof(List<ValidationError>)]);
+                var invalidMethod = typeof(Result<>).MakeGenericType(resultType).GetMethod(nameof(Result.Invalid), [typeof(List<ValidationError>)]);
 
                 if (invalidMethod is not null)
                 {
                     return (TResponse)invalidMethod.Invoke(null, new object[] { resultErrors });
                 }
             }
-            else if(typeof(TResponse) == typeof(Result))
+            else if (typeof(TResponse) == typeof(Result))
             {
                 return (TResponse)(object)Result.Invalid(resultErrors);
             }
@@ -51,7 +53,6 @@ public class ValidatorBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest
             {
                 throw new ValidationException(failures);
             }
-            
         }
 
 #nullable enable

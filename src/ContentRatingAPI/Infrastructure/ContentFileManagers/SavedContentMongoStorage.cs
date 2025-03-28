@@ -1,4 +1,8 @@
-﻿using ContentRatingAPI.Application.ContentFileManager;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRatingAPI.Application.ContentFileManager;
 using ContentRatingAPI.Infrastructure.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -11,12 +15,14 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
         private readonly MongoContext mongoContext;
         private readonly IOptions<MongoDBOptions> options;
         private readonly IMongoCollection<SavedContentFileInfo> dbSet;
+
         public SavedContentMongoStorage(MongoContext mongoContext, IOptions<MongoDBOptions> options)
         {
             this.mongoContext = mongoContext;
             this.options = options;
             dbSet = mongoContext.GetCollection<SavedContentFileInfo>(options.Value.SavedContentFileCollectionName);
         }
+
         public async Task Add(SavedContentFileInfo file)
         {
             await dbSet.InsertOneAsync(file);
@@ -30,9 +36,7 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
         public async Task<IEnumerable<SavedContentFileInfo>> GetOldCheckedOrUncheckedContent(TimeSpan checkInterval)
         {
             var startCheckDate = DateTime.UtcNow - checkInterval;
-            return await dbSet.AsQueryable()
-                .Where(c => c.LastCheckDate == null || c.LastCheckDate < startCheckDate)
-                .ToListAsync();
+            return await dbSet.AsQueryable().Where(c => c.LastCheckDate == null || c.LastCheckDate < startCheckDate).ToListAsync();
         }
 
         public async Task<SavedContentFileInfo?> GetSavedContent(Guid Id)

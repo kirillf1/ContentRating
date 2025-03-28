@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate.Exceptions;
 using ContentRatingAPI.Application.ContentPartyRating.ContentRaterService;
 
@@ -14,15 +18,22 @@ namespace ContentRatingAPI.Application.ContentPartyRating.EstimateContent
             this.contentRatingRepository = contentRatingRepository;
             this.contentRaterService = contentRaterService;
         }
+
         public async Task<Result<bool>> Handle(EstimateContentCommand request, CancellationToken cancellationToken)
         {
             try
             {
                 var contentRating = await contentRatingRepository.GetContentRating(request.ContentRatingId);
                 if (contentRating is null)
+                {
                     return Result.NotFound();
+                }
 
-                var raters = await contentRaterService.GetContentRatersForEstimation(contentRating.RoomId, request.EstimationInitiatorId, request.RaterForChangeScoreId);
+                var raters = await contentRaterService.GetContentRatersForEstimation(
+                    contentRating.RoomId,
+                    request.EstimationInitiatorId,
+                    request.RaterForChangeScoreId
+                );
 
                 var estimation = new Estimation(raters.Initiator, raters.TargetRater, new Score(request.NewScore));
                 contentRating.EstimateContent(estimation);

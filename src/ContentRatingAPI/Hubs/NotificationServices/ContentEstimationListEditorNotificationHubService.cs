@@ -1,4 +1,8 @@
-﻿using ContentRatingAPI.Application.Notifications.IContentEstimationListEditorNotifications;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRatingAPI.Application.Notifications.IContentEstimationListEditorNotifications;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ContentRatingAPI.Hubs.NotificationServices
@@ -11,9 +15,10 @@ namespace ContentRatingAPI.Hubs.NotificationServices
         {
             this.hubContext = hubContext;
         }
+
         public async Task NotifyContentCreated(Guid contentListId, Guid editorId, ContentNotificationInformation contentNotification)
         {
-           await hubContext.Clients.Group(contentListId.ToString()).SendAsync("ContentCreated", editorId, contentNotification);
+            await hubContext.Clients.Group(contentListId.ToString()).SendAsync("ContentCreated", editorId, contentNotification);
         }
 
         public async Task NotifyContentDeleted(Guid contentListId, Guid deletedContentId)

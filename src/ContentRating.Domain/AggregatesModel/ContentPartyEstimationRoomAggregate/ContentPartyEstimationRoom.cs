@@ -1,4 +1,8 @@
-﻿using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate.Events;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate.Events;
 using ContentRating.Domain.Shared.RoomStates;
 
 namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate
@@ -17,15 +21,18 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         public IReadOnlyCollection<ContentForEstimation> ContentForEstimation
         {
             get { return _contentList; }
-            private set {_contentList = value.ToList(); }
+            private set { _contentList = value.ToList(); }
         }
         private List<Rater> _raters;
         private List<ContentForEstimation> _contentList;
         public bool IsAllContentEstimated { get; private set; }
+
         public void KickRater(Guid raterForKickId, Guid kickInitiatorId)
         {
             if (IsAllContentEstimated)
+            {
                 throw new InvalidRoomStageOperationException("Сan't kick rater when all content estimated");
+            }
 
             var initiator = _raters.Find(c => c.Id == kickInitiatorId);
             var raterForKick = _raters.Find(c => c.Id == raterForKickId);
@@ -34,22 +41,30 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
                 throw new ArgumentException("Room don't contain this rater");
             }
             if (!RoomSpecification.CanKickAnotherRater(initiator))
+            {
                 throw new ForbiddenRoomOperationException("This rater does not have the right to kick other users ");
+            }
 
             if (initiator == raterForKick)
+            {
                 throw new ForbiddenRoomOperationException("The rater cannot kick himself");
+            }
 
             if (raterForKick == RoomCreator)
+            {
                 throw new ForbiddenRoomOperationException("Cannot kick room creator");
+            }
 
             _raters.Remove(raterForKick);
             AddDomainEvent(new RaterKickedDomainEvent(raterForKick, Id));
-
         }
+
         public void InviteRater(Rater newRater, Guid inviterId)
         {
             if (IsAllContentEstimated)
+            {
                 throw new InvalidRoomStageOperationException("Сan't invite rater when the room is not working");
+            }
 
             if (_raters.Contains(newRater))
             {
@@ -59,52 +74,79 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             var inviter = _raters.Find(c => c.Id == inviterId) ?? throw new ArgumentException("Unknown inviter");
 
             if (!RoomSpecification.CanInviteAnotherRater(inviter))
+            {
                 throw new ForbiddenRoomOperationException("This rater does not have the access to kick other raters");
+            }
 
             _raters.Add(newRater);
 
             AddDomainEvent(new RaterInvitedDomainEvent(newRater, Id, RatingRange.MinRating));
         }
+
         public void RemoveUnavailableContent(Guid removeContentInitiatorId, Guid contentId)
         {
             if (IsAllContentEstimated)
+            {
                 throw new InvalidRoomStageOperationException("Сan't remove content when the room is not working");
+            }
 
             var rater = _raters.Find(c => c.Id == removeContentInitiatorId) ?? throw new ArgumentNullException("Unknown rater");
 
             if (!RoomSpecification.CanEditContentList(rater))
+            {
                 throw new ForbiddenRoomOperationException("This rater does not have the access to remove content");
-            var content = _contentList.Find(c=> c.Id == contentId) ?? throw new ArgumentNullException("Unknown contentId");
-            AddDomainEvent(new UnavailableContentRemovedDomainEvent(Id, content, rater));
+            }
 
+            var content = _contentList.Find(c => c.Id == contentId) ?? throw new ArgumentNullException("Unknown contentId");
+            AddDomainEvent(new UnavailableContentRemovedDomainEvent(Id, content, rater));
         }
+
         public void ChangeRatingRange(Rater ratingRangeChanger, Rating minRating, Rating maxRating)
         {
             if (ratingRangeChanger != RoomCreator)
+            {
                 throw new ForbiddenRoomOperationException("Only creator can change rating range");
+            }
 
             var oldRatingRange = RatingRange;
             RatingRange = new RatingRange(maxRating, minRating);
 
             if (oldRatingRange != RatingRange)
+            {
                 AddDomainEvent(new RatingRangeChangedDomainEvent(Id, RatingRange.MaxRating, RatingRange.MinRating));
+            }
         }
+
         public void CompleteContentEstimation(Rater rater)
         {
             if (rater != RoomCreator)
+            {
                 throw new ForbiddenRoomOperationException("Can complete estimation only room creator");
+            }
+
             IsAllContentEstimated = true;
             AddDomainEvent(new AllContentEstimatedDomainEvent(Id, Raters));
         }
 
-        private ContentPartyEstimationRoom(Guid id, Rater creator, RoomControlSpecification specification, 
-            List<Rater> invitedUsersWithCreator, IEnumerable<ContentForEstimation> contentList, RatingRange ratingRange, string name)
+        private ContentPartyEstimationRoom(
+            Guid id,
+            Rater creator,
+            RoomControlSpecification specification,
+            List<Rater> invitedUsersWithCreator,
+            IEnumerable<ContentForEstimation> contentList,
+            RatingRange ratingRange,
+            string name
+        )
         {
             if (!contentList.Any())
+            {
                 throw new ArgumentException("Content list must not be empty");
+            }
 
             if (!invitedUsersWithCreator.Contains(creator))
+            {
                 invitedUsersWithCreator.Add(creator);
+            }
 
             Id = id;
             RoomCreator = creator;
@@ -117,8 +159,15 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
 
             AddDomainEvent(new ContentEstimationStartedDomainEvent(Id, Raters, ContentForEstimation, RatingRange));
         }
-        public static ContentPartyEstimationRoom Create(Guid id, Rater creator, IEnumerable<ContentForEstimation> contentList, string name,
-            RatingRange? ratingRange = null, List<Rater>? otherInvitedRaters = null)
+
+        public static ContentPartyEstimationRoom Create(
+            Guid id,
+            Rater creator,
+            IEnumerable<ContentForEstimation> contentList,
+            string name,
+            RatingRange? ratingRange = null,
+            List<Rater>? otherInvitedRaters = null
+        )
         {
             otherInvitedRaters ??= new List<Rater>();
             ratingRange ??= new RatingRange();

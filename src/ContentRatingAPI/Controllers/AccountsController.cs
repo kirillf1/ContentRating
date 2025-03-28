@@ -1,19 +1,22 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System.Security.Claims;
-using ContentRatingAPI.Application.Identity.RegisterUser;
-using ContentRatingAPI.Application.Identity.RefreshToken;
-using ContentRatingAPI.Application.Identity;
 using Ardalis.Result.AspNetCore;
+using ContentRatingAPI.Application.Identity;
 using ContentRatingAPI.Application.Identity.GetAllUsers;
-using Microsoft.AspNetCore.Authorization;
+using ContentRatingAPI.Application.Identity.RefreshToken;
+using ContentRatingAPI.Application.Identity.RegisterUser;
 using ContentRatingAPI.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ContentRatingAPI.Controllers
 {
-
     [Route("accounts")]
     [ApiController]
     public class AccountsController : ControllerBase
@@ -21,19 +24,22 @@ namespace ContentRatingAPI.Controllers
         [Authorize]
         [TranslateResultToActionResult]
         [HttpGet]
-        public async Task<Result<IEnumerable<UserResponse>>> GetUsers([FromServices] IMediator mediator, [FromServices] IUserInfoService userInfoService)
+        public async Task<Result<IEnumerable<UserResponse>>> GetUsers(
+            [FromServices] IMediator mediator,
+            [FromServices] IUserInfoService userInfoService
+        )
         {
             var userInfo = userInfoService.TryGetUserInfo();
-            if (userInfo is null)
-                return Result.Forbidden();
-            return await mediator.Send(new GetAllUsersQuery(userInfo.Id));
+            return userInfo is null ? (Result<IEnumerable<UserResponse>>)Result.Forbidden() : await mediator.Send(new GetAllUsersQuery(userInfo.Id));
         }
+
         [HttpGet("login-google")]
         public IActionResult Login()
         {
             var props = new AuthenticationProperties { RedirectUri = Url.Action(nameof(GoogleSignInCallback)) };
             return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
+
         [TranslateResultToActionResult()]
         [HttpPost("refresh-token")]
         public async Task<Result<LoginResult>> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest, [FromServices] IMediator mediator)
@@ -50,7 +56,9 @@ namespace ContentRatingAPI.Controllers
             var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, "access_token");
 
             if (response.Principal == null)
+            {
                 return Result.Error();
+            }
 
             var name = response.Principal.FindFirstValue(ClaimTypes.Name)!;
 
@@ -59,7 +67,6 @@ namespace ContentRatingAPI.Controllers
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return loginResult;
-
         }
     }
 }

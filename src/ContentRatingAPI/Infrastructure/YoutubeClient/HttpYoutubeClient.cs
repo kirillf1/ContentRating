@@ -1,7 +1,11 @@
-﻿using ContentRatingAPI.Application.YoutubeContent;
-using ContentRatingAPI.Infrastructure.YoutubeClient.Models;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using System.Net.Http.Headers;
 using System.Text.Json;
+using ContentRatingAPI.Application.YoutubeContent;
+using ContentRatingAPI.Infrastructure.YoutubeClient.Models;
 
 namespace ContentRatingAPI.Infrastructure.YoutubeClient
 {
@@ -15,6 +19,7 @@ namespace ContentRatingAPI.Infrastructure.YoutubeClient
             this.httpClientFactory = httpClientFactory;
             this.logger = logger;
         }
+
         public async Task<Result<IEnumerable<YoutubePlaylist>>> GetAvailablePlayLists(string accessToken)
         {
             var client = httpClientFactory.CreateClient();
@@ -24,10 +29,7 @@ namespace ContentRatingAPI.Infrastructure.YoutubeClient
             if (response.IsSuccessStatusCode)
             {
                 var stringResult = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var result = JsonSerializer.Deserialize<PlaylistModel>(stringResult, options);
                 if (result is null)
                 {
@@ -39,16 +41,30 @@ namespace ContentRatingAPI.Infrastructure.YoutubeClient
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
                 return Result.Forbidden();
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return Result.NotFound();
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                return Result.Unauthorized();
-            if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
-                return Result.Error(await response.Content.ReadAsStringAsync());
+            }
 
-            logger.LogWarning("Unknown response status code for request while getting youtube playlist, " +
-                "status code: {status code}, message {message}", response.StatusCode, await response.Content.ReadAsStringAsync());
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Result.NotFound();
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                return Result.Unauthorized();
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            {
+                return Result.Error(await response.Content.ReadAsStringAsync());
+            }
+
+            logger.LogWarning(
+                "Unknown response status code for request while getting youtube playlist, " + "status code: {status code}, message {message}",
+                response.StatusCode,
+                await response.Content.ReadAsStringAsync()
+            );
             return Result.Error("Unknown error try later");
         }
 
@@ -56,16 +72,15 @@ namespace ContentRatingAPI.Infrastructure.YoutubeClient
         {
             var client = httpClientFactory.CreateClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            var response = await client.GetAsync($"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playListId}");
+            var response = await client.GetAsync(
+                $"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playListId}"
+            );
 
             if (response.IsSuccessStatusCode)
             {
                 var videos = new List<YoutubeVideo>();
                 var stringResult = await response.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var playlist = JsonSerializer.Deserialize<PlaylistModel>(stringResult, options);
                 if (playlist is null)
                 {
@@ -75,26 +90,45 @@ namespace ContentRatingAPI.Infrastructure.YoutubeClient
                 videos.AddRange(playlist!.Items!.Select(c => MapYoutubeVideo(c.Snippet?.ResourceId?.VideoId, c?.Snippet?.Title)));
                 while (playlist != null && !string.IsNullOrEmpty(playlist?.NextPageToken))
                 {
-                    playlist = await client.GetFromJsonAsync<PlaylistModel>($"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playListId}&pageToken={playlist.NextPageToken}");
+                    playlist = await client.GetFromJsonAsync<PlaylistModel>(
+                        $"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playListId}&pageToken={playlist.NextPageToken}"
+                    );
                     if (playlist != null)
+                    {
                         videos.AddRange(playlist!.Items!.Select(c => MapYoutubeVideo(c.Snippet?.ResourceId?.VideoId, c?.Snippet?.Title)));
+                    }
                 }
                 return Result.Success(videos.AsEnumerable());
             }
 
             if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
                 return Result.Forbidden();
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return Result.NotFound();
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                return Result.Unauthorized();
-            if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
-                return Result.Error(await response.Content.ReadAsStringAsync());
+            }
 
-            logger.LogWarning("Unknown response status code for request while getting youtube videos, status code: {status code}, message {message}", response.StatusCode,
-                await response.Content.ReadAsStringAsync());
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Result.NotFound();
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                return Result.Unauthorized();
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            {
+                return Result.Error(await response.Content.ReadAsStringAsync());
+            }
+
+            logger.LogWarning(
+                "Unknown response status code for request while getting youtube videos, status code: {status code}, message {message}",
+                response.StatusCode,
+                await response.Content.ReadAsStringAsync()
+            );
             return Result.Error("Unknown error try later");
         }
+
         private static YoutubeVideo MapYoutubeVideo(string? id, string? name)
         {
             name ??= "deleted video";

@@ -1,4 +1,8 @@
-﻿using ContentRatingAPI.Application.ContentFileManager;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using ContentRatingAPI.Application.ContentFileManager;
 using Microsoft.Extensions.Options;
 
 namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
@@ -11,19 +15,30 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
         {
             this.options = options;
         }
-        public abstract Task<SavedContentFileInfo> SaveFile(Guid fileId, string fileExtension, byte[] data, CancellationToken cancellationToken = default);
+
+        public abstract Task<SavedContentFileInfo> SaveFile(
+            Guid fileId,
+            string fileExtension,
+            byte[] data,
+            CancellationToken cancellationToken = default
+        );
+
         protected async Task<string> SaveFile(string fileName, byte[] data, CancellationToken cancellationToken = default)
         {
             if (!Path.HasExtension(fileName))
+            {
                 throw new ArgumentException("Invalid file name");
+            }
+
             var fullPath = Path.Combine(options.Value.Directory, fileName);
             var directory = Path.GetDirectoryName(fullPath);
-            if(!Directory.Exists(directory))
+            if (!Directory.Exists(directory))
+            {
                 Directory.CreateDirectory(directory);
+            }
 
             await File.WriteAllBytesAsync(fullPath, data, cancellationToken);
             return fullPath;
         }
-        
     }
 }

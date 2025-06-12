@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using ContentRating.Web.UI.Services
+@inherits LayoutComponentBase
+@inject AuthService AuthService
 
 <MudLayout>
     <MudAppBar Elevation="1">
@@ -8,6 +10,7 @@
                        OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6">ContentRating</MudText>
         <MudSpacer />
+        <AuthComponent />
         <ThemeToggle />
         <MudButton Variant="Variant.Text" 
                    StartIcon="@Icons.Material.Filled.Info" 
@@ -41,6 +44,22 @@
     void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await AuthService.InitializeAsync();
+            }
+            catch
+            {
+                // Игнорируем ошибки инициализации
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     protected override void OnInitialized()

@@ -3,32 +3,35 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 
-namespace ContentRating.Web.UI
+namespace ContentRating.Web.UI;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static async Task Main(string[] args)
+        var builder = WebAssemblyHostBuilder.CreateDefault(args);
+        builder.RootComponents.Add<App>("#app");
+        builder.RootComponents.Add<HeadOutlet>("head::after");
+
+        var apiSettings = new ApiSettings();
+        builder.Configuration.GetSection("ApiSettings").Bind(apiSettings);
+        builder.Services.AddSingleton(apiSettings);
+
+        // Базовый HttpClient без аутентификации
+        builder.Services.AddScoped(sp =>
         {
-            var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.RootComponents.Add<App>("#app");
-            builder.RootComponents.Add<HeadOutlet>("head::after");
+            var settings = sp.GetRequiredService<ApiSettings>();
+            return new HttpClient { BaseAddress = new Uri(settings.BaseUrl) };
+        });
 
-            var apiSettings = new ApiSettings();
-            builder.Configuration.GetSection("ApiSettings").Bind(apiSettings);
-            builder.Services.AddSingleton(apiSettings);
+        builder.Services.AddMudServices();
 
-            // Настраиваем HttpClient для API
-            builder.Services.AddScoped(sp =>
-            {
-                var settings = sp.GetRequiredService<ApiSettings>();
-                return new HttpClient { BaseAddress = new Uri(settings.BaseUrl) };
-            });
+        builder.Services.AddScoped<ContentRating.Web.UI.Services.ThemeService>();
+        builder.Services.AddScoped<ContentRating.Web.UI.Services.SecureTokenStorage>();
+        builder.Services.AddScoped<ContentRating.Web.UI.Services.AuthService>();
 
-            builder.Services.AddMudServices();
+        var app = builder.Build();
 
-            builder.Services.AddSingleton<ContentRating.Web.UI.Services.ThemeService>();
-
-            await builder.Build().RunAsync();
-        }
+        await app.RunAsync();
     }
 }

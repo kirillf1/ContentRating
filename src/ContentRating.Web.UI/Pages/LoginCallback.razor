@@ -1,0 +1,78 @@
+@page "/login-callback"
+@using ContentRating.Web.Contracts.Identity
+@using ContentRating.Web.UI.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <div class="d-flex flex-column align-center">
+                @if (isProcessing)
+                {
+                    <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                    <MudText Typo="Typo.h6" Class="mt-4">Завершение авторизации...</MudText>
+                }
+                else if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                    <MudText Typo="Typo.h6" Color="Color.Error" Class="mt-4">Ошибка авторизации</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-2">@errorMessage</MudText>
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              Class="mt-4" 
+                              OnClick="GoHome">
+                        На главную
+                    </MudButton>
+                }
+            </div>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private bool isProcessing = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var uri = new Uri(NavigationManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            
+            var token = query["token"];
+            var refreshToken = query["refreshToken"];
+            var error = query["error"];
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                errorMessage = "Не удалось выполнить авторизацию";
+            }
+            else if (!string.IsNullOrEmpty(token) && !string.IsNullOrEmpty(refreshToken))
+            {
+                await AuthService.SetTokensAsync(token, refreshToken);
+                NavigationManager.NavigateTo("/", replace: true);
+                return;
+            }
+            else
+            {
+                errorMessage = "Неверные параметры авторизации";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Произошла ошибка при обработке авторизации";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void GoHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+} 

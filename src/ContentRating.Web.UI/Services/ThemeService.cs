@@ -1,10 +1,14 @@
 ﻿using MudBlazor;
+using Microsoft.JSInterop;
 
 namespace ContentRating.Web.UI.Services;
 
 public class ThemeService
 {
+    private readonly IJSRuntime _jsRuntime;
     private bool _isDarkMode = false;
+    private bool _isInitialized = false;
+    private const string THEME_KEY = "theme-preference";
 
     public event Action? OnThemeChanged;
 
@@ -12,10 +16,63 @@ public class ThemeService
 
     public MudTheme CurrentTheme => _isDarkMode ? DarkTheme : LightTheme;
 
-    public void ToggleTheme()
+    public ThemeService(IJSRuntime jsRuntime)
+    {
+        _jsRuntime = jsRuntime;
+    }
+
+    public async Task InitializeAsync()
+    {
+        if (_isInitialized)
+            return;
+
+        try
+        {
+            var savedTheme = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", THEME_KEY);
+            if (!string.IsNullOrEmpty(savedTheme))
+            {
+                _isDarkMode = savedTheme == "dark";
+            }
+            else
+            {
+                // Проверяем системные настройки темы
+                var prefersDark = await _jsRuntime.InvokeAsync<bool>("themeHelpers.getSystemPreference");
+                _isDarkMode = prefersDark;
+                await SaveThemeAsync();
+            }
+        }
+        catch
+        {
+            // Если localStorage недоступен, используем светлую тему по умолчанию
+            _isDarkMode = false;
+        }
+
+        _isInitialized = true;
+        OnThemeChanged?.Invoke();
+    }
+
+    public async Task ToggleThemeAsync()
     {
         _isDarkMode = !_isDarkMode;
+        await SaveThemeAsync();
         OnThemeChanged?.Invoke();
+    }
+
+    public void ToggleTheme()
+    {
+        _ = ToggleThemeAsync();
+    }
+
+    private async Task SaveThemeAsync()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", THEME_KEY, _isDarkMode ? "dark" : "light");
+        }
+        catch
+        {
+            // Игнорируем ошибки сохранения
+        }
     }
 
     public MudTheme LightTheme { get; } =

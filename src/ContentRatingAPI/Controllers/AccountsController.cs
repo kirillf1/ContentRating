@@ -34,9 +34,12 @@ namespace ContentRatingAPI.Controllers
         }
 
         [HttpGet("login-google")]
-        public IActionResult Login()
+        public IActionResult Login([FromQuery] string? returnUrl = null)
         {
-            var props = new AuthenticationProperties { RedirectUri = Url.Action(nameof(GoogleSignInCallback)) };
+            var props = new AuthenticationProperties 
+            { 
+                RedirectUri = Url.Action(nameof(GoogleSignInCallback), new { returnUrl }) 
+            };
             return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
 
@@ -48,25 +51,55 @@ namespace ContentRatingAPI.Controllers
             return await mediator.Send(refreshTokenCommand);
         }
 
-        [TranslateResultToActionResult()]
         [HttpGet("signin-google")]
-        public async Task<Result<LoginResult>> GoogleSignInCallback([FromServices] IMediator mediator)
+        public async Task<IActionResult> GoogleSignInCallback([FromServices] IMediator mediator, [FromQuery] string? returnUrl = null)
         {
             var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, "access_token");
 
             if (response.Principal == null)
             {
-                return Result.Error();
+                var errorUrl = BuildCallbackUrl(returnUrl, error: "authentication_failed");
+                return Redirect(errorUrl);
             }
 
             var name = response.Principal.FindFirstValue(ClaimTypes.Name)!;
-
             var email = response.Principal.FindFirstValue(ClaimTypes.Email)!;
+            
             var loginResult = await mediator.Send(new RegisterOrLoginOAuthUserCommand(name, email, GoogleDefaults.AuthenticationScheme, accessToken));
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return loginResult;
+            
+            if (loginResult.IsSuccess)
+            {
+                var successUrl = BuildCallbackUrl(returnUrl, loginResult.Value.Token, loginResult.Value.RefreshToken);
+                return Redirect(successUrl);
+            }
+            else
+            {
+                var errorUrl = BuildCallbackUrl(returnUrl, error: "login_failed");
+                return Redirect(errorUrl);
+            }
+        }
+
+        private string BuildCallbackUrl(string? returnUrl, string? token = null, string? refreshToken = null, string? error = null)
+        {
+            var baseUrl = returnUrl ?? "http://localhost:5173/login-callback";
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrEmpty(token))
+                queryParams.Add($"token={Uri.EscapeDataString(token)}");
+            
+            if (!string.IsNullOrEmpty(refreshToken))
+                queryParams.Add($"refreshToken={Uri.EscapeDataString(refreshToken)}");
+            
+            if (!string.IsNullOrEmpty(error))
+                queryParams.Add($"error={Uri.EscapeDataString(error)}");
+
+            if (queryParams.Count > 0)
+                baseUrl += "?" + string.Join("&", queryParams);
+
+            return baseUrl;
         }
     }
 }

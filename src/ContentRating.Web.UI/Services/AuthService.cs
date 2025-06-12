@@ -88,9 +88,9 @@ namespace ContentRating.Web.UI.Services
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Игнорируем ошибки рефреша токена
+                Console.WriteLine(ex);
             }
 
             return false;
@@ -151,9 +151,36 @@ namespace ContentRating.Web.UI.Services
         {
             try
             {
-                // Сначала проверяем есть ли активная сессия в памяти
-                if (await _tokenStorage.HasValidSessionAsync())
+                // Проверяем нужно ли обновить токен
+                if (await _tokenStorage.NeedsRefreshAsync())
                 {
+                    var refreshToken = await _tokenStorage.GetRefreshTokenAsync();
+                    if (!string.IsNullOrEmpty(refreshToken))
+                    {
+                        // Пытаемся восстановить сессию через refresh token
+                        var refreshSuccessful = await RefreshTokenAsync();
+                        if (refreshSuccessful)
+                        {
+                            // Сессия восстановлена, загружаем данные пользователя
+                            _userData = await _tokenStorage.GetUserDataAsync();
+                            if (_userData != null)
+                            {
+                                UpdateUserInfoFromUserData(_userData);
+                                AuthStateChanged?.Invoke();
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            // Не удалось обновить токен, выходим
+                            await LogoutAsync();
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    // У нас есть валидная сессия
                     _userData = await _tokenStorage.GetUserDataAsync();
                     if (_userData != null)
                     {
@@ -163,22 +190,19 @@ namespace ContentRating.Web.UI.Services
                     }
                 }
 
+                // Если дошли до сюда, проверяем есть ли токен в памяти
                 var token = await GetAccessTokenAsync();
-                if (!string.IsNullOrEmpty(token))
+                if (!string.IsNullOrEmpty(token) && IsTokenValid(token))
                 {
-                    if (IsTokenValid(token))
-                    {
-                        UpdateUserInfo(token);
-                    }
-                    else
-                    {
-                        // Пытаемся обновить токен
-                        var refreshSuccessful = await RefreshTokenAsync();
-                        if (!refreshSuccessful)
-                        {
-                            await LogoutAsync();
-                        }
-                    }
+                    UpdateUserInfo(token);
+                }
+                else
+                {
+                    // Нет валидного токена, устанавливаем неавторизованное состояние
+                    IsAuthenticated = false;
+                    UserName = null;
+                    UserEmail = null;
+                    UserId = null;
                 }
             }
             catch

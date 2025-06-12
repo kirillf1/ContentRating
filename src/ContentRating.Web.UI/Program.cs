@@ -24,6 +24,23 @@ public class Program
             return new HttpClient { BaseAddress = new Uri(settings.BaseUrl) };
         });
 
+        // HttpClient с аутентификацией для API сервисов
+        builder.Services.AddScoped<ContentRating.Web.UI.Services.AuthenticatedHttpClientHandler>();
+
+        builder
+            .Services.AddHttpClient<
+                Services.IContentEstimationListService,
+                Services.ContentEstimationListService
+            >(
+                (sp, client) =>
+                {
+                    var settings = sp.GetRequiredService<ApiSettings>();
+                    client.BaseAddress = new Uri(settings.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                }
+            )
+            .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
+
         builder.Services.AddMudServices();
 
         builder.Services.AddScoped<ContentRating.Web.UI.Services.ThemeService>();

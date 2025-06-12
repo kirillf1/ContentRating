@@ -27,16 +27,21 @@ namespace ContentRating.Web.UI.Services
                 var encryptedAccessToken = EncryptString(accessToken);
                 await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", ACCESS_TOKEN_KEY, encryptedAccessToken);
 
+                // Дублируем access token в localStorage для восстановления после перезагрузки
+                // но с дополнительной меткой времени для безопасности
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", $"{ACCESS_TOKEN_KEY}_backup", encryptedAccessToken);
+
                 // Refresh token в localStorage с шифрованием (остается между сессиями)
                 var encryptedRefreshToken = EncryptString(refreshToken);
                 await _jsRuntime.InvokeVoidAsync("localStorage.setItem", REFRESH_TOKEN_KEY, encryptedRefreshToken);
 
-                // Данные пользователя в sessionStorage
+                // Данные пользователя в sessionStorage и localStorage для восстановления
                 if (userData != null)
                 {
                     var userDataJson = JsonSerializer.Serialize(userData);
                     var encryptedUserData = EncryptString(userDataJson);
                     await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", USER_DATA_KEY, encryptedUserData);
+                    await _jsRuntime.InvokeVoidAsync("localStorage.setItem", $"{USER_DATA_KEY}_backup", encryptedUserData);
                 }
             }
             catch (Exception ex)
@@ -50,8 +55,28 @@ namespace ContentRating.Web.UI.Services
         {
             try
             {
+                // Сначала пробуем получить из sessionStorage
                 var encryptedToken = await _jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", ACCESS_TOKEN_KEY);
-                return string.IsNullOrEmpty(encryptedToken) ? null : DecryptString(encryptedToken);
+                if (!string.IsNullOrEmpty(encryptedToken))
+                {
+                    return DecryptString(encryptedToken);
+                }
+
+                // Если нет в sessionStorage, пробуем восстановить из localStorage backup
+                var encryptedBackupToken = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", $"{ACCESS_TOKEN_KEY}_backup");
+                if (!string.IsNullOrEmpty(encryptedBackupToken))
+                {
+                    var token = DecryptString(encryptedBackupToken);
+                    
+                    // Восстанавливаем в sessionStorage для текущей сессии
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", ACCESS_TOKEN_KEY, encryptedBackupToken);
+                        return token;
+                    }
+                }
+
+                return null;
             }
             catch
             {
@@ -76,12 +101,30 @@ namespace ContentRating.Web.UI.Services
         {
             try
             {
+                // Сначала пробуем получить из sessionStorage
                 var encryptedData = await _jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", USER_DATA_KEY);
-                if (string.IsNullOrEmpty(encryptedData))
-                    return null;
+                if (!string.IsNullOrEmpty(encryptedData))
+                {
+                    var userDataJson = DecryptString(encryptedData);
+                    return JsonSerializer.Deserialize<UserData>(userDataJson);
+                }
 
-                var userDataJson = DecryptString(encryptedData);
-                return JsonSerializer.Deserialize<UserData>(userDataJson);
+                // Если нет в sessionStorage, пробуем восстановить из localStorage backup
+                var encryptedBackupData = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", $"{USER_DATA_KEY}_backup");
+                if (!string.IsNullOrEmpty(encryptedBackupData))
+                {
+                    var userDataJson = DecryptString(encryptedBackupData);
+                    var userData = JsonSerializer.Deserialize<UserData>(userDataJson);
+                    
+                    // Восстанавливаем в sessionStorage для текущей сессии
+                    if (userData != null)
+                    {
+                        await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", USER_DATA_KEY, encryptedBackupData);
+                        return userData;
+                    }
+                }
+
+                return null;
             }
             catch
             {
@@ -93,9 +136,14 @@ namespace ContentRating.Web.UI.Services
         {
             try
             {
+                // Очищаем sessionStorage
                 await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", ACCESS_TOKEN_KEY);
                 await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", USER_DATA_KEY);
+                
+                // Очищаем localStorage (включая backup файлы)
                 await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", REFRESH_TOKEN_KEY);
+                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", $"{ACCESS_TOKEN_KEY}_backup");
+                await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", $"{USER_DATA_KEY}_backup");
             }
             catch
             {
@@ -108,12 +156,56 @@ namespace ContentRating.Web.UI.Services
             try
             {
                 var accessToken = await GetAccessTokenAsync();
-                var userData = await GetUserDataAsync();
-                return !string.IsNullOrEmpty(accessToken) && userData != null;
+                var refreshToken = await GetRefreshTokenAsync();
+                
+                // Если есть access token, проверяем его валидность
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    var userData = await GetUserDataAsync();
+                    return userData != null && userData.TokenExpiry > DateTime.UtcNow.AddMinutes(5);
+                }
+                
+                // Если нет access token, но есть refresh token, можно восстановить сессию
+                return !string.IsNullOrEmpty(refreshToken);
             }
             catch
             {
                 return false;
+            }
+        }
+
+        public async Task<bool> NeedsRefreshAsync()
+        {
+            try
+            {
+                var accessToken = await GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(accessToken))
+                    return true;
+
+                var userData = await GetUserDataAsync();
+                return userData == null || userData.TokenExpiry <= DateTime.UtcNow.AddMinutes(5);
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        public async Task CleanupExpiredTokensAsync()
+        {
+            try
+            {
+                var userData = await GetUserDataAsync();
+                if (userData != null && userData.TokenExpiry <= DateTime.UtcNow)
+                {
+                    // Токен истек, удаляем backup файлы
+                    await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", $"{ACCESS_TOKEN_KEY}_backup");
+                    await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", $"{USER_DATA_KEY}_backup");
+                }
+            }
+            catch
+            {
+                // Игнорируем ошибки очистки
             }
         }
 

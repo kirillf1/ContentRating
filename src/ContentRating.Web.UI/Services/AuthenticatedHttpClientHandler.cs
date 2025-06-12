@@ -7,6 +7,7 @@ namespace ContentRating.Web.UI.Services
         private readonly AuthService _authService;
 
         public AuthenticatedHttpClientHandler(AuthService authService)
+            : base(new HttpClientHandler())
         {
             _authService = authService;
         }
@@ -46,7 +47,6 @@ namespace ContentRating.Web.UI.Services
                 }
                 else
                 {
-                    // Если не удалось обновить токен, разлогиниваем пользователя
                     await _authService.LogoutAsync();
                 }
             }

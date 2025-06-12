@@ -120,6 +120,17 @@ try
     builder.Services.AddTransient<IContentPartyEstimationNotificationService, ContentPartyEstimationNotificationHubService>();
     builder.Services.AddTransient<IContentEstimationListEditorNotificationService, ContentEstimationListEditorNotificationHubService>();
 
+    // Настройка CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    });
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
@@ -130,6 +141,9 @@ try
     }
     app.UseRequestLocalization();
     app.UseHttpsRedirection();
+
+    // Добавляем CORS middleware
+    app.UseCors();
 
     app.UseSerilogRequestLogging();
     app.UseAuthentication();

@@ -9,9 +9,7 @@ using System.Text.Json.Serialization;
 using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
 using ContentRating.IntegrationTests.Fixtures;
-using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications;
-using ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor;
-using ContentRatingAPI.Application.ContentEstimationListEditor.InviteEditor;
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,9 +23,7 @@ namespace ContentRating.IntegrationTests
         private readonly IServiceProvider _serviceProvider;
         private readonly Guid _userId;
 
-        public ContentEstimationListEditorApiTests(
-            ContentRatingApiFixture fixture
-        )
+        public ContentEstimationListEditorApiTests(ContentRatingApiFixture fixture)
         {
             _userId = ContentRatingApiFixture.UserId;
             _webApplicationFactory = fixture;
@@ -53,9 +49,7 @@ namespace ContentRating.IntegrationTests
         public async Task Post_ContentEstimationListEditorExistingList_Error()
         {
             var contentList = await CreateContentEstimationListEditor();
-            var requestContent = CreateContentEstimationListEditorRequestBody(
-                contentList.Id
-            );
+            var requestContent = CreateContentEstimationListEditorRequestBody(contentList.Id);
 
             var response = await _httpClient.PostAsync(
                 $"api/content-estimation-list-editor",
@@ -63,10 +57,7 @@ namespace ContentRating.IntegrationTests
             );
             var r = await response.Content.ReadAsStringAsync();
 
-            Assert.Equal(
-                HttpStatusCode.InternalServerError,
-                response.StatusCode
-            );
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         }
 
         [Fact]
@@ -79,11 +70,7 @@ namespace ContentRating.IntegrationTests
                 EditorName = Guid.NewGuid().ToString(),
             };
             var requestString = JsonSerializer.Serialize(request);
-            var stringContent = new StringContent(
-                requestString,
-                Encoding.UTF8,
-                "application/json"
-            );
+            var stringContent = new StringContent(requestString, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PostAsync(
                 $"api/content-estimation-list-editor/{contentList.Id}/editor",
@@ -122,11 +109,7 @@ namespace ContentRating.IntegrationTests
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
             var requestString = JsonSerializer.Serialize(request, jsonOptions);
-            var stringContent = new StringContent(
-                requestString,
-                Encoding.UTF8,
-                "application/json"
-            );
+            var stringContent = new StringContent(requestString, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(
                 $"api/content-estimation-list-editor/{contentList.Id}/content/{content.Id}",
@@ -151,11 +134,7 @@ namespace ContentRating.IntegrationTests
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
             var requestString = JsonSerializer.Serialize(request, jsonOptions);
-            var stringContent = new StringContent(
-                requestString,
-                Encoding.UTF8,
-                "application/json"
-            );
+            var stringContent = new StringContent(requestString, Encoding.UTF8, "application/json");
 
             var response = await _httpClient.PutAsync(
                 $"api/content-estimation-list-editor/{contentList.Id}/content/{content.Id}",
@@ -184,9 +163,7 @@ namespace ContentRating.IntegrationTests
         {
             var contentList = await CreateContentEstimationListEditor();
             var editorId = contentList
-                .InvitedEditors.First(c =>
-                    c.Id != contentList.ContentListCreator.Id
-                )
+                .InvitedEditors.First(c => c.Id != contentList.ContentListCreator.Id)
                 .Id;
 
             var response = await _httpClient.DeleteAsync(
@@ -211,16 +188,12 @@ namespace ContentRating.IntegrationTests
         [Fact]
         public async Task Get_ContentListEditors_Success()
         {
-            var response = await _httpClient.GetAsync(
-                $"api/content-estimation-list-editor"
-            );
+            var response = await _httpClient.GetAsync($"api/content-estimation-list-editor");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        private StringContent CreateContentEstimationListEditorRequestBody(
-            Guid? id = null
-        )
+        private StringContent CreateContentEstimationListEditorRequestBody(Guid? id = null)
         {
             var request = new CreateContentEstimationListEditorRequest()
             {
@@ -228,11 +201,7 @@ namespace ContentRating.IntegrationTests
                 RoomName = Guid.NewGuid().ToString(),
             };
             var requestString = JsonSerializer.Serialize(request);
-            return new StringContent(
-                requestString,
-                Encoding.UTF8,
-                "application/json"
-            );
+            return new StringContent(requestString, Encoding.UTF8, "application/json");
         }
 
         private StringContent CreateContentRequestBody(Guid? contentId = null)
@@ -247,21 +216,16 @@ namespace ContentRating.IntegrationTests
             JsonSerializerOptions jsonOptions = new();
             jsonOptions.Converters.Add(new JsonStringEnumConverter());
             var requestString = JsonSerializer.Serialize(request, jsonOptions);
-            return new StringContent(
-                requestString,
-                Encoding.UTF8,
-                "application/json"
-            );
+            return new StringContent(requestString, Encoding.UTF8, "application/json");
         }
 
         private async Task<ContentEstimationListEditor> CreateContentEstimationListEditor()
         {
             var repository =
                 _serviceProvider.GetRequiredService<IContentEstimationListEditorRepository>();
-            var contentEditor =
-                ContentEstimationListEditorGenerator.ContentEstimationListEditor(
-                    _userId
-                );
+            var contentEditor = ContentEstimationListEditorGenerator.ContentEstimationListEditor(
+                _userId
+            );
             repository.Add(contentEditor);
             await repository.UnitOfWork.SaveChangesAsync();
             return contentEditor;

@@ -4,10 +4,10 @@
 
 using System.Security.Claims;
 using Ardalis.Result.AspNetCore;
-using ContentRatingAPI.Application.Identity;
 using ContentRatingAPI.Application.Identity.GetAllUsers;
 using ContentRatingAPI.Application.Identity.RefreshToken;
 using ContentRatingAPI.Application.Identity.RegisterUser;
+using ContentRating.Web.Contracts.Identity;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;

@@ -4,6 +4,7 @@
 
 using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentFileManager;
+using ContentRating.Web.Contracts.ContentFileManager;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

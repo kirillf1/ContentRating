@@ -6,15 +6,20 @@ using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.Domain.Shared;
+
 using ContentRatingAPI.Application.ContentFileManager;
 using ContentRatingAPI.Infrastructure.Data.Caching;
 using ContentRatingAPI.Infrastructure.Data.Indexes;
 using ContentRatingAPI.Infrastructure.Data.MapConvensions;
 using ContentRatingAPI.Infrastructure.Data.Repositories;
+
 using Microsoft.Extensions.Options;
+
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.Options;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 
@@ -24,6 +29,7 @@ namespace ContentRatingAPI.Infrastructure.Data
     {
         public static IServiceCollection AddMongoDbStorage(this IHostApplicationBuilder builder)
         {
+
             RegisterEntityClassMap();
             builder.Services.AddSingleton<IMongoClient>(c =>
             {
@@ -60,13 +66,17 @@ namespace ContentRatingAPI.Infrastructure.Data
 
         private static void RegisterEntityClassMap()
         {
+            BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer(GuidRepresentation.Standard));
             var conventionPack = new ConventionPack { new MapReadOnlyPropertiesConvention(), new IgnoreIfNullConvention(true) };
             ConventionRegistry.Register("Conventions", conventionPack, _ => true);
+
             BsonClassMap.RegisterClassMap<Entity>(cm =>
             {
                 cm.AutoMap();
                 cm.UnmapMember(m => m.DomainEvents);
+                cm.MapProperty(c => c.Id).SetSerializer(new GuidSerializer(GuidRepresentation.Standard));
             });
+
             BsonClassMap.RegisterClassMap<ContentPartyEstimationRoom>(classMap =>
             {
                 classMap.AutoMap();
@@ -76,6 +86,8 @@ namespace ContentRatingAPI.Infrastructure.Data
             {
                 classMap.AutoMap();
                 classMap.SetDictionaryRepresentation(c => c.RaterScores, DictionaryRepresentation.ArrayOfDocuments);
+                classMap.MapProperty(c => c.ContentId).SetSerializer(new GuidSerializer(GuidRepresentation.Standard));
+                classMap.MapProperty(c => c.RoomId).SetSerializer(new GuidSerializer(GuidRepresentation.Standard));
             });
 
             BsonClassMap.RegisterClassMap<ContentEstimationListEditor>(classMap =>
@@ -83,10 +95,18 @@ namespace ContentRatingAPI.Infrastructure.Data
                 classMap.AutoMap();
             });
 
+            BsonClassMap.RegisterClassMap<ContentModificationHistory>(classMap =>
+            {
+                classMap.AutoMap();
+                classMap.MapProperty(c => c.EditorId).SetSerializer(new GuidSerializer(GuidRepresentation.Standard));
+            });
+
             BsonClassMap.RegisterClassMap<SavedContentFileInfo>(classMap =>
             {
                 classMap.AutoMap();
             });
+
+
         }
     }
 }

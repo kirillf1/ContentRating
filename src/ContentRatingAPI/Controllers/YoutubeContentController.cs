@@ -6,6 +6,7 @@ using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubePlayLists;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubeVideos;
+using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

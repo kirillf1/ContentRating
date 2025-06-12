@@ -1,0 +1,51 @@
+﻿@inherits LayoutComponentBase
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" 
+                       Color="Color.Inherit" 
+                       Edge="Edge.Start" 
+                       OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6">ContentRating</MudText>
+        <MudSpacer />
+        <ThemeToggle />
+        <MudButton Variant="Variant.Text" 
+                   StartIcon="@Icons.Material.Filled.Info" 
+                   Color="Color.Inherit" 
+                   Href="https://learn.microsoft.com/aspnet/core/" 
+                   Target="_blank">
+            About
+        </MudButton>
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" 
+               Elevation="2" 
+               Variant="@DrawerVariant.Responsive" 
+               OpenMiniOnHover="false">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Навигация</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = true;
+
+    void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override void OnInitialized()
+    {
+        // На мобильных устройствах drawer по умолчанию закрыт
+        _drawerOpen = true;
+    }
+}

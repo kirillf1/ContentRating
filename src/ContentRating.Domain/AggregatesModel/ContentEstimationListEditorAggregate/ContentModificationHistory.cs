@@ -12,8 +12,8 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             LastContentModifiedDate = DateTime.UtcNow;
         }
 
-        public Guid EditorId { get; }
-        public DateTime LastContentModifiedDate { get; }
+        public Guid EditorId { get; private set; }
+        public DateTime LastContentModifiedDate { get; private set; }
 
         public ContentModificationHistory MarkContentModification()
         {

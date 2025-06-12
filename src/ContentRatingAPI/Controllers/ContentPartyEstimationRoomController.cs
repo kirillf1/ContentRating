@@ -11,6 +11,7 @@ using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.KickRater;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.RemoveUnavailableContent;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
+using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

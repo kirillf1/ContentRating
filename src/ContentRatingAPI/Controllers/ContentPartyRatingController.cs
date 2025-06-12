@@ -5,6 +5,7 @@
 using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentPartyRating.EstimateContent;
 using ContentRatingAPI.Application.ContentPartyRating.GetContentRating;
+using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

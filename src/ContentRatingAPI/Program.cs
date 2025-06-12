@@ -4,8 +4,11 @@
 
 using System.Net;
 using System.Text.Json.Serialization;
+
 using Ardalis.Result.AspNetCore;
+
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
+
 using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications;
 using ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
@@ -24,12 +27,18 @@ using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
+
 using FluentValidation;
+
 using Microsoft.AspNetCore.SignalR;
+
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+
 using Serilog;
 
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: true)
@@ -66,8 +75,8 @@ try
 
     builder.Services.AddSingleton<IValidator<StartContentPartyEstimationCommand>, StartContentPartyEstimationCommandValidator>();
 
-    builder.AddApplicationAuthentication();
     builder.AddMongoDbStorage();
+    builder.AddApplicationAuthentication();
     builder.AddAggregateIntegrations();
     builder.AddApplicationAuthorization();
     builder.AddTelemetry();

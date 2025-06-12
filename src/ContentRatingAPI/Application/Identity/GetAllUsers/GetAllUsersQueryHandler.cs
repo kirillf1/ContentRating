@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using ContentRating.Web.Contracts.Identity;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
@@ -19,7 +20,7 @@ namespace ContentRatingAPI.Application.Identity.GetAllUsers
 
         public async Task<Result<IEnumerable<UserResponse>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var query = (IMongoQueryable<ApplicationUser>)userManager.Users;
+            var query = userManager.Users;
             if (request.IgnoreUserId.HasValue)
             {
                 query = query.Where(c => c.Id != request.IgnoreUserId.Value);

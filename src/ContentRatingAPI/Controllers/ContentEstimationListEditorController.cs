@@ -9,6 +9,7 @@ using ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEstimat
 using ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEstimationListEditorTitles;
 using ContentRatingAPI.Application.ContentEstimationListEditor.InviteEditor;
 using ContentRatingAPI.Application.ContentEstimationListEditor.KickEditor;
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

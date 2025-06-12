@@ -1,0 +1,37 @@
+@using ContentRating.Web.UI.Services
+@inject ThemeService ThemeService
+@implements IDisposable
+
+<MudButton Variant="Variant.Text" 
+           Color="Color.Inherit" 
+           StartIcon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+           OnClick="ToggleTheme"
+           title="@(_isDarkMode ? "Переключить на светлую тему" : "Переключить на темную тему")">
+    @(_isDarkMode ? "Светлая" : "Темная")
+</MudButton>
+
+@code {
+    private bool _isDarkMode;
+
+    protected override void OnInitialized()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        ThemeService.OnThemeChanged += OnThemeChanged;
+    }
+
+    private void ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+    }
+
+    private void OnThemeChanged()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= OnThemeChanged;
+    }
+} 

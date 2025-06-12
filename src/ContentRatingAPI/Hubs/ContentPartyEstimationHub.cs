@@ -4,6 +4,7 @@
 
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRatingAPI.Application.ContentPartyRating.EstimateContent;
+using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;

@@ -63,7 +63,9 @@ namespace ContentRating.Web.UI.Services
             var accessToken = await GetAccessTokenAsync();
 
             if (string.IsNullOrEmpty(refreshToken) || string.IsNullOrEmpty(accessToken))
+            {
                 return false;
+            }
 
             try
             {
@@ -115,7 +117,9 @@ namespace ContentRating.Web.UI.Services
         public async Task<string?> GetAccessTokenAsync()
         {
             if (_accessToken != null)
+            {
                 return _accessToken;
+            }
 
             _accessToken = await _tokenStorage.GetAccessTokenAsync();
             return _accessToken;
@@ -124,7 +128,9 @@ namespace ContentRating.Web.UI.Services
         public async Task<string?> GetRefreshTokenAsync()
         {
             if (_refreshToken != null)
+            {
                 return _refreshToken;
+            }
 
             _refreshToken = await _tokenStorage.GetRefreshTokenAsync();
             return _refreshToken;

@@ -1,0 +1,135 @@
+@using ContentRating.Web.UI.ViewModels
+@using MudBlazor
+@implements IDisposable
+
+@if (ViewModel.ShowYoutubeDialog)
+{
+    <MudOverlay Visible="true" DarkBackground="true" Absolute="false">
+        <MudPaper Class="pa-6 ma-4" Style="max-width: 600px; width: 100%; margin: auto;">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.PlaylistAdd" Class="mr-3" />
+                        Импорт из YouTube плейлистов
+                    </MudText>
+                </MudItem>
+                
+                @if (ViewModel.IsLoadingPlaylists)
+                {
+                    <MudItem xs="12">
+                        <MudGrid Justify="Justify.Center" Class="pa-4">
+                            <MudItem>
+                                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                                <MudText Typo="Typo.body1" Class="mt-2" Align="Align.Center">
+                                    Загружаем ваши плейлисты...
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                }
+                else if (ViewModel.HasYoutubeError)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Warning" Class="mb-4">
+                            @ViewModel.YoutubeErrorMessage
+                        </MudAlert>
+                    </MudItem>
+                }
+                else if (ViewModel.YoutubePlaylists.Any())
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.body1" Class="mb-4">
+                            Выберите плейлист для импорта видео:
+                        </MudText>
+                        
+                        <MudSelect @bind-Value="ViewModel.SelectedPlaylistId" 
+                                   Label="Плейлист YouTube" 
+                                   Placeholder="Выберите плейлист">
+                            @foreach (var playlist in ViewModel.YoutubePlaylists)
+                            {
+                                <MudSelectItem T="string" Value="@playlist.Id">
+                                    @playlist.Name
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        @if (ViewModel.IsLoadingVideos)
+                        {
+                            <MudGrid Justify="Justify.Center" Class="mt-4">
+                                <MudItem>
+                                    <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                                    <MudText Typo="Typo.body2" Class="mt-2" Align="Align.Center">
+                                        Импортируем видео...
+                                    </MudText>
+                                </MudItem>
+                            </MudGrid>
+                        }
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info">
+                            Не найдено доступных плейлистов
+                        </MudAlert>
+                    </MudItem>
+                }
+                
+                <MudItem xs="12" Class="d-flex justify-end gap-2 mt-4">
+                    <MudButton OnClick="OnCancel">Отмена</MudButton>
+                    <MudButton Color="Color.Primary" 
+                               Variant="Variant.Filled"
+                               OnClick="OnImport"
+                               Disabled="@(string.IsNullOrEmpty(ViewModel.SelectedPlaylistId) || ViewModel.IsLoadingVideos || ViewModel.HasYoutubeError)">
+                        @if (ViewModel.IsLoadingVideos)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <text>Импортировать</text>
+                        }
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudOverlay>
+}
+
+@code {
+    [Parameter] public YoutubeImportViewModel ViewModel { get; set; } = null!;
+    [Parameter] public List<ContentItemViewModel> ExistingContent { get; set; } = new();
+    [Parameter] public EventCallback OnStateChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ViewModel.StateChanged += OnViewModelStateChanged;
+    }
+
+    private void OnViewModelStateChanged()
+    {
+        InvokeAsync(() => 
+        {
+            StateHasChanged();
+            OnStateChanged.InvokeAsync();
+        });
+    }
+
+    private void OnCancel()
+    {
+        ViewModel.CloseYoutubeDialog();
+    }
+
+    private async Task OnImport()
+    {
+        await ViewModel.ImportFromPlaylistAsync(ExistingContent);
+    }
+
+    public void Dispose()
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+} 

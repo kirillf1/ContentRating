@@ -3,15 +3,17 @@
 // See the LICENSE file in the project root for more information.
 
 using Ardalis.Result.AspNetCore;
+using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubePlayLists;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubeVideos;
-using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRatingAPI.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContentRatingAPI.Controllers
 {
+    [Authorize]
     [Route("api/youtube-content")]
     [ApiController]
     public class YoutubeContentController : ControllerBase
@@ -39,6 +41,7 @@ namespace ContentRatingAPI.Controllers
         }
 
         [HttpGet("{playlistId}")]
+        [TranslateResultToActionResult]
         public async Task<Result<IEnumerable<YoutubeVideo>>> GetVideosByPlaylist(string playlistId)
         {
             var userInfo = userInfoService.TryGetUserInfo();

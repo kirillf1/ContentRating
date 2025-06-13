@@ -4,11 +4,8 @@
 
 using System.Net;
 using System.Text.Json.Serialization;
-
 using Ardalis.Result.AspNetCore;
-
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
-
 using ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications;
 using ContentRatingAPI.Application.ContentEstimationListEditor.CreateContentEstimationListEditor;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
@@ -27,15 +24,11 @@ using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
-
 using FluentValidation;
-
 using Microsoft.AspNetCore.SignalR;
-
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-
 using Serilog;
 
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
@@ -65,15 +58,25 @@ try
 
     builder.Services.AddSingleton<IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
 
-    builder.Services.AddSingleton<IValidator<CreateContentEstimationListEditorCommand>, CreateContentEstimationListEditorCommandValidator>();
+    builder.Services.AddSingleton<
+        IValidator<CreateContentEstimationListEditorCommand>,
+        CreateContentEstimationListEditorCommandValidator
+    >();
 
-    builder.Services.AddSingleton<IValidator<CreateContentCommand>, CreateContentCommandValidator>();
+    builder.Services.AddSingleton<
+        IValidator<CreateContentCommand>,
+        CreateContentCommandValidator
+    >();
 
-    builder.Services.AddSingleton<IValidator<UpdateContentCommand>, UpdateContentCommandValidator>();
+    builder.Services.AddSingleton<
+        IValidator<UpdateContentCommand>,
+        UpdateContentCommandValidator
+    >();
 
-
-
-    builder.Services.AddSingleton<IValidator<StartContentPartyEstimationCommand>, StartContentPartyEstimationCommandValidator>();
+    builder.Services.AddSingleton<
+        IValidator<StartContentPartyEstimationCommand>,
+        StartContentPartyEstimationCommandValidator
+    >();
 
     builder.AddMongoDbStorage();
     builder.AddApplicationAuthentication();
@@ -96,7 +99,10 @@ try
                     .For(
                         ResultStatus.Ok,
                         HttpStatusCode.OK,
-                        resultStatusOptions => resultStatusOptions.For("POST", HttpStatusCode.Created).For("DELETE", HttpStatusCode.NoContent)
+                        resultStatusOptions =>
+                            resultStatusOptions
+                                .For("POST", HttpStatusCode.Created)
+                                .For("DELETE", HttpStatusCode.NoContent)
                     )
                     .For(ResultStatus.Error, HttpStatusCode.InternalServerError)
             )
@@ -112,22 +118,29 @@ try
     builder.Services.Configure<RequestLocalizationOptions>(options =>
     {
         var supportedCultures = new[] { "en-US", "ru-RU" };
-        options.SetDefaultCulture(supportedCultures[0]).AddSupportedCultures(supportedCultures).AddSupportedUICultures(supportedCultures);
+        options
+            .SetDefaultCulture(supportedCultures[0])
+            .AddSupportedCultures(supportedCultures)
+            .AddSupportedUICultures(supportedCultures);
         options.ApplyCurrentCultureToResponseHeaders = true;
     });
 
     builder.Services.AddSignalR(options => options.AddFilter<LoggingHubFilter>());
-    builder.Services.AddTransient<IContentPartyEstimationNotificationService, ContentPartyEstimationNotificationHubService>();
-    builder.Services.AddTransient<IContentEstimationListEditorNotificationService, ContentEstimationListEditorNotificationHubService>();
+    builder.Services.AddTransient<
+        IContentPartyEstimationNotificationService,
+        ContentPartyEstimationNotificationHubService
+    >();
+    builder.Services.AddTransient<
+        IContentEstimationListEditorNotificationService,
+        ContentEstimationListEditorNotificationHubService
+    >();
 
     // Настройка CORS
     builder.Services.AddCors(options =>
     {
         options.AddDefaultPolicy(policy =>
         {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
         });
     });
 
@@ -151,6 +164,7 @@ try
 
     app.MapControllers();
     app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub");
+    app.MapHub<ContentEstimationListEditorHub>("/contentListEditor");
 
     await app.RunAsync();
     return 0;

@@ -1,5 +1,5 @@
-﻿using MudBlazor;
-using Microsoft.JSInterop;
+﻿using Microsoft.JSInterop;
+using MudBlazor;
 
 namespace ContentRating.Web.UI.Services;
 
@@ -24,11 +24,16 @@ public class ThemeService
     public async Task InitializeAsync()
     {
         if (_isInitialized)
+        {
             return;
+        }
 
         try
         {
-            var savedTheme = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", THEME_KEY);
+            var savedTheme = await _jsRuntime.InvokeAsync<string?>(
+                "localStorage.getItem",
+                THEME_KEY
+            );
             if (!string.IsNullOrEmpty(savedTheme))
             {
                 _isDarkMode = savedTheme == "dark";
@@ -36,7 +41,9 @@ public class ThemeService
             else
             {
                 // Проверяем системные настройки темы
-                var prefersDark = await _jsRuntime.InvokeAsync<bool>("themeHelpers.getSystemPreference");
+                var prefersDark = await _jsRuntime.InvokeAsync<bool>(
+                    "themeHelpers.getSystemPreference"
+                );
                 _isDarkMode = prefersDark;
                 await SaveThemeAsync();
             }
@@ -67,7 +74,11 @@ public class ThemeService
     {
         try
         {
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", THEME_KEY, _isDarkMode ? "dark" : "light");
+            await _jsRuntime.InvokeVoidAsync(
+                "localStorage.setItem",
+                THEME_KEY,
+                _isDarkMode ? "dark" : "light"
+            );
         }
         catch
         {

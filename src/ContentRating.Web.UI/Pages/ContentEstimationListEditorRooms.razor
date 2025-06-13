@@ -1,4 +1,4 @@
-@page "/rooms"
+@page "/content-creation-rooms"
 @using ContentRating.Web.Contracts.ContentEstimationListEditor
 @using ContentRating.Web.UI.Services
 @using MudBlazor
@@ -7,13 +7,13 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<PageTitle>Ваши топы</PageTitle>
+<PageTitle>Ваши редакторы топов</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudGrid Justify="Justify.SpaceBetween" Class="mb-4">
         <MudItem>
             <MudText Typo="Typo.h4" GutterBottom="true">
-                Ваши топы
+                Ваши редакторы топов
             </MudText>
         </MudItem>
         <MudItem>
@@ -85,10 +85,11 @@
             Найдено топов: @rooms.Count()
         </MudText>
 
-        @* Виртуализованный список для оптимизации производительности *@
         <MudVirtualize Items="rooms" Context="room" ItemSize="120" T="ContentEstimationListEditorTitle">
             <ContentRating.Web.UI.Components.RoomCard Room="room" 
-                                                      OnEdit="NavigateToRoom" />
+                                                      OnEdit="NavigateToRoom"
+                                                      OnDelete="DeleteRoom"
+                                                      IsDeleting="@(deletingRoomId == room.Id)" />
         </MudVirtualize>
     }
 </MudContainer>
@@ -97,6 +98,7 @@
     private ICollection<ContentEstimationListEditorTitle>? rooms;
     private bool isLoading = true;
     private bool hasError = false;
+    private Guid? deletingRoomId = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,11 +136,48 @@
 
     private void NavigateToRoom(Guid roomId)
     {
-        // Пока просто показываем уведомление, так как страница редактирования не создана
-        Snackbar.Add($"Переход к редактированию топа {roomId}", Severity.Info);
-        
-        // Когда страница будет создана, раскомментировать:
-        // Navigation.NavigateTo($"/rooms/{roomId}");
+        Navigation.NavigateTo($"/content-estimation-list-editor/{roomId}");
+    }
+
+    private async Task DeleteRoom(Guid roomId)
+    {
+        var room = rooms?.FirstOrDefault(r => r.Id == roomId);
+        if (room == null) return;
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Подтвердить удаление",
+            $"Вы уверены, что хотите удалить топ \"{room.Name}\"? Это действие нельзя отменить.",
+            yesText: "Удалить", 
+            cancelText: "Отмена");
+
+        if (confirmed != true) return;
+
+        try
+        {
+            deletingRoomId = roomId;
+            StateHasChanged();
+
+            var success = await ContentEstimationListService.DeleteRoomAsync(roomId);
+            
+            if (success)
+            {
+                rooms = rooms?.Where(r => r.Id != roomId).ToList();
+                Snackbar.Add($"Топ \"{room.Name}\" был удален", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Не удалось удалить топ", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Произошла ошибка при удалении топа", Severity.Error);
+        }
+        finally
+        {
+            deletingRoomId = null;
+            StateHasChanged();
+        }
     }
 
     private async Task OpenCreateRoomDialog()

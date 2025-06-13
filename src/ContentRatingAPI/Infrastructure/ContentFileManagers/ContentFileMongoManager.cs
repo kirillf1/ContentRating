@@ -56,12 +56,17 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
             }
         }
 
-        public async Task<Result<int>> RemoveUnusedSavedContentFiles(TimeSpan notCheckedTime, CancellationToken cancellationToken = default)
+        public async Task<Result<int>> RemoveUnusedSavedContentFiles(
+            TimeSpan notCheckedTime,
+            CancellationToken cancellationToken = default
+        )
         {
             try
             {
                 var deletedFileCount = 0;
-                var uncheckedFiles = await savedContentStorage.GetOldCheckedOrUncheckedContent(notCheckedTime);
+                var uncheckedFiles = await savedContentStorage.GetOldCheckedOrUncheckedContent(
+                    notCheckedTime
+                );
                 foreach (var uncheckedFile in uncheckedFiles)
                 {
                     if (!await contentPathFinder.HasFileIdInContent(uncheckedFile.Id))
@@ -98,21 +103,34 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
                     return Result.Invalid(new ValidationError("Unknown content type"));
                 }
 
-                var newContent = await fileSaver.SaveFile(Guid.NewGuid(), Path.GetExtension(fileName), contentBytes, cancellationToken);
+                var newContent = await fileSaver.SaveFile(
+                    Guid.NewGuid(),
+                    Path.GetExtension(fileName),
+                    contentBytes,
+                    cancellationToken
+                );
                 newContent.LastCheckDate = DateTime.UtcNow;
                 await savedContentStorage.Add(newContent);
 
-                logger.LogInformation("Saved file: {fileName}, id: {id}", newContent.Path, newContent.Id);
+                logger.LogInformation(
+                    "Saved file: {FileName}, id: {Id}",
+                    newContent.Path,
+                    newContent.Id
+                );
                 return newContent;
             }
             catch (Exception ex)
             {
-                logger.LogError("Can't save file: {fileName}, error: {ex}", fileName, ex);
+                logger.LogError(ex, "Can't save file: {FileName}", fileName);
                 return Result.Error(ex.Message);
             }
         }
 
-        public async Task<Result<ContentFile>> GetFile(Guid id, string baseUrlForSegmentManifest, CancellationToken cancellationToken = default)
+        public async Task<Result<ContentFile>> GetFile(
+            Guid id,
+            string baseUrlForSegmentManifest,
+            CancellationToken cancellationToken = default
+        )
         {
             try
             {
@@ -126,20 +144,32 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
 
                 if (savedContentFile.IsSegmented)
                 {
-                    return await CreateSegmentedFile(savedContentFile, mimeType, baseUrlForSegmentManifest, cancellationToken);
+                    return await CreateSegmentedFile(
+                        savedContentFile,
+                        mimeType,
+                        baseUrlForSegmentManifest,
+                        cancellationToken
+                    );
                 }
 
-                var fileBytes = await File.ReadAllBytesAsync(savedContentFile.Path, cancellationToken);
+                var fileBytes = await File.ReadAllBytesAsync(
+                    savedContentFile.Path,
+                    cancellationToken
+                );
                 return new ContentFile(fileBytes, savedContentFile.Path, mimeType);
             }
             catch (Exception ex)
             {
-                logger.LogError("Can't get file with id: {id}, error: {ex}", id, ex);
+                logger.LogError(ex, "Can't get file with id: {Id}", id);
                 return Result.Error(ex.Message);
             }
         }
 
-        public async Task<Result<ContentFile>> GetFileSegment(Guid id, string segmentName, CancellationToken cancellationToken = default)
+        public async Task<Result<ContentFile>> GetFileSegment(
+            Guid id,
+            string segmentName,
+            CancellationToken cancellationToken = default
+        )
         {
             try
             {
@@ -164,7 +194,13 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
             }
             catch (Exception ex)
             {
-                logger.LogError("Can't get file with id: {id}, segment: {segment} error: {ex}", id, segmentName, ex);
+                logger.LogError(
+                    ex,
+                    "Can't get file with id: {Id}, segment: {Segment}",
+                    id,
+                    segmentName,
+                    ex
+                );
                 return Result.Error(ex.Message);
             }
         }
@@ -182,9 +218,15 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers
             }
 
             // TODO IF add new content should divide logic
-            var fileStringHLS = await File.ReadAllTextAsync(savedContentFile.Path, cancellationToken);
+            var fileStringHLS = await File.ReadAllTextAsync(
+                savedContentFile.Path,
+                cancellationToken
+            );
             var fileName = Path.GetFileNameWithoutExtension(savedContentFile.Path);
-            fileStringHLS = fileStringHLS.Replace(fileName, $"{baseUrlForSegmentManifest}/{fileName}");
+            fileStringHLS = fileStringHLS.Replace(
+                fileName,
+                $"{baseUrlForSegmentManifest}/{fileName}"
+            );
             var fileBytes = Encoding.UTF8.GetBytes(fileStringHLS);
 
             return new ContentFile(fileBytes, savedContentFile.Path, mimeType);

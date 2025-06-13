@@ -1,0 +1,220 @@
+@using System.Text.RegularExpressions
+@using MudBlazor
+
+<div class="video-container" style="position: relative; width: @Width; height: @Height;">
+    @if (IsYouTubeUrl(Url))
+    {
+        @if (!_isYouTubeLoaded)
+        {
+            <!-- Превью для YouTube видео -->
+            <div class="youtube-preview" 
+                 style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg, #f9f9f9 0%, #e9e9e9 100%);"
+                 @onclick="LoadYouTubeVideo">
+                
+                <!-- Фоновое изображение превью YouTube -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('@GetYouTubeThumbnail(Url)'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 8px;">
+                    <!-- Затемнение и кнопка воспроизведения -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: transform 0.2s ease;">
+                            <MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Large" Color="Color.Error" Style="font-size: 2.5rem; margin-left: 4px;" />
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Логотип YouTube в углу -->
+                <div style="position: absolute; bottom: 8px; right: 8px; background: #ff0000; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                    YouTube
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Загруженное YouTube видео -->
+            <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                        src="@GetEmbedUrl(Url)" 
+                        frameborder="0" 
+                        allowfullscreen
+                        allow="autoplay">
+                </iframe>
+            </div>
+        }
+    }
+    else if (IsHlsUrl(Url))
+    {
+        <div style="border-radius: 8px; overflow: hidden;">
+            <HlsPlayerComponent Url="@Url" 
+                                AutoLoad="true"
+                                ShowError="@ShowError" />
+        </div>
+    }
+    else if (IsVideoFile(Url))
+    {
+        <div style="position: relative; width: 100%; border-radius: 8px; overflow: hidden;">
+            <video width="100%" 
+                   height="@Height" 
+                   controls
+                   preload="metadata"
+                   style="border-radius: 8px;">
+                <source src="@Url" type="@GetVideoMimeType(Url)">
+                @if (ShowError)
+                {
+                    <MudText Color="Color.Error">Ваш браузер не поддерживает видео</MudText>
+                }
+            </video>
+        </div>
+    }
+    else
+    {
+        @if (ShowError)
+        {
+            <MudAlert Severity="Severity.Warning" Style="border-radius: 8px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" />
+                    <MudText>Неподдерживаемый формат видео</MudText>
+                    <MudLink Href="@Url" Target="_blank" Typo="Typo.caption">
+                        Открыть в новой вкладке
+                    </MudLink>
+                </MudStack>
+            </MudAlert>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Url { get; set; } = string.Empty;
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public string Height { get; set; } = "315px";
+    [Parameter] public bool ShowError { get; set; } = true;
+    [Parameter] public bool AutoLoad { get; set; } = false; // Для YouTube будет использоваться ленивая загрузка
+
+    private bool _isYouTubeLoaded = false;
+
+    protected override void OnParametersSet()
+    {
+        // Если AutoLoad включен для YouTube, сразу загружаем
+        if (AutoLoad && IsYouTubeUrl(Url))
+        {
+            _isYouTubeLoaded = true;
+        }
+    }
+
+    private void LoadYouTubeVideo()
+    {
+        _isYouTubeLoaded = true;
+        StateHasChanged();
+    }
+
+    private bool IsYouTubeUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+
+        return url.Contains("youtube.com") || url.Contains("youtu.be");
+    }
+
+    private bool IsHlsUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+
+        // Проверяем только .m3u8 файлы - это настоящий HLS формат
+        return url.EndsWith(".m3u8", StringComparison.OrdinalIgnoreCase) || 
+               url.Contains("/api/content-files/") || 
+               url.Contains("application/vnd.apple.mpegurl") ||
+               url.Contains("application/x-mpegURL");
+    }
+
+    private bool IsVideoFile(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+
+    
+
+        var extension = Path.GetExtension(url).ToLower();
+        return extension switch
+        {
+            ".mp4" or ".webm" or ".ogg" or ".avi" or ".mov" or ".mkv" => true,
+            _ => false
+        };
+    }
+
+    private string GetYouTubeThumbnail(string youtubeUrl)
+    {
+        try
+        {
+            var videoId = ExtractYouTubeVideoId(youtubeUrl);
+            if (!string.IsNullOrEmpty(videoId))
+            {
+                // Используем высококачественное превью YouTube в приоритете
+                // sddefault.jpg - лучшее качество с гарантированным заполнением
+                return $"https://img.youtube.com/vi/{videoId}/sddefault.jpg";
+            }
+        }
+        catch
+        {
+            // Fallback к стандартному превью
+        }
+        
+        return "https://img.youtube.com/vi/default/sddefault.jpg";
+    }
+
+    private string ExtractYouTubeVideoId(string youtubeUrl)
+    {
+        try
+        {
+            var uri = new Uri(youtubeUrl);
+            
+            if (uri.Host.Contains("youtu.be"))
+            {
+                return uri.LocalPath.TrimStart('/');
+            }
+            
+            if (uri.Host.Contains("youtube.com"))
+            {
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                return query["v"] ?? string.Empty;
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        
+        return string.Empty;
+    }
+
+    private string GetEmbedUrl(string youtubeUrl)
+    {
+        try
+        {
+            var videoId = ExtractYouTubeVideoId(youtubeUrl);
+            if (!string.IsNullOrEmpty(videoId))
+            {
+                return $"https://www.youtube.com/embed/{videoId}?rel=0&modestbranding=1&autoplay=1";
+            }
+        }
+        catch
+        {
+            // Fallback к оригинальному URL
+        }
+        
+        return youtubeUrl;
+    }
+
+    private string GetVideoMimeType(string url)
+    {
+        var extension = Path.GetExtension(url).ToLower();
+        return extension switch
+        {
+            ".mp4" => "video/mp4",
+            ".webm" => "video/webm",
+            ".ogg" => "video/ogg",
+            ".avi" => "video/x-msvideo",
+            ".mov" => "video/quicktime",
+            ".mkv" => "video/x-matroska",
+            _ => "video/mp4"
+        };
+    }
+} 

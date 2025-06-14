@@ -1,0 +1,251 @@
+@page "/party-estimation-rooms"
+@using ContentRating.Web.Contracts.ContentPartyEstimationRoom
+@using ContentRating.Web.UI.Services
+@using MudBlazor
+@inject IContentPartyEstimationService PartyEstimationService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Комнаты групповой оценки</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudGrid Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudItem>
+            <MudText Typo="Typo.h4" GutterBottom="true">
+                Комнаты групповой оценки
+            </MudText>
+        </MudItem>
+        <MudItem>
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Add"
+                      OnClick="OpenCreateRoomDialog"
+                      Disabled="isLoading">
+                Создать комнату
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Фильтры -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" md="6">
+            <MudCheckBox Value="showCompleted"
+                        Label="Показать завершенные"
+                        Color="Color.Primary"
+                        T="bool"
+                        ValueChanged="OnCompletedFilterChanged" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCheckBox Value="showActive"
+                        Label="Показать активные"
+                        Color="Color.Primary"
+                        T="bool"
+                        ValueChanged="OnActiveFilterChanged" />
+        </MudItem>
+    </MudGrid>
+
+    @if (isLoading)
+    {
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem>
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                <MudText Typo="Typo.body1" Class="mt-2" Align="Align.Center">Загружаем комнаты...</MudText>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (hasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            Произошла ошибка при загрузке комнат. Попробуйте обновить страницу.
+        </MudAlert>
+        <MudGrid Justify="Justify.Center" Class="mt-4">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadRoomsAsync">
+                    Попробовать снова
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (filteredRooms?.Any() != true)
+    {
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem xs="12" md="8" lg="6">
+                <MudPaper Class="pa-6" Elevation="2">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        @if (rooms?.Any() == true)
+                        {
+                            <text>Нет комнат соответствующих фильтрам</text>
+                        }
+                        else
+                        {
+                            <text>Комнат пока нет</text>
+                        }
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        @if (rooms?.Any() == true)
+                        {
+                            <text>Измените настройки фильтров или создайте новую комнату</text>
+                        }
+                        else
+                        {
+                            <text>Создайте первую комнату для групповой оценки топов</text>
+                        }
+                    </MudText>
+                    <MudGrid Justify="Justify.Center" Class="mt-4">
+                        <MudItem>
+                            <MudButton Variant="Variant.Filled" 
+                                      Color="Color.Primary" 
+                                      StartIcon="@Icons.Material.Filled.Add"
+                                      OnClick="OpenCreateRoomDialog">
+                                Создать комнату
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+            Найдено комнат: @filteredRooms.Count()
+        </MudText>
+
+        <MudVirtualize Items="filteredRooms.ToList()" Context="room" ItemSize="140" T="PartyEstimationTitle">
+            <ContentRating.Web.UI.Components.PartyEstimationRoomCard Room="room" 
+                                                                    OnJoin="JoinRoom"
+                                                                    IsLoading="@(joiningRoomId == room.Id)" />
+        </MudVirtualize>
+    }
+</MudContainer>
+
+@code {
+    private ICollection<PartyEstimationTitle>? rooms;
+    private IEnumerable<PartyEstimationTitle>? filteredRooms;
+    private bool isLoading = true;
+    private bool hasError = false;
+    private Guid? joiningRoomId = null;
+    
+    private bool showCompleted = true;
+    private bool showActive = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoomsAsync();
+    }
+
+    private async Task LoadRoomsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            hasError = false;
+            StateHasChanged();
+
+            var roomsResult = await PartyEstimationService.GetRoomsAsync(showCompleted, showActive);
+            rooms = roomsResult?.ToList();
+            
+            if (rooms == null)
+            {
+                hasError = true;
+                Snackbar.Add("Не удалось загрузить список комнат", Severity.Error);
+            }
+            else
+            {
+                UpdateFilteredRooms();
+            }
+        }
+        catch (Exception)
+        {
+            hasError = true;
+            Snackbar.Add("Произошла ошибка при загрузке комнат", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateFilteredRooms()
+    {
+        if (rooms == null)
+        {
+            filteredRooms = null;
+            return;
+        }
+
+        filteredRooms = rooms.Where(r => 
+            (showCompleted && r.IsEstimated) || 
+            (showActive && !r.IsEstimated));
+    }
+
+    private async Task OnCompletedFilterChanged(bool value)
+    {
+        showCompleted = value;
+        if (!showCompleted && !showActive)
+        {
+            showActive = true; // По крайней мере одна опция должна быть выбрана
+        }
+        
+        await LoadRoomsAsync();
+    }
+
+    private async Task OnActiveFilterChanged(bool value)
+    {
+        showActive = value;
+        if (!showCompleted && !showActive)
+        {
+            showCompleted = true; // По крайней мере одна опция должна быть выбрана
+        }
+        
+        await LoadRoomsAsync();
+    }
+
+    private void JoinRoom(Guid roomId)
+    {
+        try
+        {
+            joiningRoomId = roomId;
+            StateHasChanged();
+
+            // Переходим к странице оценки
+            Navigation.NavigateTo($"/party-estimation/{roomId}");
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Произошла ошибка при присоединении к комнате", Severity.Error);
+        }
+        finally
+        {
+            joiningRoomId = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenCreateRoomDialog()
+    {
+        var parameters = new DialogParameters<ContentRating.Web.UI.Components.CreatePartyEstimationRoomDialog>
+        {
+            { x => x.OnRoomCreated, EventCallback.Factory.Create(this, LoadRoomsAsync) }
+        };
+
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ContentRating.Web.UI.Components.CreatePartyEstimationRoomDialog>(
+            "Создать новую комнату", 
+            parameters, 
+            options);
+    }
+} 

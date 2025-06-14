@@ -27,31 +27,42 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstima
 
         public async Task<Result<PartyEstimationRoomResponse>> Handle(GetPartyEstimationRoomQuery request, CancellationToken cancellationToken)
         {
-            var query =
-                from estimationRoom in partyRatingRoomCollection.AsQueryable().Where(c => c.Id == request.RoomId)
-                join rating in contentRatingCollection on estimationRoom.Id equals rating.RoomId
-                select new PartyEstimationRoomResponse(
-                    estimationRoom.Id,
-                    estimationRoom.Name,
-                    estimationRoom.RatingRange.MinRating.Value,
-                    estimationRoom.RatingRange.MaxRating.Value,
-                    estimationRoom.RoomCreator.Name,
-                    estimationRoom.ContentForEstimation.Select(c => new ContentRatingResponse(
-                        rating.Id,
-                        c.Id,
-                        c.Name,
-                        c.Url,
-                        c.ContentType,
-                        rating.RaterScores.Select(s => new RatingByRaterResponse(s.Key, s.Value.Value)),
-                        rating.AverageContentScore.Value
-                    )),
-                    estimationRoom.Raters.Select(r => new RaterResponse(r.Id, r.Name))
-                );
-            var response = await query.FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            if (response is null)
+            var estimationRoom = await partyRatingRoomCollection.AsQueryable()
+                .Where(c => c.Id == request.RoomId)
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+            if (estimationRoom is null)
             {
                 return Result.NotFound();
             }
+
+            var ratings = await contentRatingCollection.AsQueryable()
+                .Where(r => r.RoomId == request.RoomId)
+                .ToListAsync(cancellationToken: cancellationToken);
+
+            var contentRatings = estimationRoom.ContentForEstimation.Select(content =>
+            {
+                var rating = ratings.FirstOrDefault(r => r.ContentId == content.Id);
+                return new ContentRatingResponse(
+                    rating?.Id ?? Guid.Empty,
+                    content.Id,
+                    content.Name,
+                    content.Url,
+                    content.ContentType,
+                    rating?.RaterScores.Select(s => new RatingByRaterResponse(s.Key, s.Value.Value)) ?? Enumerable.Empty<RatingByRaterResponse>(),
+                    rating?.AverageContentScore.Value ?? 0.0
+                );
+            });
+
+            var response = new PartyEstimationRoomResponse(
+                estimationRoom.Id,
+                estimationRoom.Name,
+                estimationRoom.RatingRange.MinRating.Value,
+                estimationRoom.RatingRange.MaxRating.Value,
+                estimationRoom.RoomCreator.Name,
+                contentRatings,
+                estimationRoom.Raters.Select(r => new RaterResponse(r.Id, r.Name))
+            );
 
             return response;
         }

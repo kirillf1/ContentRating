@@ -70,6 +70,34 @@ public class Program
             )
             .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
 
+        builder
+            .Services.AddHttpClient<
+                Services.IContentPartyEstimationService,
+                Services.ContentPartyEstimationService
+            >(
+                (sp, client) =>
+                {
+                    var settings = sp.GetRequiredService<ApiSettings>();
+                    client.BaseAddress = new Uri(settings.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                }
+            )
+            .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
+
+        builder
+            .Services.AddHttpClient<
+                Services.IContentPartyRatingService,
+                Services.ContentPartyRatingService
+            >(
+                (sp, client) =>
+                {
+                    var settings = sp.GetRequiredService<ApiSettings>();
+                    client.BaseAddress = new Uri(settings.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                }
+            )
+            .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
+
         builder.Services.AddMudServices(config =>
         {
             config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
@@ -96,6 +124,7 @@ public class Program
         builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.ContentEstimationListEditorViewModel>();
         builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.YoutubeImportViewModel>();
         builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.FileUploadViewModel>();
+        builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.ContentPartyEstimationRoomViewModel>();
         
         // Services
         builder.Services.AddScoped<ContentRating.Web.UI.Services.ContentValidationService>();

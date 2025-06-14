@@ -1,0 +1,220 @@
+@using ContentRating.Web.Contracts.ContentPartyEstimationRoom
+@using ContentRating.Web.Contracts.ContentEstimationListEditor
+@using ContentRating.Web.UI.Services
+@using MudBlazor
+@inject IContentPartyEstimationService PartyEstimationService
+@inject IContentEstimationListService ContentEstimationListService
+@inject ISnackbar Snackbar
+
+<MudDialog Class="pa-4">
+    <DialogContent>
+        <MudForm @ref="form" Model="@model" Validation="@validation">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="mb-4">
+                        Создание новой комнаты для групповой оценки
+                    </MudText>
+                </MudItem>
+                
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="model.RoomName"
+                                  Label="Название комнаты"
+                                  For="@(() => model.RoomName)"
+                                  Required="true"
+                                  MaxLength="100"
+                                  Counter="100"
+                                  Placeholder="Введите название комнаты..."
+                                  Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudSelect @bind-Value="model.ContentListId"
+                               Label="Выберите топ для оценки"
+                               For="@(() => model.ContentListId)"
+                               Required="true"
+                               Dense="true">
+                        @if (contentLists != null)
+                        {
+                            @foreach (var list in contentLists)
+                            {
+                                <MudSelectItem Value="@list.Id">@list.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="model.MinRating"
+                                     Label="Минимальная оценка"
+                                     For="@(() => model.MinRating)"
+                                     Required="true"
+                                     Min="0"
+                                     Max="10"
+                                     Step="0.1" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="model.MaxRating"
+                                     Label="Максимальная оценка"
+                                     For="@(() => model.MaxRating)"
+                                     Required="true"
+                                     Min="0"
+                                     Max="10"
+                                     Step="0.1" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="Cancel">Отмена</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="CreateRoom"
+                   Disabled="isCreating">
+            @if (isCreating)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ml-2">Создаем...</MudText>
+            }
+            else
+            {
+                <text>Создать</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public EventCallback OnRoomCreated { get; set; }
+
+    private MudForm form = null!;
+    private CreatePartyEstimationRoomModel model = new();
+    private bool isCreating = false;
+    private IEnumerable<ContentEstimationListEditorTitle>? contentLists;
+
+    private readonly Validations validation = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadContentLists();
+        model.RoomId = Guid.NewGuid();
+        model.MinRating = 0.0;
+        model.MaxRating = 10.0;
+    }
+
+    private async Task LoadContentLists()
+    {
+        try
+        {
+            contentLists = await ContentEstimationListService.GetRoomsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            Snackbar.Add("Ошибка при загрузке списка топов", Severity.Error);
+        }
+    }
+
+    private async Task CreateRoom()
+    {
+        await form.Validate();
+        if (!form.IsValid) return;
+
+        if (model.MinRating >= model.MaxRating)
+        {
+            Snackbar.Add("Минимальная оценка должна быть меньше максимальной", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            isCreating = true;
+            StateHasChanged();
+
+            var request = new CreatePartyEstimationRoomRequest
+            {
+                RoomId = model.RoomId,
+                ContentListId = model.ContentListId,
+                RoomName = model.RoomName,
+                MinRating = model.MinRating,
+                MaxRating = model.MaxRating
+            };
+
+            var success = await PartyEstimationService.CreateRoomAsync(request);
+
+            if (success)
+            {
+                Snackbar.Add("Комната успешно создана", Severity.Success);
+                await OnRoomCreated.InvokeAsync();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Ошибка при создании комнаты", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            Snackbar.Add("Произошла ошибка при создании комнаты", Severity.Error);
+        }
+        finally
+        {
+            isCreating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private class CreatePartyEstimationRoomModel
+    {
+        public Guid RoomId { get; set; }
+        public Guid ContentListId { get; set; }
+        public string RoomName { get; set; } = string.Empty;
+        public double MinRating { get; set; }
+        public double MaxRating { get; set; }
+    }
+
+    private class Validations
+    {
+        public Func<string, IEnumerable<string>> RoomNameValidation => value =>
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(value))
+                errors.Add("Название комнаты обязательно");
+            else if (value.Length > 100 || value.Length < 3)
+                errors.Add("Название комнаты не может быть длиннее 100 и меньше 3 символов");
+            return errors;
+        };
+
+        public Func<Guid, IEnumerable<string>> ContentListValidation => value =>
+        {
+            var errors = new List<string>();
+            if (value == Guid.Empty)
+                errors.Add("Выберите топ для оценки");
+            return errors;
+        };
+
+        public Func<double, IEnumerable<string>> MinRatingValidation => value =>
+        {
+            var errors = new List<string>();
+            if (value < 0 || value > 10)
+                errors.Add("Минимальная оценка должна быть от 0 до 10");
+            return errors;
+        };
+
+        public Func<double, IEnumerable<string>> MaxRatingValidation => value =>
+        {
+            var errors = new List<string>();
+            if (value < 0 || value > 10)
+                errors.Add("Максимальная оценка должна быть от 0 до 10");
+            return errors;
+        };
+    }
+} 

@@ -1,0 +1,210 @@
+@page "/party-estimation/{RoomId:guid}"
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.Components
+@using MudBlazor
+@inject ContentPartyEstimationRoomViewModel ViewModel
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ContentRating.Web.UI.Services.AuthService AuthService
+@implements IDisposable
+
+<PageTitle>Групповая оценка - @ViewModel.RoomName</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    @if (ViewModel.IsLoading)
+    {
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem>
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                <MudText Typo="Typo.body1" Class="mt-2" Align="Align.Center">Загружаем комнату...</MudText>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (ViewModel.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            @ViewModel.ErrorMessage
+        </MudAlert>
+        <MudGrid Justify="Justify.Center" Class="mt-4">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">
+                    Попробовать снова
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <!-- Заголовок страницы -->
+        <MudGrid Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudItem>
+                <MudButton Variant="Variant.Text" 
+                          StartIcon="@Icons.Material.Filled.ArrowBack" 
+                          OnClick="NavigateBack">
+                    Назад к комнатам
+                </MudButton>
+                <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-2">
+                    @ViewModel.RoomName
+                </MudText>
+                <MudGrid>
+                    <MudItem>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                            Создатель: @ViewModel.CreatorName
+                        </MudText>
+                    </MudItem>
+                    <MudItem>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                            Диапазон оценок: @ViewModel.MinRating.ToString("F1") - @ViewModel.MaxRating.ToString("F1")
+                        </MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem>
+                <MudGrid>
+                    <MudItem>
+                        <MudChip T="string" 
+                                Color="Color.Info" 
+                                Icon="@Icons.Material.Filled.Group"
+                                Size="Size.Medium">
+                            @ViewModel.Raters.Count участников
+                        </MudChip>
+                    </MudItem>
+                    <MudItem>
+                        <MudChip T="string" 
+                                Color="@(ViewModel.IsEstimationCompleted ? Color.Success : Color.Warning)" 
+                                Icon="@(ViewModel.IsEstimationCompleted ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.AccessTime)"
+                                Size="Size.Medium">
+                            @(ViewModel.IsEstimationCompleted ? "Завершена" : "В процессе")
+                        </MudChip>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Информация об участниках -->
+        @if (ViewModel.Raters.Any())
+        {
+            <MudExpansionPanels Class="mb-4">
+                <MudExpansionPanel Text="Участники оценки">
+                    <MudGrid>
+                        @foreach (var rater in ViewModel.Raters)
+                        {
+                            <MudItem xs="6" md="4" lg="3">
+                                <MudChip T="string" 
+                                        Color="@(rater.Id == ViewModel.CurrentUserId ? Color.Primary : Color.Secondary)"
+                                        Icon="@Icons.Material.Filled.Person"
+                                        Size="Size.Small">
+                                    @rater.Name @(rater.Id == ViewModel.CurrentUserId ? "(Вы)" : "")
+                                </MudChip>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
+        <!-- Контент для оценки -->
+        <MudText Typo="Typo.h6" GutterBottom="true">
+            Контент для оценки (@ViewModel.ContentRatings.Count)
+        </MudText>
+
+        @if (!ViewModel.ContentRatings.Any())
+        {
+            <MudPaper Class="pa-6" Elevation="1">
+                <MudGrid Justify="Justify.Center">
+                    <MudItem>
+                        <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                    Контент не найден
+                </MudText>
+                <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                    В этой комнате нет контента для оценки
+                </MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <!-- Виртуализированный список контента для оптимизации -->
+            <MudVirtualize Items="@ViewModel.ContentRatings" 
+                          Context="contentRating"
+                          ItemSize="400"
+                          OverscanCount="2">
+                <ChildContent>
+                    <ContentPartyRatingItemComponent 
+                        @key="contentRating.RatingId"
+                        ContentRating="contentRating"
+                        MinRating="@ViewModel.MinRating"
+                        MaxRating="@ViewModel.MaxRating"
+                        CurrentUserRating="ViewModel.GetCurrentUserRating(contentRating.RatingId)"
+                        CanRate="ViewModel.CanRate(contentRating.RatingId)"
+                        IsEstimationCompleted="ViewModel.IsEstimationCompleted"
+                        OnRatingChanged="OnContentRated" />
+                </ChildContent>
+            </MudVirtualize>
+        }
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public Guid RoomId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Инициализируем AuthService если нужно
+        await AuthService.InitializeAsync();
+        
+        // Подписываемся на событие изменения состояния ViewModel
+        ViewModel.StateChanged += OnViewModelStateChanged;
+        await LoadData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ViewModel.RoomId != RoomId)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        // Проверяем авторизацию пользователя
+        if (!AuthService.IsAuthenticated)
+        {
+            Snackbar.Add("Необходимо войти в систему", Severity.Warning);
+            return;
+        }
+
+        await ViewModel.LoadRoomDataAsync(RoomId);
+        StateHasChanged();
+    }
+
+    private async Task OnContentRated((Guid ContentRatingId, double Rating) ratingData)
+    {
+        var success = await ViewModel.EstimateContentAsync(ratingData.ContentRatingId, ratingData.Rating);
+        if (success)
+        {
+            StateHasChanged(); // Обновляем UI после успешной оценки
+        }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/party-estimation-rooms");
+    }
+
+    private void OnViewModelStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+} 

@@ -6,6 +6,8 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ContentRating.Web.UI.Services.AuthService AuthService
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <PageTitle>Групповая оценка - @ViewModel.RoomName</PageTitle>
@@ -69,6 +71,50 @@
                             @ViewModel.Raters.Count участников
                         </MudChip>
                     </MudItem>
+
+                    @if (ViewModel.CanManageParticipants())
+                    {
+                        <MudItem>
+                            <MudButton Variant="Variant.Outlined" 
+                                      StartIcon="@Icons.Material.Filled.SupervisedUserCircle" 
+                                      Color="Color.Warning"
+                                      Size="Size.Medium"
+                                      OnClick="OpenManageParticipantsDialog"
+                                      Disabled="ViewModel.IsEstimationCompleted">
+                                Управление участниками
+                            </MudButton>
+                        </MudItem>
+                    }
+                    @if (ViewModel.CanCompleteEstimation())
+                    {
+                        <MudItem>
+                            <MudButton Variant="Variant.Filled" 
+                                      StartIcon="@Icons.Material.Filled.Flag" 
+                                      Color="Color.Success"
+                                      Size="Size.Medium"
+                                      OnClick="CompleteEstimation"
+                                      Disabled="_isCompletingEstimation">
+                                @if (_isCompletingEstimation)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                    <span class="ml-2">Завершение...</span>
+                                }
+                                else
+                                {
+                                    <span>Закончить оценку</span>
+                                }
+                            </MudButton>
+                        </MudItem>
+                    }
+                    <MudItem>
+                        <MudButton Variant="Variant.Outlined" 
+                                  StartIcon="@Icons.Material.Filled.BarChart" 
+                                  Color="Color.Info"
+                                  Size="Size.Medium"
+                                  OnClick="NavigateToResultsInNewTab">
+                            Результаты
+                        </MudButton>
+                    </MudItem>
                     <MudItem>
                         <MudChip T="string" 
                                 Color="@(ViewModel.IsEstimationCompleted ? Color.Success : Color.Warning)" 
@@ -80,6 +126,14 @@
                 </MudGrid>
             </MudItem>
         </MudGrid>
+    
+        <!-- Кнопка прокрутки наверх -->
+        <MudScrollToTop>
+            <MudFab Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.KeyboardArrowUp" 
+                   Size="Size.Medium" />
+
+        </MudScrollToTop>
 
         <!-- Информация об участниках -->
         @if (ViewModel.Raters.Any())
@@ -91,10 +145,10 @@
                         {
                             <MudItem xs="6" md="4" lg="3">
                                 <MudChip T="string" 
-                                        Color="@(rater.Id == ViewModel.CurrentUserId ? Color.Primary : Color.Secondary)"
-                                        Icon="@Icons.Material.Filled.Person"
+                                        Color="@(rater.Id == ViewModel.CurrentUserId ? Color.Primary : (rater.IsMock ? Color.Secondary : Color.Default))"
+                                        Icon="@(rater.IsMock ? Icons.Material.Filled.SmartToy : Icons.Material.Filled.Person)"
                                         Size="Size.Small">
-                                    @rater.Name @(rater.Id == ViewModel.CurrentUserId ? "(Вы)" : "")
+                                    @rater.DisplayName @(rater.Id == ViewModel.CurrentUserId ? "(Вы)" : "") @(rater.IsMock ? "(Mock)" : "")
                                 </MudChip>
                             </MudItem>
                         }
@@ -140,7 +194,9 @@
                         CurrentUserRating="ViewModel.GetCurrentUserRating(contentRating.RatingId)"
                         CanRate="ViewModel.CanRate(contentRating.RatingId)"
                         IsEstimationCompleted="ViewModel.IsEstimationCompleted"
-                        OnRatingChanged="OnContentRated" />
+                        OnRatingChanged="OnContentRated"
+                        MockRaters="@ViewModel.Raters.Where(r => r.IsMock)"
+                        OnMockRatingChanged="@((mockUserRating) => OnMockUserRated(contentRating.RatingId, mockUserRating))" />
                 </ChildContent>
             </MudVirtualize>
         }
@@ -149,6 +205,8 @@
 
 @code {
     [Parameter] public Guid RoomId { get; set; }
+    
+    private bool _isCompletingEstimation = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -178,6 +236,14 @@
         }
 
         await ViewModel.LoadRoomDataAsync(RoomId);
+        
+        // Если оценка уже завершена, переходим на страницу результатов
+        if (ViewModel.IsEstimationCompleted)
+        {
+            Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
+            return;
+        }
+        
         StateHasChanged();
     }
 
@@ -190,14 +256,130 @@
         }
     }
 
+    private async Task OnMockUserRated(Guid contentRatingId, (Guid MockUserId, double Rating) mockRatingData)
+    {
+        var success = await ViewModel.EstimateContentForMockUserAsync(mockRatingData.MockUserId, contentRatingId, mockRatingData.Rating);
+        if (success)
+        {
+            StateHasChanged(); // Обновляем UI после успешной оценки
+        }
+    }
+
     private void NavigateBack()
     {
         Navigation.NavigateTo("/party-estimation-rooms");
     }
 
+    private void NavigateToResults()
+    {
+        Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
+    }
+
+    private async Task NavigateToResultsInNewTab()
+    {
+        var url = $"/party-estimation/{RoomId}/results";
+        await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task OpenInviteDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["RoomId"] = RoomId,
+            ["OnUserInvited"] = EventCallback.Factory.Create(this, OnUserInvited)
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<Components.InviteUsersDialog>("Пригласить участников", parameters, options);
+    }
+
+    private async Task OnUserInvited()
+    {
+        // Обновляем данные комнаты после приглашения
+        await LoadData();
+        
+        // Принудительно обновляем UI
+        StateHasChanged();
+    }
+
+    private async Task OpenManageParticipantsDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["Participants"] = ViewModel.Raters,
+            ["RoomId"] = RoomId,
+            ["CurrentUserId"] = ViewModel.CurrentUserId,
+            ["CreatorId"] = ViewModel.CreatorId,
+            ["OnParticipantRemoved"] = EventCallback.Factory.Create(this, OnParticipantRemoved),
+            ["OnUserInvited"] = EventCallback.Factory.Create(this, OnUserInvited)
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<Components.ManageParticipantsDialog>("Управление участниками", parameters, options);
+    }
+
+    private async Task OnParticipantRemoved()
+    {
+        // Обновляем данные комнаты после удаления участника
+        await LoadData();
+        
+        // Принудительно обновляем UI
+        StateHasChanged();
+    }
+
+    private async Task CompleteEstimation()
+    {
+        _isCompletingEstimation = true;
+        try
+        {
+            var success = await ViewModel.CompleteEstimationAsync();
+            if (success)
+            {
+                // Автоматически перенаправляем на страницу результатов через 2 секунды
+                await Task.Delay(2000);
+                Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
+            }
+        }
+        finally
+        {
+            _isCompletingEstimation = false;
+            StateHasChanged();
+        }
+    }
+
     private void OnViewModelStateChanged()
     {
-        InvokeAsync(StateHasChanged);
+        InvokeAsync(() =>
+        {
+            // Если оценка завершена, автоматически переходим к результатам
+            if (ViewModel.IsEstimationCompleted && !_isCompletingEstimation)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(3000); // Показываем сообщение об успехе 3 секунды
+                    await InvokeAsync(() => 
+                    {
+                        // Переходим на страницу результатов в той же вкладке
+                        Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
+                    });
+                });
+            }
+            StateHasChanged();
+        });
     }
 
     public void Dispose()
@@ -207,4 +389,16 @@
             ViewModel.StateChanged -= OnViewModelStateChanged;
         }
     }
-} 
+}
+
+<style>
+    .visible-scroll-to-top {
+        opacity: 1;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .hidden-scroll-to-top {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+</style>

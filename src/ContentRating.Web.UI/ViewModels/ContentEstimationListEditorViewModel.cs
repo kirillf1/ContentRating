@@ -314,6 +314,8 @@ namespace ContentRating.Web.UI.ViewModels
             _hubService.ContentDeleted += OnContentDeleted;
             _hubService.EditorInvited += OnEditorInvited;
             _hubService.EditorKicked += OnEditorKicked;
+            _hubService.ConnectionLost += OnConnectionLost;
+            _hubService.ConnectionRestored += OnConnectionRestored;
         }
 
         private void OnContentCreated(Guid editorId, ContentNotificationData content)
@@ -405,6 +407,32 @@ namespace ContentRating.Web.UI.ViewModels
             }
         }
 
+        private void OnConnectionLost()
+        {
+            _snackbar.Add("Соединение потеряно, попытка переподключения...", Severity.Warning);
+            StateChanged?.Invoke();
+        }
+
+        private async void OnConnectionRestored()
+        {
+            _snackbar.Add("Соединение восстановлено, обновление данных...", Severity.Success);
+            
+            // Перезагружаем данные комнаты
+            if (RoomId != Guid.Empty)
+            {
+                try
+                {
+                    await LoadRoomDataAsync(RoomId);
+                }
+                catch (Exception ex)
+                {
+                    _snackbar.Add("Ошибка при обновлении данных после переподключения", Severity.Error);
+                }
+            }
+            
+            StateChanged?.Invoke();
+        }
+
         public async ValueTask DisposeAsync()
         {
             // Отписываемся от событий
@@ -427,6 +455,8 @@ namespace ContentRating.Web.UI.ViewModels
             _hubService.ContentDeleted -= OnContentDeleted;
             _hubService.EditorInvited -= OnEditorInvited;
             _hubService.EditorKicked -= OnEditorKicked;
+            _hubService.ConnectionLost -= OnConnectionLost;
+            _hubService.ConnectionRestored -= OnConnectionRestored;
 
             await _hubService.DisconnectAsync();
         }

@@ -60,6 +60,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstima
                 estimationRoom.RatingRange.MinRating.Value,
                 estimationRoom.RatingRange.MaxRating.Value,
                 estimationRoom.RoomCreator.Name,
+                estimationRoom.RoomCreator.Id,
                 contentRatings,
                 estimationRoom.Raters.Select(r => new RaterResponse(r.Id, r.Name))
             );

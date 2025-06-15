@@ -215,12 +215,23 @@
             joiningRoomId = roomId;
             StateHasChanged();
 
-            // Переходим к странице оценки
-            Navigation.NavigateTo($"/party-estimation/{roomId}");
+            // Находим комнату по ID
+            var room = rooms?.FirstOrDefault(r => r.Id == roomId);
+            
+            if (room != null && room.IsEstimated)
+            {
+                // Если оценка завершена, переходим к результатам
+                Navigation.NavigateTo($"/party-estimation/{roomId}/results");
+            }
+            else
+            {
+                // Если оценка в процессе, переходим к странице оценки
+                Navigation.NavigateTo($"/party-estimation/{roomId}");
+            }
         }
         catch (Exception)
         {
-            Snackbar.Add("Произошла ошибка при присоединении к комнате", Severity.Error);
+            Snackbar.Add("Произошла ошибка при переходе к комнате", Severity.Error);
         }
         finally
         {

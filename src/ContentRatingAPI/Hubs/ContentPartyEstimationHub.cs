@@ -51,7 +51,8 @@ namespace ContentRatingAPI.Hubs
         public async Task EstimateContent(Guid contentRatingId, EstimateContentRequest request)
         {
             var userInfo =
-                userInfoService.TryGetUserInfo() ?? throw new HubException("Unknown user info");
+                userInfoService.TryGetUserInfo(Context.User)
+                ?? throw new HubException("Unknown user info");
 
             await mediator.Send(
                 new EstimateContentCommand(

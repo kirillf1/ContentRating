@@ -1,23 +1,20 @@
-﻿using ContentRating.Domain.Shared.Content;
+using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRating.Web.UI.Models;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Options;
 
 namespace ContentRating.Web.UI.Services
 {
-    public class ContentEstimationListEditorHubService
-        : IContentEstimationListEditorHubService,
-            IAsyncDisposable
+    public class ContentPartyEstimationHubService : IContentPartyEstimationHubService, IAsyncDisposable
     {
         private readonly ApiSettings _apiSettings;
-        private readonly ILogger<ContentEstimationListEditorHubService> _logger;
+        private readonly ILogger<ContentPartyEstimationHubService> _logger;
         private readonly AuthService _authService;
         private HubConnection? _hubConnection;
         private Guid? _currentRoomId;
 
-        public ContentEstimationListEditorHubService(
+        public ContentPartyEstimationHubService(
             ApiSettings apiSettings,
-            ILogger<ContentEstimationListEditorHubService> logger,
+            ILogger<ContentPartyEstimationHubService> logger,
             AuthService authService
         )
         {
@@ -31,11 +28,12 @@ namespace ContentRating.Web.UI.Services
 
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
-        public event Action<Guid, ContentNotificationData>? ContentCreated;
-        public event Action<Guid, ContentNotificationData>? ContentUpdated;
+        public event Action<Guid, Guid, double>? RatingChanged;
+        public event Action<Guid, string, double>? RaterInvited;
+        public event Action<Guid>? RaterKicked;
         public event Action<Guid>? ContentDeleted;
-        public event Action<Guid, string, Guid>? EditorInvited;
-        public event Action<Guid, Guid>? EditorKicked;
+        public event Action? EstimationCompleted;
+        public event Action<double, double>? RatingRangeChanged;
         public event Action? ConnectionLost;
         public event Action? ConnectionRestored;
 
@@ -63,9 +61,7 @@ namespace ContentRating.Web.UI.Services
                     if (!refreshSuccess)
                     {
                         _logger.LogError("Failed to refresh token, cannot connect to SignalR hub");
-                        throw new UnauthorizedAccessException(
-                            "Failed to refresh authentication token"
-                        );
+                        throw new UnauthorizedAccessException("Failed to refresh authentication token");
                     }
                 }
 
@@ -75,7 +71,7 @@ namespace ContentRating.Web.UI.Services
                 _currentRoomId = roomId;
 
                 // Создаем новое подключение
-                var hubUrl = $"{_apiSettings.BaseUrl.TrimEnd('/')}/contentListEditor";
+                var hubUrl = $"{_apiSettings.BaseUrl.TrimEnd('/')}/partyEstimationHub";
 
                 _hubConnection = new HubConnectionBuilder()
                     .WithUrl(
@@ -101,13 +97,13 @@ namespace ContentRating.Web.UI.Services
                 await _hubConnection.StartAsync();
 
                 // Присоединяемся к группе комнаты
-                await _hubConnection.InvokeAsync("JoinContentEditing", roomId);
+                await _hubConnection.InvokeAsync("JoinEstimationRoom", roomId);
 
-                _logger.LogInformation("Connected to SignalR hub for room {RoomId}", roomId);
+                _logger.LogInformation("Connected to SignalR hub for estimation room {RoomId}", roomId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to connect to SignalR hub for room {RoomId}", roomId);
+                _logger.LogError(ex, "Failed to connect to SignalR hub for estimation room {RoomId}", roomId);
                 throw;
             }
         }
@@ -120,17 +116,11 @@ namespace ContentRating.Web.UI.Services
                 {
                     if (_currentRoomId.HasValue && IsConnected)
                     {
-                        await _hubConnection.InvokeAsync(
-                            "ExitContentEditing",
-                            _currentRoomId.Value
-                        );
+                        await _hubConnection.InvokeAsync("ExitEstimationRoom", _currentRoomId.Value);
                     }
 
                     await _hubConnection.DisposeAsync();
-                    _logger.LogInformation(
-                        "Disconnected from SignalR hub for room {RoomId}",
-                        _currentRoomId
-                    );
+                    _logger.LogInformation("Disconnected from SignalR hub for estimation room {RoomId}", _currentRoomId);
                 }
                 catch (Exception ex)
                 {
@@ -144,34 +134,72 @@ namespace ContentRating.Web.UI.Services
             }
         }
 
+        public async Task EstimateContentAsync(Guid contentRatingId, double newRating)
+        {
+            if (!IsConnected)
+            {
+                throw new InvalidOperationException("Not connected to SignalR hub");
+            }
+
+            if (!_authService.IsAuthenticated || _authService.UserId == null)
+            {
+                throw new UnauthorizedAccessException("User is not authenticated");
+            }
+
+            try
+            {
+                var request = new EstimateContentRequest
+                {
+                    NewScore = newRating,
+                    RaterForChangeScoreId = _authService.UserId.Value,
+                };
+
+                await _hubConnection!.InvokeAsync("EstimateContent", contentRatingId, request);
+                
+                _logger.LogDebug("Sent rating {Rating} for content {ContentRatingId}", newRating, contentRatingId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send rating through SignalR");
+                throw;
+            }
+        }
+
         private void SetupEventHandlers()
         {
             if (_hubConnection == null)
                 return;
 
-            _hubConnection.On<Guid, ContentNotificationData>(
-                "ContentCreated",
-                (editorId, content) =>
+            _hubConnection.On<Guid, Guid, double>(
+                "RatingChanged",
+                (raterId, ratingId, score) =>
                 {
-                    _logger.LogDebug(
-                        "Received ContentCreated event: {ContentId} by {EditorId}",
-                        content.Id,
-                        editorId
-                    );
-                    ContentCreated?.Invoke(editorId, content);
+                    _logger.LogDebug("Received RatingChanged event: Rater {RaterId}, Rating {RatingId}, Score {Score}", 
+                        raterId, ratingId, score);
+                    
+                    // Проверяем, что это не наша собственная оценка (избегаем дублирования)
+                    if (raterId != _authService.UserId)
+                    {
+                        RatingChanged?.Invoke(raterId, ratingId, score);
+                    }
                 }
             );
 
-            _hubConnection.On<Guid, ContentNotificationData>(
-                "ContentUpdated",
-                (editorId, content) =>
+            _hubConnection.On<Guid, string, double>(
+                "RaterInvited",
+                (newRaterId, raterName, baseScore) =>
                 {
-                    _logger.LogDebug(
-                        "Received ContentUpdated event: {ContentId} by {EditorId}",
-                        content.Id,
-                        editorId
-                    );
-                    ContentUpdated?.Invoke(editorId, content);
+                    _logger.LogDebug("Received RaterInvited event: {RaterId} - {RaterName}", newRaterId, raterName);
+                    RaterInvited?.Invoke(newRaterId, raterName, baseScore);
+                }
+            );
+
+            _hubConnection.On<Guid>(
+                "RaterKicked",
+                (kickedRaterId) =>
+                {
+                    _logger.LogDebug("Received RaterKicked event: {RaterId}", kickedRaterId);
+                    RaterKicked?.Invoke(kickedRaterId);
                 }
             );
 
@@ -184,47 +212,33 @@ namespace ContentRating.Web.UI.Services
                 }
             );
 
-            _hubConnection.On<Guid, string, Guid>(
-                "EditorInvited",
-                (newEditorId, editorName, inviterId) =>
+            _hubConnection.On(
+                "EstimationCompleted",
+                () =>
                 {
-                    _logger.LogDebug(
-                        "Received EditorInvited event: {EditorId} invited by {InviterId}",
-                        newEditorId,
-                        inviterId
-                    );
-                    EditorInvited?.Invoke(newEditorId, editorName, inviterId);
+                    _logger.LogDebug("Received EstimationCompleted event");
+                    EstimationCompleted?.Invoke();
                 }
             );
 
-            _hubConnection.On<Guid, Guid>(
-                "EditorKicked",
-                (kickedEditorId, kickInitiatorId) =>
+            _hubConnection.On<double, double>(
+                "RatingRangeChanged",
+                (minRating, maxRating) =>
                 {
-                    _logger.LogDebug(
-                        "Received EditorKicked event: {EditorId} kicked by {InitiatorId}",
-                        kickedEditorId,
-                        kickInitiatorId
-                    );
-                    EditorKicked?.Invoke(kickedEditorId, kickInitiatorId);
+                    _logger.LogDebug("Received RatingRangeChanged event: {MinRating} - {MaxRating}", minRating, maxRating);
+                    RatingRangeChanged?.Invoke(minRating, maxRating);
                 }
             );
 
             _hubConnection.Reconnecting += async (error) =>
             {
-                _logger.LogWarning(
-                    "SignalR connection lost, attempting to reconnect: {Error}",
-                    error?.Message
-                );
+                _logger.LogWarning("SignalR connection lost, attempting to reconnect: {Error}", error?.Message);
                 
                 // Уведомляем UI о потере соединения
                 ConnectionLost?.Invoke();
 
                 // Если ошибка связана с аутентификацией, пытаемся обновить токен
-                if (
-                    error?.Message?.Contains("401") == true
-                    || error?.Message?.Contains("Unauthorized") == true
-                )
+                if (error?.Message?.Contains("401") == true || error?.Message?.Contains("Unauthorized") == true)
                 {
                     _logger.LogInformation("Attempting to refresh token before reconnection");
                     try
@@ -232,9 +246,7 @@ namespace ContentRating.Web.UI.Services
                         var refreshSuccess = await _authService.RefreshTokenAsync();
                         if (!refreshSuccess)
                         {
-                            _logger.LogWarning(
-                                "Failed to refresh token, user may need to re-authenticate"
-                            );
+                            _logger.LogWarning("Failed to refresh token, user may need to re-authenticate");
                         }
                     }
                     catch (Exception ex)
@@ -246,33 +258,23 @@ namespace ContentRating.Web.UI.Services
 
             _hubConnection.Reconnected += async (connectionId) =>
             {
-                _logger.LogInformation(
-                    "SignalR reconnected with connection ID: {ConnectionId}",
-                    connectionId
-                );
-
-                // Повторно присоединяемся к группе после переподключения
+                _logger.LogInformation("SignalR reconnected with connection ID {ConnectionId}", connectionId);
+                
+                // Переподключаемся к группе комнаты
                 if (_currentRoomId.HasValue)
                 {
                     try
                     {
-                        await _hubConnection.InvokeAsync(
-                            "JoinContentEditing",
-                            _currentRoomId.Value
-                        );
+                        await _hubConnection.InvokeAsync("JoinEstimationRoom", _currentRoomId.Value);
                         
                         // Уведомляем UI о восстановлении соединения для перезагрузки данных
                         ConnectionRestored?.Invoke();
                         
-                        _logger.LogInformation("Successfully rejoined content editing room {RoomId} after reconnection", _currentRoomId.Value);
+                        _logger.LogInformation("Successfully rejoined estimation room {RoomId} after reconnection", _currentRoomId.Value);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(
-                            ex,
-                            "Failed to rejoin room {RoomId} after reconnection",
-                            _currentRoomId.Value
-                        );
+                        _logger.LogError(ex, "Failed to rejoin estimation room after reconnection");
                     }
                 }
             };
@@ -306,36 +308,21 @@ namespace ContentRating.Web.UI.Services
 
         private async void OnAuthStateChanged()
         {
-            // Если пользователь вышел из системы, отключаемся от Hub
             if (!_authService.IsAuthenticated && IsConnected)
             {
-                _logger.LogInformation("User logged out, disconnecting from SignalR hub");
+                _logger.LogInformation("User signed out, disconnecting from SignalR hub");
                 await DisconnectAsync();
-            }
-            // Если пользователь вошел в систему и у нас есть активная комната, переподключаемся
-            else if (_authService.IsAuthenticated && _currentRoomId.HasValue && !IsConnected)
-            {
-                _logger.LogInformation(
-                    "User authenticated, reconnecting to SignalR hub for room {RoomId}",
-                    _currentRoomId.Value
-                );
-                try
-                {
-                    await ConnectAsync(_currentRoomId.Value);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to reconnect to SignalR hub after authentication");
-                }
             }
         }
 
         public async ValueTask DisposeAsync()
         {
-            // Отписываемся от событий аутентификации
-            _authService.AuthStateChanged -= OnAuthStateChanged;
+            if (_authService != null)
+            {
+                _authService.AuthStateChanged -= OnAuthStateChanged;
+            }
 
             await DisconnectAsync();
         }
     }
-}
+} 

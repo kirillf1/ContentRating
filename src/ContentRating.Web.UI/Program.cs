@@ -98,6 +98,21 @@ public class Program
             )
             .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
 
+        // UserService для работы с пользователями
+        builder
+            .Services.AddHttpClient<
+                Services.IUserService,
+                Services.UserService
+            >(
+                (sp, client) =>
+                {
+                    var settings = sp.GetRequiredService<ApiSettings>();
+                    client.BaseAddress = new Uri(settings.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                }
+            )
+            .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
+
         builder.Services.AddMudServices(config =>
         {
             config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
@@ -118,6 +133,12 @@ public class Program
         builder.Services.AddScoped<
             ContentRating.Web.UI.Services.IContentEstimationListEditorHubService,
             ContentRating.Web.UI.Services.ContentEstimationListEditorHubService
+        >();
+
+        // SignalR сервис для оценки контента
+        builder.Services.AddScoped<
+            ContentRating.Web.UI.Services.IContentPartyEstimationHubService,
+            ContentRating.Web.UI.Services.ContentPartyEstimationHubService
         >();
 
         // ViewModels

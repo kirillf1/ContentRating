@@ -1,0 +1,218 @@
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.Services
+@using MudBlazor
+@inject IContentPartyEstimationService EstimationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+                <MudItem>
+                    <MudText Typo="Typo.h6">Участники комнаты</MudText>
+                </MudItem>
+                <MudItem>
+                    <MudButton Variant="Variant.Filled" 
+                              StartIcon="@Icons.Material.Filled.PersonAdd" 
+                              Color="Color.Primary"
+                              Size="Size.Medium"
+                              OnClick="OpenInviteDialog">
+                        Пригласить
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+            
+            @if (Participants.Any())
+            {
+                <MudGrid>
+                    @foreach (var participant in Participants.OrderBy(p => p.Name))
+                    {
+                        <MudItem xs="12">
+                            <MudCard Elevation="1" Class="pa-3">
+                                <MudGrid AlignItems="Center">
+                                    <MudItem xs="1">
+                                        @if (participant.IsMock)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.SmartToy" Color="Color.Secondary" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" />
+                                        }
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Typo="Typo.body1">
+                                            @participant.DisplayName
+                                                                                         @if (participant.Id == CurrentUserId)
+                                             {
+                                                 <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">(Вы)</MudChip>
+                                             }
+                                             @if (participant.Id == CreatorId)
+                                             {
+                                                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">(Создатель)</MudChip>
+                                             }
+                                             @if (participant.IsMock)
+                                             {
+                                                 <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Text">(Mock)</MudChip>
+                                             }
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem xs="5" Class="text-right">
+                                        @if (CanKickParticipant(participant))
+                                        {
+                                            <MudButton Variant="Variant.Outlined"
+                                                      Color="Color.Error"
+                                                      Size="Size.Small"
+                                                      StartIcon="@Icons.Material.Filled.PersonRemove"
+                                                      OnClick="() => ConfirmKickParticipant(participant)"
+                                                      Disabled="_isKicking">
+                                                @if (_isKicking && _kickingParticipantId == participant.Id)
+                                                {
+                                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                                }
+                                                else
+                                                {
+                                                    <text>Удалить</text>
+                                                }
+                                            </MudButton>
+                                        }
+                                        else
+                                        {
+                                                                                         <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">
+                                                 Нельзя удалить
+                                             </MudChip>
+                                        }
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    В комнате нет участников
+                </MudAlert>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Закрыть</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public IEnumerable<RaterViewModel> Participants { get; set; } = Enumerable.Empty<RaterViewModel>();
+    [Parameter] public Guid RoomId { get; set; }
+    [Parameter] public Guid? CurrentUserId { get; set; }
+    [Parameter] public Guid? CreatorId { get; set; }
+    [Parameter] public EventCallback OnParticipantRemoved { get; set; }
+    [Parameter] public EventCallback OnUserInvited { get; set; }
+
+    private bool _isKicking = false;
+    private Guid? _kickingParticipantId = null;
+
+    private bool CanKickParticipant(RaterViewModel participant)
+    {
+        // Проверяем, что текущий пользователь - создатель комнаты
+        if (CurrentUserId != CreatorId)
+            return false;
+
+        // Нельзя удалить самого себя
+        if (participant.Id == CurrentUserId)
+            return false;
+
+        // Нельзя удалить создателя
+        if (participant.Id == CreatorId)
+            return false;
+
+        return true;
+    }
+
+    private async Task ConfirmKickParticipant(RaterViewModel participant)
+    {
+        var options = new DialogOptions 
+        { 
+            MaxWidth = MaxWidth.Small,
+            CloseButton = true,
+            Position = DialogPosition.Center 
+        };
+
+        var parameters = new DialogParameters
+        {
+            ["ContentText"] = $"Вы уверены, что хотите удалить участника '{participant.DisplayName}' из комнаты?",
+            ["ButtonText"] = "Удалить",
+            ["Color"] = Color.Error
+        };
+
+        var dialog = await DialogService.ShowAsync<MudMessageBox>("Подтверждение удаления", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await KickParticipant(participant);
+        }
+    }
+
+    private async Task KickParticipant(RaterViewModel participant)
+    {
+        _isKicking = true;
+        _kickingParticipantId = participant.Id;
+
+        try
+        {
+            var success = await EstimationService.KickRaterAsync(RoomId, participant.Id);
+            
+            if (success)
+            {
+                Snackbar.Add($"Участник '{participant.DisplayName}' удален из комнаты", Severity.Success);
+                await OnParticipantRemoved.InvokeAsync();
+                MudDialog?.Close();
+            }
+            else
+            {
+                Snackbar.Add($"Не удалось удалить участника '{participant.DisplayName}'", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка при удалении участника: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isKicking = false;
+            _kickingParticipantId = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenInviteDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["RoomId"] = RoomId,
+            ["OnUserInvited"] = EventCallback.Factory.Create(this, OnUserInvitedInternal)
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<InviteUsersDialog>("Пригласить участников", parameters, options);
+    }
+
+    private async Task OnUserInvitedInternal()
+    {
+        // Уведомляем родительский компонент о приглашении пользователя
+        await OnUserInvited.InvokeAsync();
+    }
+
+    private void Close() => MudDialog?.Close();
+} 

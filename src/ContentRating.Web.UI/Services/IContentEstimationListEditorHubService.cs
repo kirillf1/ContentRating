@@ -14,6 +14,10 @@ namespace ContentRating.Web.UI.Services
         event Action<Guid>? ContentDeleted;
         event Action<Guid, string, Guid>? EditorInvited;
         event Action<Guid, Guid>? EditorKicked;
+        
+        // События для управления соединением
+        event Action? ConnectionLost; // Соединение потеряно
+        event Action? ConnectionRestored; // Соединение восстановлено, нужна перезагрузка данных
     }
 
     public class ContentNotificationData

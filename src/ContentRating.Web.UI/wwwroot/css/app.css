@@ -51,3 +51,29 @@
 .loading-progress-text:after {
     content: var(--blazor-load-percentage-text, "Loading");
 }
+
+/* Адаптивные стили для фиксированной кнопки результатов */
+.results-fab {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 1000 !important;
+    box-shadow: 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12), 0 3px 5px -1px rgba(0,0,0,.2) !important;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .results-fab {
+        bottom: 15px !important;
+        right: 15px !important;
+        transform: scale(0.9) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .results-fab {
+        bottom: 10px !important;
+        right: 10px !important;
+        transform: scale(0.8) !important;
+    }
+}

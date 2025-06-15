@@ -12,6 +12,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
             double minRating,
             double maxRating,
             string creatorName,
+            Guid creatorId,
             IEnumerable<ContentRatingResponse> contentRatings,
             IEnumerable<RaterResponse> raters
         )
@@ -21,6 +22,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
             MinRating = minRating;
             MaxRating = maxRating;
             CreatorName = creatorName;
+            CreatorId = creatorId;
             ContentRatings = contentRatings;
             Raters = raters;
         }
@@ -30,6 +32,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
         public double MinRating { get; }
         public double MaxRating { get; }
         public string CreatorName { get; }
+        public Guid CreatorId { get; }
         public IEnumerable<ContentRatingResponse> ContentRatings { get; }
         public IEnumerable<RaterResponse> Raters { get; }
     }

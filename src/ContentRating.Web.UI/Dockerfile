@@ -40,6 +40,8 @@ RUN apk add --no-cache jq moreutils
 
 # Copy published app to nginx web root
 COPY --from=publish /app/publish/wwwroot .
+COPY ["./src/ContentRating.Web.UI/update-blazor-env.sh", "/docker-entrypoint.d/40-update-blazor-env.sh"]
+RUN chmod +x /docker-entrypoint.d/40-update-blazor-env.sh
 
 COPY ./src/ContentRating.Web.UI/nginx.conf /etc/nginx/nginx.conf
 

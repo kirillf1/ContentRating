@@ -27,9 +27,6 @@ using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
 using Serilog;
 
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
@@ -43,6 +40,15 @@ var configuration = new ConfigurationBuilder()
 
 // add configuration if needed
 Log.Logger = LoggingExtensions.CreateSerilogLogger(configuration, environment);
+
+try
+{
+    Gst.Application.Init(ref args);
+}
+catch (Exception ex)
+{
+    Log.Logger.Error(ex, "Failed initialize gstreamer");
+}
 
 try
 {
@@ -152,7 +158,7 @@ try
     });
 
     var app = builder.Build();
-
+    app.UseSerilogRequestLogging();
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
@@ -167,7 +173,6 @@ try
     // Добавляем CORS middleware
     app.UseCors();
 
-    app.UseSerilogRequestLogging();
     app.UseAuthentication();
     app.UseAuthorization();
 

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
 {
-    public partial class HLSVideoSaver : FileSaverBase
+    public partial class HLSFFMEPVideoSaver : FileSaverBase
     {
         private const double DefaultFPS = 30;
         private const double DefaultVideoBitrateKbs = 256;
@@ -22,7 +22,10 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
 
         private readonly IOptions<FFMPEGOptions> fFMPEGOptions;
 
-        public HLSVideoSaver(IOptions<ContentFileOptions> options, IOptions<FFMPEGOptions> FFMPEGOptions)
+        public HLSFFMEPVideoSaver(
+            IOptions<ContentFileOptions> options,
+            IOptions<FFMPEGOptions> FFMPEGOptions
+        )
             : base(options)
         {
             fFMPEGOptions = FFMPEGOptions;
@@ -86,7 +89,10 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
             await process.WaitForExitAsync(cts.Token);
         }
 
-        private async Task<VideoInfo> GetVideoInfo(byte[] videoData, CancellationToken cancellationToken = default)
+        private async Task<VideoInfo> GetVideoInfo(
+            byte[] videoData,
+            CancellationToken cancellationToken = default
+        )
         {
             try
             {
@@ -125,7 +131,13 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
                 var stringResult = output.ToString();
 
                 var matchVideoBitrate = regexVideoBitrate.Match(stringResult);
-                if (!double.TryParse(matchVideoBitrate.Groups[1].Value, CultureInfo.InvariantCulture, out var bitrateVideo))
+                if (
+                    !double.TryParse(
+                        matchVideoBitrate.Groups[1].Value,
+                        CultureInfo.InvariantCulture,
+                        out var bitrateVideo
+                    )
+                )
                 {
                     bitrateVideo = DefaultVideoBitrateKbs;
                 }
@@ -138,13 +150,25 @@ namespace ContentRatingAPI.Infrastructure.ContentFileManagers.FileSavers
                     }
                 }
                 var matchFps = regexFps.Match(stringResult);
-                if (!double.TryParse(matchFps.Groups[1].Value, CultureInfo.InvariantCulture, out var fps))
+                if (
+                    !double.TryParse(
+                        matchFps.Groups[1].Value,
+                        CultureInfo.InvariantCulture,
+                        out var fps
+                    )
+                )
                 {
                     fps = DefaultFPS;
                 }
 
                 var matchAudioBitrate = regexAudioBitrate.Match(stringResult);
-                if (!double.TryParse(matchAudioBitrate.Groups[1].Value, CultureInfo.InvariantCulture, out var bitrateAudio))
+                if (
+                    !double.TryParse(
+                        matchAudioBitrate.Groups[1].Value,
+                        CultureInfo.InvariantCulture,
+                        out var bitrateAudio
+                    )
+                )
                 {
                     bitrateAudio = DefaultAudioBitrateKbs;
                 }

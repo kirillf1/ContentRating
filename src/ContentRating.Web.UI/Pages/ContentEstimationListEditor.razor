@@ -9,11 +9,12 @@
 @inject ContentRating.Web.UI.Services.ContentItemEditingService EditingService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @implements IDisposable
 
 <PageTitle>Редактор топа - @ViewModel.RoomName</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4" Style="flex-direction:column; flex-shrink: 0;">
     @if (ViewModel.IsLoading)
     {
         <MudGrid Justify="Justify.Center" Class="mt-8">
@@ -49,12 +50,36 @@
                 <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-2">
                     @ViewModel.RoomName
                 </MudText>
-                <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
-                    Создатель: @ViewModel.CreatorName
-                </MudText>
+                <MudGrid>
+                    <MudItem>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                            Создатель: @ViewModel.CreatorName
+                        </MudText>
+                    </MudItem>
+                    <MudItem>
+                        <MudChip T="string" 
+                                Color="Color.Info" 
+                                Icon="@Icons.Material.Filled.Edit"
+                                Size="Size.Medium">
+                            @ViewModel.InvitedEditors.Count редакторов
+                        </MudChip>
+                    </MudItem>
+                </MudGrid>
             </MudItem>
             <MudItem>
                 <MudGrid>
+                    @if (ViewModel.CanManageEditors())
+                    {
+                        <MudItem>
+                            <MudButton Variant="Variant.Outlined" 
+                                      StartIcon="@Icons.Material.Filled.SupervisedUserCircle" 
+                                      Color="Color.Warning"
+                                      Size="Size.Medium"
+                                      OnClick="OpenManageEditorsDialog">
+                                Управление редакторами
+                            </MudButton>
+                        </MudItem>
+                    }
                     <MudItem>
                         <MudButton Variant="Variant.Filled" 
                                   Color="Color.Primary" 
@@ -86,6 +111,28 @@
                                 OnUrlChangedCallback="OnUrlChanged"
                                 Snackbar="Snackbar" />
 
+        <!-- Информация о редакторах -->
+        @if (ViewModel.InvitedEditors.Any())
+        {
+            <MudExpansionPanels Class="mb-4">
+                <MudExpansionPanel Text="Редакторы топа">
+                    <MudGrid>
+                        @foreach (var editor in ViewModel.InvitedEditors)
+                        {
+                            <MudItem xs="6" md="4" lg="3">
+                                <MudChip T="string" 
+                                        Color="@(editor.Id == ViewModel.CurrentUserId ? Color.Primary : Color.Default)"
+                                        Icon="@Icons.Material.Filled.Person"
+                                        Size="Size.Small">
+                                    @editor.Name @(editor.Id == ViewModel.CurrentUserId ? "(Вы)" : "")
+                                </MudChip>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
         <!-- Список контента -->
         <MudText Typo="Typo.h6" GutterBottom="true">
             Контент (@ViewModel.ContentItems.Count)
@@ -110,19 +157,17 @@
         else
         {
             <!-- Виртуализированный список для оптимизации производительности -->
-            <MudVirtualize Items="@ViewModel.ContentItems" 
-                          Context="item"
-                          ItemSize="300"
-                          OverscanCount="3">
-                <ChildContent>
-                    <ContentListItemComponent 
-                        ContentItem="item"
-                        OnEdit="StartEditingOptimized"
-                        OnSave="SaveContentOptimized"
-                        OnCancel="CancelEditingOptimized"
-                        OnDelete="DeleteContentOptimized" />
-                </ChildContent>
-            </MudVirtualize>
+            <Virtualize Items="@ViewModel.ContentItems" 
+                       Context="item"
+                       ItemSize="250"
+                       OverscanCount="8">
+                <ContentListItemComponent 
+                    ContentItem="item"
+                    OnEdit="StartEditingOptimized"
+                    OnSave="SaveContentOptimized"
+                    OnCancel="CancelEditingOptimized"
+                    OnDelete="DeleteContentOptimized" />
+            </Virtualize>
         }
     }
 </MudContainer>
@@ -314,6 +359,44 @@
     private async Task UploadFile()
     {
         await ViewModel.FileUpload.UploadFileAsync();
+        StateHasChanged();
+    }
+
+    // Методы для управления редакторами
+    private async Task OpenManageEditorsDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["Editors"] = ViewModel.InvitedEditors,
+            ["RoomId"] = RoomId,
+            ["CurrentUserId"] = ViewModel.CurrentUserId,
+            ["CreatorId"] = ViewModel.CreatorId,
+            ["OnEditorRemoved"] = EventCallback.Factory.Create(this, OnEditorRemoved),
+            ["OnEditorInvited"] = EventCallback.Factory.Create(this, OnEditorInvited)
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<Components.ManageEditorsDialog>("Управление редакторами", parameters, options);
+    }
+
+    private async Task OnEditorRemoved()
+    {
+        // Обновляем данные комнаты после удаления редактора
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task OnEditorInvited()
+    {
+        // Обновляем данные комнаты после приглашения редактора
+        await LoadData();
         StateHasChanged();
     }
 

@@ -1,5 +1,6 @@
 @using ContentRating.Web.UI.ViewModels
 @using MudBlazor
+@using System.Globalization
 
 <MudExpansionPanel Text="@($"Управление mock пользователями ({MockRaters.Count()})")">
     <TitleContent>
@@ -26,25 +27,16 @@
                                 </MudItem>
                                 <MudItem xs="12">
                                     <MudNumericField Value="@GetMockRatingValue(mockRater.Id)"
-                                                   ValueChanged="@((double value) => SetMockRatingValue(mockRater.Id, value))"
+                                                   ValueChanged="@((double value) => HandleMockRatingValueChanged(mockRater.Id, value))"
                                                    Min="@MinRating"
                                                    Max="@MaxRating"
                                                    Step="0.01"
                                                    Variant="Variant.Outlined"
-                                                   Placeholder="Оценка"
+                                                   Placeholder="Оценка (используйте точку: 7.5)"
                                                    Format="F2"
-                                                   HelperText="@($"От {MinRating:F2} до {MaxRating:F2}")"
-                                                   Class="mb-2" />
-                                </MudItem>
-                                <MudItem xs="12">
-                                    <MudButton Variant="Variant.Filled"
-                                              Color="Color.Secondary"
-                                              Size="Size.Small"
-                                              FullWidth="true"
-                                              OnClick="() => HandleMockRatingChanged(mockRater.Id)"
-                                              StartIcon="@Icons.Material.Filled.Check">
-                                        Установить
-                                    </MudButton>
+                                                   HelperText="@($"От {MinRating:F2} до {MaxRating:F2} (используйте точку как разделитель)")"
+                                                   Class="mb-2"
+                                                   Culture="@_invariantCulture" />
                                 </MudItem>
                                 <MudItem xs="12">
                                     <MudText Typo="Typo.caption" Class="text-center">
@@ -75,6 +67,7 @@
     [Parameter] public EventCallback<(Guid MockUserId, double Rating)> OnMockRatingChanged { get; set; }
 
     private Dictionary<Guid, double> _mockRatingValues = new();
+    private readonly CultureInfo _invariantCulture = CultureInfo.InvariantCulture;
 
     protected override void OnParametersSet()
     {
@@ -99,6 +92,15 @@
         _mockRatingValues[mockRaterId] = value;
     }
 
+    private async Task HandleMockRatingValueChanged(Guid mockRaterId, double value)
+    {
+        // Устанавливаем новое значение
+        SetMockRatingValue(mockRaterId, value);
+        
+        // Сразу отправляем изменение
+        await OnMockRatingChanged.InvokeAsync((mockRaterId, value));
+    }
+
     private double? GetCurrentMockRatingValue(Guid mockRaterId)
     {
         return ContentRating.Ratings.FirstOrDefault(r => r.RaterId == mockRaterId)?.Rating;
@@ -115,4 +117,6 @@
         var rating = GetMockRatingValue(mockRaterId);
         await OnMockRatingChanged.InvokeAsync((mockRaterId, rating));
     }
+
+
 } 

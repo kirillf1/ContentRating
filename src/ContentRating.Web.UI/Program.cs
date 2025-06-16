@@ -43,10 +43,7 @@ public class Program
             .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
 
         builder
-            .Services.AddHttpClient<
-                Services.IYoutubeService,
-                Services.YoutubeService
-            >(
+            .Services.AddHttpClient<Services.IYoutubeService, Services.YoutubeService>(
                 (sp, client) =>
                 {
                     var settings = sp.GetRequiredService<ApiSettings>();
@@ -57,10 +54,7 @@ public class Program
             .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
 
         builder
-            .Services.AddHttpClient<
-                Services.IContentFileService,
-                Services.ContentFileService
-            >(
+            .Services.AddHttpClient<Services.IContentFileService, Services.ContentFileService>(
                 (sp, client) =>
                 {
                     var settings = sp.GetRequiredService<ApiSettings>();
@@ -100,10 +94,7 @@ public class Program
 
         // UserService для работы с пользователями
         builder
-            .Services.AddHttpClient<
-                Services.IUserService,
-                Services.UserService
-            >(
+            .Services.AddHttpClient<Services.IUserService, Services.UserService>(
                 (sp, client) =>
                 {
                     var settings = sp.GetRequiredService<ApiSettings>();
@@ -130,26 +121,26 @@ public class Program
         builder.Services.AddScoped<ContentRating.Web.UI.Services.AuthService>();
 
         // SignalR сервис для редактора контента
-        builder.Services.AddScoped<
+        builder.Services.AddTransient<
             ContentRating.Web.UI.Services.IContentEstimationListEditorHubService,
             ContentRating.Web.UI.Services.ContentEstimationListEditorHubService
         >();
 
         // SignalR сервис для оценки контента
-        builder.Services.AddScoped<
+        builder.Services.AddTransient<
             ContentRating.Web.UI.Services.IContentPartyEstimationHubService,
             ContentRating.Web.UI.Services.ContentPartyEstimationHubService
         >();
 
         // ViewModels
-        builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.ContentEstimationListEditorViewModel>();
-        builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.YoutubeImportViewModel>();
-        builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.FileUploadViewModel>();
-        builder.Services.AddScoped<ContentRating.Web.UI.ViewModels.ContentPartyEstimationRoomViewModel>();
-        
+        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.ContentEstimationListEditorViewModel>();
+        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.YoutubeImportViewModel>();
+        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.FileUploadViewModel>();
+        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.ContentPartyEstimationRoomViewModel>();
+
         // Services
-        builder.Services.AddScoped<ContentRating.Web.UI.Services.ContentValidationService>();
-        builder.Services.AddScoped<ContentRating.Web.UI.Services.ContentItemEditingService>();
+        builder.Services.AddTransient<ContentRating.Web.UI.Services.ContentValidationService>();
+        builder.Services.AddTransient<ContentRating.Web.UI.Services.ContentItemEditingService>();
 
         var app = builder.Build();
 

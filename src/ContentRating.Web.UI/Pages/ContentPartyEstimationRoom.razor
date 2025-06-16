@@ -12,7 +12,7 @@
 
 <PageTitle>Групповая оценка - @ViewModel.RoomName</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4" Style="flex-direction:column; flex-shrink: 0;">
     @if (ViewModel.IsLoading)
     {
         <MudGrid Justify="Justify.Center" Class="mt-8">
@@ -181,24 +181,24 @@
         else
         {
             <!-- Виртуализированный список контента для оптимизации -->
-            <MudVirtualize Items="@ViewModel.ContentRatings" 
-                          Context="contentRating"
-                          ItemSize="400"
-                          OverscanCount="2">
-                <ChildContent>
-                    <ContentPartyRatingItemComponent 
-                        @key="contentRating.RatingId"
-                        ContentRating="contentRating"
-                        MinRating="@ViewModel.MinRating"
-                        MaxRating="@ViewModel.MaxRating"
-                        CurrentUserRating="ViewModel.GetCurrentUserRating(contentRating.RatingId)"
-                        CanRate="ViewModel.CanRate(contentRating.RatingId)"
-                        IsEstimationCompleted="ViewModel.IsEstimationCompleted"
-                        OnRatingChanged="OnContentRated"
-                        MockRaters="@ViewModel.Raters.Where(r => r.IsMock)"
-                        OnMockRatingChanged="@((mockUserRating) => OnMockUserRated(contentRating.RatingId, mockUserRating))" />
-                </ChildContent>
-            </MudVirtualize>
+            <Virtualize Items="@ViewModel.ContentRatings" 
+                       Context="contentRating"
+                       ItemSize="320"
+                       OverscanCount="8">
+                <ContentPartyRatingItemComponent 
+                    @key="contentRating.RatingId"
+                    ContentRating="contentRating"
+                    MinRating="@ViewModel.MinRating"
+                    MaxRating="@ViewModel.MaxRating"
+                    CurrentUserRating="ViewModel.GetCurrentUserRating(contentRating.RatingId)"
+                    CanRate="ViewModel.CanRate(contentRating.RatingId)"
+                    IsEstimationCompleted="ViewModel.IsEstimationCompleted"
+                    OnRatingChanged="OnContentRated"
+                    MockRaters="@ViewModel.Raters.Where(r => r.IsMock)"
+                    OnMockRatingChanged="@((mockUserRating) => OnMockUserRated(contentRating.RatingId, mockUserRating))"
+                    CanDeleteContent="ViewModel.CanDeleteContent()"
+                    OnContentDelete="OnContentDeleted" />
+            </Virtualize>
         }
     }
 </MudContainer>
@@ -262,6 +262,15 @@
         if (success)
         {
             StateHasChanged(); // Обновляем UI после успешной оценки
+        }
+    }
+
+    private async Task OnContentDeleted(Guid contentId)
+    {
+        var success = await ViewModel.DeleteContentAsync(contentId);
+        if (success)
+        {
+            StateHasChanged(); // Обновляем UI после успешного удаления
         }
     }
 

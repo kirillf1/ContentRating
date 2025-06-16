@@ -9,7 +9,7 @@
 
 <PageTitle>Промежуточные результаты - @ViewModel.RoomName</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4" Style="flex-direction:column; flex-shrink: 0;">
     @if (ViewModel.IsLoading)
     {
         <MudGrid Justify="Justify.Center" Class="mt-8">
@@ -133,8 +133,10 @@
         else if (_showDetailedView)
         {
             <!-- Подробный вид с превью контента -->
-            @foreach (var content in GetSortedContentRatings())
-            {
+            <Virtualize Items="@GetSortedContentRatings()" 
+                       Context="content"
+                       ItemSize="350"
+                       OverscanCount="7">
                 <ContentRating.Web.UI.Components.ContentPartyResultItemComponent 
                     ContentRating="@content.content"
                     Rank="@content.rank"
@@ -143,15 +145,17 @@
                     AllRaters="@ViewModel.Raters"
                     TotalRaters="@ViewModel.Raters.Count"
                     CurrentUserId="@ViewModel.CurrentUserId" />
-            }
+            </Virtualize>
         }
         else
         {
             <!-- Компактный вид -->
-            @foreach (var content in GetSortedContentRatings())
-            {
+            <Virtualize Items="@GetSortedContentRatings()" 
+                       Context="content"
+                       ItemSize="180"
+                       OverscanCount="8">
                 <MudPaper Class="mb-4 pa-4" Elevation="2">
-                    <MudGrid AlignItems="Center.Center">
+                    <MudGrid AlignItems="Center.Center" Style="flex-direction:column; flex-shrink: 0;">
                         <!-- Позиция -->
                         <MudItem xs="12" sm="1">
                             <MudChip T="string" 
@@ -164,7 +168,7 @@
                         
                         <!-- Информация о контенте -->
                         <MudItem xs="12" sm="6">
-                            <MudGrid>
+                            <MudGrid Style="flex-direction:column; flex-shrink: 0;">
                                 <MudItem xs="12">
                                     <MudText Typo="Typo.h6" GutterBottom="false">@content.content.Name</MudText>
                                     <MudChip T="string" 
@@ -182,28 +186,12 @@
                         </MudItem>
                         
                         <!-- Средняя оценка -->
-                        <MudItem xs="12" sm="2">
-                            <MudGrid Justify="Justify.Center">
+                        <MudItem xs="12" sm="5">
+                            <MudGrid Justify="Justify.Center" Style="flex-direction:column; flex-shrink: 0;">
                                 <MudItem>
                                     <MudText Typo="Typo.h5" Color="Color.Primary" Class="font-weight-bold">
                                         @content.content.AverageRating.ToString("F1")
                                     </MudText>
-                                    <MudRating ReadOnly="true" SelectedValue="(int)Math.Round(content.content.AverageRating)" MaxValue="5" Size="Size.Small" Color="Color.Warning" />
-                                </MudItem>
-                            </MudGrid>
-                        </MudItem>
-                        
-                        <!-- Количество оценок -->
-                        <MudItem xs="12" sm="3">
-                            <MudGrid Justify="Justify.FlexEnd">
-                                <MudItem>
-                                    <MudText Typo="Typo.body1">
-                                        Оценок: @content.content.Ratings.Count из @ViewModel.Raters.Count
-                                    </MudText>
-                                    <MudProgressLinear Value="@GetRatingProgress(content.content)" 
-                                                     Color="Color.Info" 
-                                                     Size="Size.Small" 
-                                                     Class="mt-1" />
                                 </MudItem>
                             </MudGrid>
                         </MudItem>
@@ -214,13 +202,13 @@
                         <MudExpansionPanels Class="mt-3">
                             <MudExpansionPanel Text="@GetDetailsPanelText(content.content)"
                                              Icon="@Icons.Material.Filled.ExpandMore">
-                                <MudGrid>
+                                <MudGrid Style="flex-direction:column; flex-shrink: 0;">
                                     @foreach (var rater in ViewModel.Raters)
                                     {
                                         var raterRating = content.content.Ratings.FirstOrDefault(r => r.RaterId == rater.Id);
                                         <MudItem xs="12" sm="6" md="4">
                                             <MudPaper Class="pa-2" Elevation="1">
-                                                <MudGrid AlignItems="Center.Center">
+                                                <MudGrid AlignItems="Center.Center" Style="flex-direction:column; flex-shrink: 0;">
                                                     <MudItem xs="6">
                                                         <MudText Typo="Typo.body2">@rater.DisplayName</MudText>
                                                     </MudItem>
@@ -246,8 +234,9 @@
                             </MudExpansionPanel>
                         </MudExpansionPanels>
                     </MudCollapse>
+
                 </MudPaper>
-            }
+            </Virtualize>
         }
     }
 </MudContainer>

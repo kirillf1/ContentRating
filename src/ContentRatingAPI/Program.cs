@@ -25,6 +25,7 @@ using ContentRatingAPI.Infrastructure.MediatrBehaviors;
 using ContentRatingAPI.Infrastructure.Telemetry;
 using ContentRatingAPI.Infrastructure.YoutubeClient;
 using FluentValidation;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -54,6 +55,12 @@ try
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         cfg.AddOpenBehavior(typeof(ValidatorBehavior<,>));
         cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+    });
+
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
     });
 
     builder.Services.AddSingleton<IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
@@ -152,8 +159,10 @@ try
         app.UseSwagger();
         app.UseSwaggerUI(options => { });
     }
+    app.UseForwardedHeaders();
+    app.UsePathBase("/content-rating");
+
     app.UseRequestLocalization();
-    app.UseHttpsRedirection();
 
     // Добавляем CORS middleware
     app.UseCors();

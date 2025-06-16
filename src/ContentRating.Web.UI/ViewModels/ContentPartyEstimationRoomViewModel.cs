@@ -224,6 +224,11 @@ namespace ContentRating.Web.UI.ViewModels
             return CurrentUserId == CreatorId && !IsEstimationCompleted;
         }
 
+        public bool CanDeleteContent()
+        {
+            return CurrentUserId == CreatorId && !IsEstimationCompleted;
+        }
+
         public async Task<bool> CompleteEstimationAsync()
         {
             if (!CanCompleteEstimation())
@@ -247,6 +252,47 @@ namespace ContentRating.Web.UI.ViewModels
             catch (Exception ex)
             {
                 _snackbar.Add($"Ошибка при завершении оценки: {ex.Message}", Severity.Error);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteContentAsync(Guid contentId)
+        {
+            if (!CanDeleteContent())
+            {
+                _snackbar.Add("У вас нет прав для удаления контента", Severity.Error);
+                return false;
+            }
+
+            var content = ContentRatings.FirstOrDefault(c => c.ContentId == contentId);
+            if (content == null)
+            {
+                _snackbar.Add("Контент не найден", Severity.Error);
+                return false;
+            }
+
+            try
+            {
+                var success = await _estimationService.RemoveContentAsync(RoomId, contentId);
+                if (success)
+                {
+                    // Удаляем локально сразу для лучшего UX
+                    // SignalR обновит остальных участников
+                    ContentRatings.Remove(content);
+                    _snackbar.Add($"Контент «{content.Name}» удален", Severity.Success);
+                    StateChanged?.Invoke();
+                    return true;
+                }
+                else
+                {
+                    _snackbar.Add("Не удалось удалить контент", Severity.Error);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                _snackbar.Add("Произошла ошибка при удалении контента", Severity.Error);
                 return false;
             }
         }
@@ -339,6 +385,28 @@ namespace ContentRating.Web.UI.ViewModels
             if (content != null)
             {
                 UpdateLocalRating(ratingId, raterId, score);
+                
+                // Показываем уведомление о том, что пользователь оценил контент
+                var rater = Raters.FirstOrDefault(r => r.Id == raterId);
+                if (rater != null)
+                {
+                    var raterName = rater.DisplayName;
+                    var contentName = content.Name;
+                    var scoreFormatted = score.ToString("F1");
+                    
+                    _snackbar.Add(
+                        $"{raterName} оценил «{contentName}» на {scoreFormatted}",
+                        Severity.Info,
+                        config =>
+                        {
+                            config.ShowCloseIcon = true;
+                            config.VisibleStateDuration = 4000; // Показываем 4 секунды
+                            config.HideTransitionDuration = 300;
+                            config.ShowTransitionDuration = 300;
+                        }
+                    );
+                }
+                
                 StateChanged?.Invoke();
             }
         }

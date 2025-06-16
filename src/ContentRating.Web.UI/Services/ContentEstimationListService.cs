@@ -14,6 +14,8 @@ namespace ContentRating.Web.UI.Services
         Task<bool> CreateContentAsync(Guid roomId, CreateContentRequest request);
         Task<bool> UpdateContentAsync(Guid roomId, Guid contentId, UpdateContentRequest request);
         Task<bool> DeleteContentAsync(Guid roomId, Guid contentId);
+        Task<bool> InviteEditorAsync(Guid roomId, InviteEditorRequest request);
+        Task<bool> KickEditorAsync(Guid roomId, Guid editorId);
     }
 
     public class ContentEstimationListService : IContentEstimationListService
@@ -169,6 +171,42 @@ namespace ContentRating.Web.UI.Services
             {
                 var response = await _httpClient.DeleteAsync(
                     $"api/content-estimation-list-editor/{roomId}/content/{contentId}"
+                );
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> InviteEditorAsync(Guid roomId, InviteEditorRequest request)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(request, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(
+                    $"api/content-estimation-list-editor/{roomId}/editor",
+                    content
+                );
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return false;
+            }
+        }
+
+        public async Task<bool> KickEditorAsync(Guid roomId, Guid editorId)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync(
+                    $"api/content-estimation-list-editor/{roomId}/editor/{editorId}"
                 );
                 return response.IsSuccessStatusCode;
             }

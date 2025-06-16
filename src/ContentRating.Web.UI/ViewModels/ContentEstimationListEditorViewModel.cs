@@ -12,6 +12,7 @@ namespace ContentRating.Web.UI.ViewModels
         private readonly IContentEstimationListService _contentService;
         private readonly IContentEstimationListEditorHubService _hubService;
         private readonly ISnackbar _snackbar;
+        private readonly AuthService _authService;
 
         // Специализированные ViewModels
         public YoutubeImportViewModel YoutubeImport { get; }
@@ -22,6 +23,7 @@ namespace ContentRating.Web.UI.ViewModels
             IContentEstimationListService contentService,
             IContentEstimationListEditorHubService hubService,
             ISnackbar snackbar,
+            AuthService authService,
             YoutubeImportViewModel youtubeImport,
             FileUploadViewModel fileUpload,
             ContentValidationService contentValidation
@@ -30,6 +32,7 @@ namespace ContentRating.Web.UI.ViewModels
             _contentService = contentService;
             _hubService = hubService;
             _snackbar = snackbar;
+            _authService = authService;
 
             YoutubeImport = youtubeImport;
             FileUpload = fileUpload;
@@ -73,6 +76,9 @@ namespace ContentRating.Web.UI.ViewModels
 
         // Событие для уведомления UI об изменениях
         public event Action? StateChanged;
+
+        // Текущий пользователь
+        public Guid? CurrentUserId => _authService.UserId;
 
         private ContentItemViewModel? _currentEditingItem;
 
@@ -153,6 +159,12 @@ namespace ContentRating.Web.UI.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        public bool CanManageEditors()
+        {
+            // Только создатель топа может управлять редакторами
+            return CurrentUserId == CreatorId;
         }
 
         public async Task<bool> AddContentAsync()

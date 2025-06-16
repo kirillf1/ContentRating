@@ -1,0 +1,149 @@
+@using ContentRating.Web.Contracts.Identity
+@using ContentRating.Web.Contracts.ContentEstimationListEditor
+@using ContentRating.Web.UI.Services
+@using MudBlazor
+@inject IUserService UserService
+@inject IContentEstimationListService ContentService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudText Typo="Typo.h6" Class="mb-4">Пригласить редактора</MudText>
+            
+            @if (_isLoading)
+            {
+                <MudGrid Justify="Justify.Center" Class="pa-4">
+                    <MudItem>
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                        <MudText Class="mt-2" Align="Align.Center">Загрузка пользователей...</MudText>
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudGrid>
+                    @if (_users?.Any() == true)
+                    {
+                        @foreach (var user in _users.Where(u => !u.Name.StartsWith("Mock:")))
+                        {
+                            <MudItem xs="12">
+                                <MudCard Elevation="1" Class="pa-3">
+                                    <MudGrid AlignItems="Center">
+                                        <MudItem xs="2">
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Primary" />
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudText Typo="Typo.body1">@user.Name</MudText>
+                                        </MudItem>
+                                        <MudItem xs="4" Class="text-right">
+                                            <MudButton 
+                                                Variant="Variant.Filled" 
+                                                Color="Color.Primary" 
+                                                Size="Size.Small"
+                                                OnClick="() => InviteEditor(user)"
+                                                Disabled="_inviting">
+                                                @if (_inviting)
+                                                {
+                                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                                }
+                                                else
+                                                {
+                                                    <text>Пригласить</text>
+                                                }
+                                            </MudButton>
+                                        </MudItem>
+                                    </MudGrid>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Info">
+                                Нет доступных пользователей для приглашения в качестве редакторов
+                            </MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Закрыть</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public Guid RoomId { get; set; }
+    [Parameter] public EventCallback OnUserInvited { get; set; }
+
+    private IEnumerable<UserResponse>? _users;
+    private bool _isLoading = true;
+    private bool _inviting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _isLoading = true;
+        try
+        {
+            _users = await UserService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка загрузки пользователей: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InviteEditor(UserResponse user)
+    {
+        _inviting = true;
+        try
+        {
+            var request = new InviteEditorRequest
+            {
+                EditorId = user.Id,
+                EditorName = user.Name
+            };
+
+            var success = await ContentService.InviteEditorAsync(RoomId, request);
+            if (success)
+            {
+                Snackbar.Add($"Редактор {user.Name} приглашен в топ", Severity.Success);
+                await OnUserInvited.InvokeAsync();
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"Ошибка при приглашении редактора {user.Name}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Ошибка при приглашении редактора: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _inviting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+} 

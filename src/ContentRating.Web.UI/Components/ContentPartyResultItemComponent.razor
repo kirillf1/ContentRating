@@ -51,8 +51,8 @@
                     
                     <!-- Средняя оценка -->
                     <MudPaper Class="pa-3 mb-3" Elevation="1">
-                        <MudGrid AlignItems="Center.Center">
-                            <MudItem xs="6">
+                                                <MudGrid AlignItems="Center.Center">
+                            <MudItem xs="12">
                                 <MudText Typo="Typo.h4" Color="Color.Primary" Class="font-weight-bold">
                                     @ContentRating.AverageRating.ToString("F1")
                                 </MudText>
@@ -60,24 +60,9 @@
                                     из @MaxRating.ToString("F0")
                                 </MudText>
                             </MudItem>
-                            <MudItem xs="6">
-                                <MudRating ReadOnly="true" 
-                                         SelectedValue="@GetStarRating()" 
-                                         MaxValue="5" 
-                                         Size="Size.Medium" 
-                                         Color="Color.Warning" />
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                    @ContentRating.Ratings.Count из @TotalRaters оценок
-                                </MudText>
-                            </MudItem>
-                        </MudGrid>
+                          </MudGrid>
                     </MudPaper>
 
-                    <!-- Прогресс оценивания -->
-                    <MudProgressLinear Value="@GetRatingProgress()" 
-                                     Color="Color.Info" 
-                                     Size="Size.Medium" 
-                                     Class="mb-3" />
                 </MudItem>
 
                 <!-- Детальные оценки всех участников -->

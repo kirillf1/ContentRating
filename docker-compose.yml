@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  contentrating-web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: contentrating-web-ui-container
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./certs:/https:ro
+    environment:
+      - TZ=Europe/Moscow
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - contentrating-network
+
+networks:
+  contentrating-network:
+    driver: bridge 

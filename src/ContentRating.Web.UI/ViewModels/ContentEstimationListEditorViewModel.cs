@@ -4,6 +4,7 @@ using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRating.Web.UI.Services;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using System.Timers;
 
 namespace ContentRating.Web.UI.ViewModels
 {
@@ -18,6 +19,11 @@ namespace ContentRating.Web.UI.ViewModels
         public YoutubeImportViewModel YoutubeImport { get; }
         public FileUploadViewModel FileUpload { get; }
         public ContentValidationService ContentValidation { get; }
+
+        // Поиск контента с debounce
+        private string _searchText = string.Empty;
+        private string _debouncedSearchText = string.Empty;
+        private System.Timers.Timer? _searchTimer;
 
         public ContentEstimationListEditorViewModel(
             IContentEstimationListService contentService,
@@ -37,6 +43,11 @@ namespace ContentRating.Web.UI.ViewModels
             YoutubeImport = youtubeImport;
             FileUpload = fileUpload;
             ContentValidation = contentValidation;
+
+            // Инициализируем таймер для debounce поиска
+            _searchTimer = new System.Timers.Timer(300); // 300 мс
+            _searchTimer.Elapsed += OnSearchTimerElapsed;
+            _searchTimer.AutoReset = false;
 
             // Подписываемся на события
             SubscribeToHubEvents();
@@ -81,6 +92,46 @@ namespace ContentRating.Web.UI.ViewModels
         public Guid? CurrentUserId => _authService.UserId;
 
         private ContentItemViewModel? _currentEditingItem;
+
+        // Поиск контента с debounce
+        public string SearchText 
+        { 
+            get => _searchText;
+            set 
+            {
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    // Перезапускаем таймер при каждом изменении
+                    _searchTimer?.Stop();
+                    _searchTimer?.Start();
+                }
+            }
+        }
+        
+        // Отфильтрованный список контента на основе поиска
+        public List<ContentItemViewModel> FilteredContentItems
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_debouncedSearchText))
+                {
+                    return ContentItems;
+                }
+
+                var searchLower = _debouncedSearchText.ToLowerInvariant();
+                return ContentItems.Where(item =>
+                    item.Name.ToLowerInvariant().Contains(searchLower) ||
+                    item.Url.ToLowerInvariant().Contains(searchLower)
+                ).ToList();
+            }
+        }
+
+        private void OnSearchTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            _debouncedSearchText = _searchText;
+            StateChanged?.Invoke();
+        }
 
         private void SubscribeToChildViewModelEvents()
         {
@@ -447,6 +498,10 @@ namespace ContentRating.Web.UI.ViewModels
 
         public async ValueTask DisposeAsync()
         {
+            // Освобождаем таймер поиска
+            _searchTimer?.Stop();
+            _searchTimer?.Dispose();
+
             // Отписываемся от событий
             if (YoutubeImport != null)
             {

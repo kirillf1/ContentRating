@@ -158,30 +158,64 @@
         }
 
         <!-- Контент для оценки -->
-        <MudText Typo="Typo.h6" GutterBottom="true">
-            Контент для оценки (@ViewModel.ContentRatings.Count)
-        </MudText>
+        <MudGrid Align="Align.Center" Class="mb-3">
+            <MudItem xs="8">
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    Контент для оценки (@ViewModel.FilteredContentRatings.Count из @ViewModel.ContentRatings.Count)
+                </MudText>
+            </MudItem>
+            <MudItem xs="4">
+                <MudTextField @bind-Value="ViewModel.SearchText"
+                              Label="Поиск контента"
+                              Placeholder="Введите название или ссылку..."
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true"
+                              Immediate="true"
+                              OnClearButtonClick="OnSearchCleared" />
+            </MudItem>
+        </MudGrid>
 
-        @if (!ViewModel.ContentRatings.Any())
+        @if (!ViewModel.FilteredContentRatings.Any())
         {
-            <MudPaper Class="pa-6" Elevation="1">
-                <MudGrid Justify="Justify.Center">
-                    <MudItem>
-                        <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
-                    </MudItem>
-                </MudGrid>
-                <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
-                    Контент не найден
-                </MudText>
-                <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
-                    В этой комнате нет контента для оценки
-                </MudText>
-            </MudPaper>
+            @if (string.IsNullOrWhiteSpace(ViewModel.SearchText))
+            {
+                <MudPaper Class="pa-6" Elevation="1">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        Контент не найден
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        В этой комнате нет контента для оценки
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Class="pa-6" Elevation="1">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mb-3" Color="Color.Secondary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        Ничего не найдено
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        Попробуйте изменить поисковый запрос
+                    </MudText>
+                </MudPaper>
+            }
         }
         else
         {
             <!-- Виртуализированный список контента для оптимизации -->
-            <Virtualize Items="@ViewModel.ContentRatings" 
+            <Virtualize Items="@ViewModel.FilteredContentRatings" 
                        Context="contentRating"
                        ItemSize="320"
                        OverscanCount="8">
@@ -372,23 +406,13 @@
 
     private void OnViewModelStateChanged()
     {
-        InvokeAsync(() =>
-        {
-            // Если оценка завершена, автоматически переходим к результатам
-            if (ViewModel.IsEstimationCompleted && !_isCompletingEstimation)
-            {
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(3000); // Показываем сообщение об успехе 3 секунды
-                    await InvokeAsync(() => 
-                    {
-                        // Переходим на страницу результатов в той же вкладке
-                        Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
-                    });
-                });
-            }
-            StateHasChanged();
-        });
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void OnSearchCleared()
+    {
+        ViewModel.SearchText = string.Empty;
+        StateHasChanged();
     }
 
     public void Dispose()

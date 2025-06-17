@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
 using MudBlazor.Services;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 namespace ContentRating.Web.UI;
 
@@ -26,7 +27,7 @@ public class Program
         });
 
         // HttpClient с аутентификацией для API сервисов
-        builder.Services.AddScoped<ContentRating.Web.UI.Services.AuthenticatedHttpClientHandler>();
+        builder.Services.AddScoped<Services.AuthenticatedHttpClientHandler>();
 
         builder
             .Services.AddHttpClient<
@@ -116,32 +117,32 @@ public class Program
             config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
         });
 
-        builder.Services.AddScoped<ContentRating.Web.UI.Services.ThemeService>();
-        builder.Services.AddScoped<ContentRating.Web.UI.Services.SecureTokenStorage>();
-        builder.Services.AddScoped<ContentRating.Web.UI.Services.AuthService>();
+        builder.Services.AddScoped<Services.ThemeService>();
+        builder.Services.AddScoped<Services.SecureTokenStorage>();
+        builder.Services.AddScoped<Services.AuthService>();
 
         // SignalR сервис для редактора контента
         builder.Services.AddTransient<
-            ContentRating.Web.UI.Services.IContentEstimationListEditorHubService,
-            ContentRating.Web.UI.Services.ContentEstimationListEditorHubService
+            Services.IContentEstimationListEditorHubService,
+            Services.ContentEstimationListEditorHubService
         >();
 
         // SignalR сервис для оценки контента
         builder.Services.AddTransient<
-            ContentRating.Web.UI.Services.IContentPartyEstimationHubService,
-            ContentRating.Web.UI.Services.ContentPartyEstimationHubService
+            Services.IContentPartyEstimationHubService,
+            Services.ContentPartyEstimationHubService
         >();
 
         // ViewModels
-        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.ContentEstimationListEditorViewModel>();
-        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.YoutubeImportViewModel>();
-        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.FileUploadViewModel>();
-        builder.Services.AddTransient<ContentRating.Web.UI.ViewModels.ContentPartyEstimationRoomViewModel>();
+        builder.Services.AddTransient<ViewModels.ContentEstimationListEditorViewModel>();
+        builder.Services.AddTransient<ViewModels.YoutubeImportViewModel>();
+        builder.Services.AddTransient<ViewModels.FileUploadViewModel>();
+        builder.Services.AddTransient<ViewModels.ContentPartyEstimationRoomViewModel>();
 
         // Services
-        builder.Services.AddTransient<ContentRating.Web.UI.Services.ContentValidationService>();
-        builder.Services.AddTransient<ContentRating.Web.UI.Services.ContentItemEditingService>();
-
+        builder.Services.AddTransient<Services.ContentValidationService>();
+        builder.Services.AddTransient<Services.ContentItemEditingService>();
+        builder.Services.AddPWAUpdater();
         var app = builder.Build();
 
         await app.RunAsync();

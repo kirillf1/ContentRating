@@ -1,4 +1,5 @@
 ﻿@using ContentRating.Web.UI.Services
+@using Toolbelt.Blazor.PWA.Updater
 @inherits LayoutComponentBase
 @inject AuthService AuthService
 
@@ -31,6 +32,32 @@
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+<!-- PWA Updater - уведомление об обновлениях внизу экрана -->
+<PWAUpdater EnvironmentsForWork="Production">
+    <div class="pwa-update-notification">
+        <div class="pwa-update-content">
+            <MudIcon Icon="@Icons.Material.Filled.SystemUpdate" 
+                     Size="Size.Medium" 
+                     Class="pwa-update-icon" />
+            <div class="pwa-update-text">
+                <MudText Typo="Typo.body2" Class="pwa-update-title">
+                    Доступна новая версия приложения
+                </MudText>
+                <MudText Typo="Typo.caption" Class="pwa-update-subtitle">
+                    Обновите для получения новых функций и улучшений
+                </MudText>
+            </div>
+        </div>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Size="Size.Small"
+                   Class="pwa-update-button"
+                   StartIcon="@Icons.Material.Filled.Refresh">
+            Обновить сейчас
+        </MudButton>
+    </div>
+</PWAUpdater>
 
 @code {
     bool _drawerOpen = true;

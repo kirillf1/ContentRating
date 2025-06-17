@@ -2,6 +2,7 @@
 using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRating.Web.UI.Services;
 using MudBlazor;
+using System.Timers;
 
 namespace ContentRating.Web.UI.ViewModels
 {
@@ -12,6 +13,11 @@ namespace ContentRating.Web.UI.ViewModels
         private readonly IContentPartyEstimationHubService _hubService;
         private readonly ISnackbar _snackbar;
         private readonly AuthService _authService;
+
+        // Поиск контента с debounce
+        private string _searchText = string.Empty;
+        private string _debouncedSearchText = string.Empty;
+        private System.Timers.Timer? _searchTimer;
 
         public ContentPartyEstimationRoomViewModel(
             IContentPartyEstimationService estimationService,
@@ -26,6 +32,11 @@ namespace ContentRating.Web.UI.ViewModels
             _hubService = hubService;
             _snackbar = snackbar;
             _authService = authService;
+
+            // Инициализируем таймер для debounce поиска
+            _searchTimer = new System.Timers.Timer(300); // 300 мс
+            _searchTimer.Elapsed += OnSearchTimerElapsed;
+            _searchTimer.AutoReset = false;
 
             // Подписываемся на события SignalR
             SubscribeToHubEvents();
@@ -45,6 +56,46 @@ namespace ContentRating.Web.UI.ViewModels
         public bool IsLoading { get; set; } = true;
         public bool HasError { get; set; } = false;
         public string ErrorMessage { get; set; } = string.Empty;
+
+        // Поиск контента с debounce
+        public string SearchText 
+        { 
+            get => _searchText;
+            set 
+            {
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    // Перезапускаем таймер при каждом изменении
+                    _searchTimer?.Stop();
+                    _searchTimer?.Start();
+                }
+            }
+        }
+        
+        // Отфильтрованный список контента на основе поиска
+        public List<ContentPartyRatingViewModel> FilteredContentRatings
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_debouncedSearchText))
+                {
+                    return ContentRatings;
+                }
+
+                var searchLower = _debouncedSearchText.ToLowerInvariant();
+                return ContentRatings.Where(rating =>
+                    rating.Name.ToLowerInvariant().Contains(searchLower) ||
+                    rating.Address.ToLowerInvariant().Contains(searchLower)
+                ).ToList();
+            }
+        }
+
+        private void OnSearchTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            _debouncedSearchText = _searchText;
+            StateChanged?.Invoke();
+        }
 
         // Текущий пользователь
         public Guid? CurrentUserId => _authService.UserId;
@@ -564,6 +615,10 @@ namespace ContentRating.Web.UI.ViewModels
 
         public async ValueTask DisposeAsync()
         {
+            // Освобождаем таймер поиска
+            _searchTimer?.Stop();
+            _searchTimer?.Dispose();
+
             // Отписываемся от событий SignalR
             _hubService.RatingChanged -= OnRatingChanged;
             _hubService.RaterInvited -= OnRaterInvited;

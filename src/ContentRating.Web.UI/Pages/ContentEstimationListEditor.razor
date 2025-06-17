@@ -134,30 +134,64 @@
         }
 
         <!-- Список контента -->
-        <MudText Typo="Typo.h6" GutterBottom="true">
-            Контент (@ViewModel.ContentItems.Count)
-        </MudText>
+        <MudGrid Align="Align.Center" Class="mb-3">
+            <MudItem xs="8">
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    Контент (@ViewModel.FilteredContentItems.Count из @ViewModel.ContentItems.Count)
+                </MudText>
+            </MudItem>
+            <MudItem xs="4">
+                <MudTextField @bind-Value="ViewModel.SearchText"
+                              Label="Поиск контента"
+                              Placeholder="Введите название или ссылку..."
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true"
+                              Immediate="true"
+                              OnClearButtonClick="OnSearchCleared" />
+            </MudItem>
+        </MudGrid>
 
-        @if (!ViewModel.ContentItems.Any())
+        @if (!ViewModel.FilteredContentItems.Any())
         {
-            <MudPaper Class="pa-6" Elevation="1">
-                <MudGrid Justify="Justify.Center">
-                    <MudItem>
-                        <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
-                    </MudItem>
-                </MudGrid>
-                <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
-                    Пока нет контента
-                </MudText>
-                <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
-                    Добавьте первый элемент контента в ваш топ
-                </MudText>
-            </MudPaper>
+            @if (string.IsNullOrWhiteSpace(ViewModel.SearchText))
+            {
+                <MudPaper Class="pa-6" Elevation="1">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        Пока нет контента
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        Добавьте первый элемент контента в ваш топ
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Class="pa-6" Elevation="1">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mb-3" Color="Color.Secondary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        Ничего не найдено
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        Попробуйте изменить поисковый запрос
+                    </MudText>
+                </MudPaper>
+            }
         }
         else
         {
             <!-- Виртуализированный список для оптимизации производительности -->
-            <Virtualize Items="@ViewModel.ContentItems" 
+            <Virtualize Items="@ViewModel.FilteredContentItems" 
                        Context="item"
                        ItemSize="250"
                        OverscanCount="8">
@@ -323,6 +357,12 @@
         InvokeAsync(() => StateHasChanged());
     }
 
+    private void OnSearchCleared()
+    {
+        ViewModel.SearchText = string.Empty;
+        StateHasChanged();
+    }
+
     // YouTube методы
     private async Task OpenYoutubeDialog()
     {
@@ -402,7 +442,9 @@
 
     public void Dispose()
     {
-        // Отписываемся от события при уничтожении компонента
-        ViewModel.StateChanged -= OnViewModelStateChanged;
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
     }
 } 

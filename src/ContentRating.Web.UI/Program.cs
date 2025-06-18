@@ -140,8 +140,20 @@ public class Program
         builder.Services.AddTransient<ViewModels.ContentPartyEstimationRoomViewModel>();
 
         // Services
-        builder.Services.AddTransient<Services.ContentValidationService>();
         builder.Services.AddTransient<Services.ContentItemEditingService>();
+        
+        // ContentValidationService с аутентифицированным HttpClient
+        builder
+            .Services.AddHttpClient<Services.ContentValidationService>(
+                (sp, client) =>
+                {
+                    var settings = sp.GetRequiredService<ApiSettings>();
+                    client.BaseAddress = new Uri(settings.BaseUrl);
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                }
+            )
+            .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
+            
         builder.Services.AddPWAUpdater();
         var app = builder.Build();
 

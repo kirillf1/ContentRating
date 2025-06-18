@@ -1,10 +1,10 @@
-﻿using ContentRating.Domain.Shared.Content;
+﻿using System.Timers;
+using ContentRating.Domain.Shared.Content;
 using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRating.Web.UI.Services;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
-using System.Timers;
 
 namespace ContentRating.Web.UI.ViewModels
 {
@@ -94,10 +94,10 @@ namespace ContentRating.Web.UI.ViewModels
         private ContentItemViewModel? _currentEditingItem;
 
         // Поиск контента с debounce
-        public string SearchText 
-        { 
+        public string SearchText
+        {
             get => _searchText;
-            set 
+            set
             {
                 if (_searchText != value)
                 {
@@ -108,7 +108,7 @@ namespace ContentRating.Web.UI.ViewModels
                 }
             }
         }
-        
+
         // Отфильтрованный список контента на основе поиска
         public List<ContentItemViewModel> FilteredContentItems
         {
@@ -120,10 +120,12 @@ namespace ContentRating.Web.UI.ViewModels
                 }
 
                 var searchLower = _debouncedSearchText.ToLowerInvariant();
-                return ContentItems.Where(item =>
-                    item.Name.ToLowerInvariant().Contains(searchLower) ||
-                    item.Url.ToLowerInvariant().Contains(searchLower)
-                ).ToList();
+                return ContentItems
+                    .Where(item =>
+                        item.Name.ToLowerInvariant().Contains(searchLower)
+                        || item.Url.ToLowerInvariant().Contains(searchLower)
+                    )
+                    .ToList();
             }
         }
 
@@ -391,22 +393,22 @@ namespace ContentRating.Web.UI.ViewModels
             }
 
             var newItem = new ContentItemViewModel
-                    {
-                        Id = content.Id,
-                        Name = content.Name,
-                        Url = content.Path,
-                        ContentType = content.ContentType,
-                        CreatorId = editorId,
-                        LastModificationDate = content.LastModificationDate,
-                        IsEditing = false,
+            {
+                Id = content.Id,
+                Name = content.Name,
+                Url = content.Path,
+                ContentType = content.ContentType,
+                CreatorId = editorId,
+                LastModificationDate = content.LastModificationDate,
+                IsEditing = false,
             };
 
             ContentItems.Add(newItem);
             ContentValidation.Initialize(ContentItems);
-            
+
             // Уведомление о добавлении контента
             _snackbar.Add($"➕ Добавлен новый контент: {content.Name}", Severity.Info);
-            
+
             StateChanged?.Invoke();
         }
 
@@ -479,7 +481,7 @@ namespace ContentRating.Web.UI.ViewModels
         private async void OnConnectionRestored()
         {
             _snackbar.Add("Соединение восстановлено, обновление данных...", Severity.Success);
-            
+
             // Перезагружаем данные комнаты
             if (RoomId != Guid.Empty)
             {
@@ -489,10 +491,13 @@ namespace ContentRating.Web.UI.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    _snackbar.Add("Ошибка при обновлении данных после переподключения", Severity.Error);
+                    _snackbar.Add(
+                        "Ошибка при обновлении данных после переподключения",
+                        Severity.Error
+                    );
                 }
             }
-            
+
             StateChanged?.Invoke();
         }
 

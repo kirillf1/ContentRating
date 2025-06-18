@@ -1,4 +1,8 @@
+﻿using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 using ContentRating.Domain.Shared.Content;
+using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRating.Web.UI.ViewModels;
 using MudBlazor;
 
@@ -7,11 +11,13 @@ namespace ContentRating.Web.UI.Services
     public class ContentValidationService
     {
         private readonly ISnackbar _snackbar;
+        private readonly HttpClient _httpClient;
         private List<ContentItemViewModel> _existingContent = new();
 
-        public ContentValidationService(ISnackbar snackbar)
+        public ContentValidationService(ISnackbar snackbar, HttpClient httpClient)
         {
             _snackbar = snackbar;
+            _httpClient = httpClient;
         }
 
         public void Initialize(List<ContentItemViewModel> existingContent)
@@ -193,7 +199,7 @@ namespace ContentRating.Web.UI.Services
             }
         }
 
-        private bool IsYouTubeUrl(string url)
+        public bool IsYouTubeUrl(string url)
         {
             return url.Contains("youtube.com") || url.Contains("youtu.be");
         }
@@ -202,8 +208,6 @@ namespace ContentRating.Web.UI.Services
         {
             try
             {
-                // Для YouTube пока возвращаем базовое название
-                // В будущем можно добавить API запрос для получения реального названия видео
                 var uri = new Uri(url);
                 var videoId = ExtractYouTubeVideoId(url);
 
@@ -216,6 +220,60 @@ namespace ContentRating.Web.UI.Services
             }
             catch
             {
+                return "YouTube видео";
+            }
+        }
+
+        public async Task<string> ExtractYouTubeNameAsync(string url)
+        {
+            try
+            {
+                var request = new { Url = url };
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(
+                    json,
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _httpClient.PostAsync(
+                    "api/youtube-content/video-title",
+                    content
+                );
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseJson = await response.Content.ReadAsStringAsync();
+                    var title = JsonSerializer.Deserialize<YoutubeVideoTitle>(
+                        responseJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (title is not null)
+                    {
+                        return title.Name;
+                    }
+                }
+
+                // Fallback к базовому названию
+                var videoId = ExtractYouTubeVideoId(url);
+                if (!string.IsNullOrEmpty(videoId))
+                {
+                    return $"YouTube видео ({videoId})";
+                }
+
+                return "YouTube видео";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                // Fallback к базовому названию
+                var videoId = ExtractYouTubeVideoId(url);
+                if (!string.IsNullOrEmpty(videoId))
+                {
+                    return $"YouTube видео ({videoId})";
+                }
+
                 return "YouTube видео";
             }
         }
@@ -316,4 +374,4 @@ namespace ContentRating.Web.UI.Services
             return imageExtensions.Contains(extension);
         }
     }
-} 
+}

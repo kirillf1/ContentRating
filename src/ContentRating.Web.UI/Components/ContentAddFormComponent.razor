@@ -82,16 +82,28 @@
     [Parameter] public EventCallback OnUrlChangedCallback { get; set; }
     [Parameter] public ISnackbar Snackbar { get; set; } = null!;
 
-    private void ExtractNameFromUrl()
+    private async Task ExtractNameFromUrl()
     {
         if (!string.IsNullOrWhiteSpace(NewContent.Url))
         {
-            var suggestedName = ValidationService.ExtractNameFromUrl(NewContent.Url);
+            string suggestedName;
+            
+            // Для YouTube видео используем специальный асинхронный метод
+            if (ValidationService.IsYouTubeUrl(NewContent.Url))
+            {
+               
+                suggestedName = await ValidationService.ExtractYouTubeNameAsync(NewContent.Url);
+            }
+            else
+            {
+                suggestedName = ValidationService.ExtractNameFromUrl(NewContent.Url);
+            }
+            
             if (!string.IsNullOrEmpty(suggestedName))
             {
                 NewContent.Name = suggestedName;
                 StateHasChanged();
-                Snackbar.Add($"Название извлечено: {suggestedName}", Severity.Info);
+                Snackbar.Add($"Название извлечено: {suggestedName}", Severity.Success);
             }
             else
             {
@@ -171,6 +183,14 @@
 
     private async Task OnUrlChanged()
     {
+        // Если URL - YouTube видео и название пустое, автоматически извлекаем название
+        if (!string.IsNullOrWhiteSpace(NewContent.Url) && 
+            string.IsNullOrWhiteSpace(NewContent.Name) && 
+            ValidationService.IsYouTubeUrl(NewContent.Url))
+        {
+            await ExtractNameFromUrl();
+        }
+        
         await OnUrlChangedCallback.InvokeAsync();
     }
 } 

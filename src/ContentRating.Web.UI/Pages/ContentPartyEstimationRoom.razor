@@ -159,12 +159,12 @@
 
         <!-- Контент для оценки -->
         <MudGrid Align="Align.Center" Class="mb-3">
-            <MudItem xs="8">
+            <MudItem xs="12" sm="8">
                 <MudText Typo="Typo.h6" GutterBottom="true">
                     Контент для оценки (@ViewModel.FilteredContentRatings.Count из @ViewModel.ContentRatings.Count)
                 </MudText>
             </MudItem>
-            <MudItem xs="4">
+            <MudItem xs="12" sm="4">
                 <MudTextField @bind-Value="ViewModel.SearchText"
                               Label="Поиск контента"
                               Placeholder="Введите название или ссылку..."

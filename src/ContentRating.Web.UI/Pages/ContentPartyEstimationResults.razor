@@ -137,14 +137,17 @@
                        Context="content"
                        ItemSize="350"
                        OverscanCount="7">
-                <ContentRating.Web.UI.Components.ContentPartyResultItemComponent 
-                    ContentRating="@content.content"
-                    Rank="@content.rank"
-                    MinRating="@ViewModel.MinRating"
-                    MaxRating="@ViewModel.MaxRating"
-                    AllRaters="@ViewModel.Raters"
-                    TotalRaters="@ViewModel.Raters.Count"
-                    CurrentUserId="@ViewModel.CurrentUserId" />
+                <div @key="@($"detailed-{content.content.ContentId}")">
+                    <ContentRating.Web.UI.Components.ContentPartyResultItemComponent 
+                        ContentRating="@content.content"
+                        Rank="@content.rank"
+                        MinRating="@ViewModel.MinRating"
+                        MaxRating="@ViewModel.MaxRating"
+                        AllRaters="@ViewModel.Raters"
+                        TotalRaters="@ViewModel.Raters.Count"
+                        CurrentUserId="@ViewModel.CurrentUserId"
+                        CreatorName="@GetCreatorName(content.content.CreatorId)" />
+                </div>
             </Virtualize>
         }
         else
@@ -154,7 +157,8 @@
                        Context="content"
                        ItemSize="180"
                        OverscanCount="8">
-                <MudPaper Class="mb-4 pa-4" Elevation="2">
+                <div @key="@($"compact-{content.content.ContentId}")">
+                    <MudPaper Class="mb-4 pa-4" Elevation="2">
                     <MudGrid AlignItems="Center.Center" Style="flex-direction:column; flex-shrink: 0;">
                         <!-- Позиция -->
                         <MudItem xs="12" sm="1">
@@ -181,6 +185,16 @@
                                         <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="mr-1" />
                                         Открыть контент
                                     </MudLink>
+                                    @{
+                                        var creatorName = GetCreatorName(content.content.CreatorId);
+                                    }
+                                    @if (creatorName != null)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block">
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                                            Создатель: @creatorName
+                                        </MudText>
+                                    }
                                 </MudItem>
                             </MudGrid>
                         </MudItem>
@@ -236,6 +250,7 @@
                     </MudCollapse>
 
                 </MudPaper>
+                </div>
             </Virtualize>
         }
     }
@@ -326,6 +341,12 @@
         var ratedCount = content.Ratings.Count;
         var totalCount = ViewModel.Raters.Count;
         return $"Детальные оценки ({ratedCount}/{totalCount} участников)";
+    }
+
+    private string? GetCreatorName(Guid creatorId)
+    {
+        var creator = ViewModel.Raters.FirstOrDefault(r => r.Id == creatorId);
+        return creator?.DisplayName;
     }
 
     private void OnViewModelStateChanged()

@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject AuthService AuthService
 
 <PageTitle>Комнаты групповой оценки</PageTitle>
 
@@ -120,7 +121,10 @@
         <MudVirtualize Items="filteredRooms.ToList()" Context="room" ItemSize="140" T="PartyEstimationTitle">
             <ContentRating.Web.UI.Components.PartyEstimationRoomCard Room="room" 
                                                                     OnJoin="JoinRoom"
-                                                                    IsLoading="@(joiningRoomId == room.Id)" />
+                                                                    OnDelete="DeleteRoom"
+                                                                    IsLoading="@(joiningRoomId == room.Id)"
+                                                                    IsDeleting="@(deletingRoomId == room.Id)"
+                                                                    CurrentUserId="@AuthService.UserId" />
         </MudVirtualize>
     }
 </MudContainer>
@@ -131,12 +135,14 @@
     private bool isLoading = true;
     private bool hasError = false;
     private Guid? joiningRoomId = null;
+    private Guid? deletingRoomId = null;
     
     private bool showCompleted = true;
     private bool showActive = true;
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthService.InitializeAsync();
         await LoadRoomsAsync();
     }
 
@@ -258,5 +264,69 @@
             "Создать новую комнату", 
             parameters, 
             options);
+    }
+
+    private async Task DeleteRoom(Guid roomId)
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            Snackbar.Add("Необходимо войти в систему", Severity.Warning);
+            return;
+        }
+
+        var room = rooms?.FirstOrDefault(r => r.Id == roomId);
+        if (room == null)
+        {
+            Snackbar.Add("Комната не найдена", Severity.Error);
+            return;
+        }
+
+        // Подтверждение удаления
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+
+        var parameters = new DialogParameters
+        {
+            ["ContentText"] = $"Вы уверены, что хотите удалить комнату \"{room.RoomName}\"? Это действие нельзя отменить.",
+            ["ButtonText"] = "Удалить",
+            ["Color"] = Color.Error
+        };
+
+        var dialog = await DialogService.ShowAsync<MudMessageBox>("Подтверждение удаления", parameters, options);
+        var result = await dialog.Result;
+
+        if (result?.Canceled == false)
+        {
+            try
+            {
+                deletingRoomId = roomId;
+                StateHasChanged();
+
+                var success = await PartyEstimationService.DeleteRoomAsync(roomId);
+                if (success)
+                {
+                    Snackbar.Add("Комната успешно удалена", Severity.Success);
+                    await LoadRoomsAsync(); // Обновляем список
+                }
+                else
+                {
+                    Snackbar.Add("Не удалось удалить комнату", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                Snackbar.Add("Произошла ошибка при удалении комнаты", Severity.Error);
+            }
+            finally
+            {
+                deletingRoomId = null;
+                StateHasChanged();
+            }
+        }
     }
 } 

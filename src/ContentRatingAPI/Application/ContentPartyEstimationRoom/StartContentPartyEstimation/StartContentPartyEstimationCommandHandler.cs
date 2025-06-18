@@ -39,6 +39,8 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPa
                     request.CreatorId
                 );
 
+            contentForEstimation = contentForEstimation.OrderBy(c => Guid.NewGuid());
+
             var existingRoom = await roomRepository.GetRoom(request.RoomId);
             if (existingRoom is not null)
             {

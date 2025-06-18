@@ -29,7 +29,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEst
             return await collection
                 .AsQueryable()
                 .Where(c => c.InvitedEditors.Any(c => c.Id == request.EditorId) || c.ContentListCreator.Id == request.EditorId)
-                .Select(c => new ContentEstimationListEditorTitle(c.Id, c.Name, c.AddedContent.Count, c.Name))
+                .Select(c => new ContentEstimationListEditorTitle(c.Id, c.Name, c.AddedContent.Count, c.ContentListCreator.Name))
                 .ToListAsync(cancellationToken);
         }
     }

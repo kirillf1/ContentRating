@@ -22,7 +22,6 @@ namespace ContentRatingAPI.Controllers
     {
         private readonly IMediator mediator;
         private readonly IUserInfoService userInfoService;
-        private readonly HttpClient httpClient;
 
         public YoutubeContentController(
             IMediator mediator,
@@ -32,7 +31,6 @@ namespace ContentRatingAPI.Controllers
         {
             this.mediator = mediator;
             this.userInfoService = userInfoService;
-            this.httpClient = httpClient;
         }
 
         [HttpGet]

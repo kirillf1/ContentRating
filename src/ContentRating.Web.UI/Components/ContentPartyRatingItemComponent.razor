@@ -26,9 +26,17 @@
                     <MudText Typo="Typo.h6" GutterBottom="true">
                         @ContentRating.Name
                     </MudText>
-                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2">
+                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2" Class="d-block mb-2">
                         @ContentRating.Address
                     </MudLink>
+                    
+                    @if (CreatorName != null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                            Создатель: @CreatorName
+                        </MudText>
+                    }
                     
                     <!-- Отображение средней оценки -->
                     <div class="mt-3">
@@ -166,6 +174,7 @@
     [Parameter] public EventCallback<(Guid MockUserId, double Rating)> OnMockRatingChanged { get; set; }
     [Parameter] public bool CanDeleteContent { get; set; } = false;
     [Parameter] public EventCallback<Guid> OnContentDelete { get; set; }
+    [Parameter] public string? CreatorName { get; set; }
     
     private double? _lastCurrentUserRating = null;
     private double _lastAverageRating = 0;

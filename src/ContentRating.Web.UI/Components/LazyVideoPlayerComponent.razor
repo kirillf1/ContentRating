@@ -89,9 +89,17 @@
     [Parameter] public bool AutoLoad { get; set; } = false; // Для YouTube будет использоваться ленивая загрузка
 
     private bool _isYouTubeLoaded = false;
+    private string _lastUrl = string.Empty;
 
     protected override void OnParametersSet()
     {
+        // Сбрасываем состояние видео если URL изменился (фиксит проблему виртуализации)
+        if (_lastUrl != Url)
+        {
+            _isYouTubeLoaded = false;
+            _lastUrl = Url;
+        }
+        
         // Если AutoLoad включен для YouTube, сразу загружаем
         if (AutoLoad && IsYouTubeUrl(Url))
         {

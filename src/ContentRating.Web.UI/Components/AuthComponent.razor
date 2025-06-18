@@ -50,6 +50,8 @@
     protected override void OnInitialized()
     {
         AuthService.AuthStateChanged += OnAuthStateChanged;
+        // Обновляем состояние при инициализации
+        StateHasChanged();
     }
 
     private void OnAuthStateChanged()

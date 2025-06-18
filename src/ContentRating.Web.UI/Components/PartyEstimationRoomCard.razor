@@ -50,7 +50,7 @@
                                  Color="Color.Primary" 
                                  StartIcon="@Icons.Material.Filled.PlayArrow"
                                  OnClick="HandleJoinClick"
-                                 Disabled="IsLoading">
+                                 Disabled="IsLoading || IsDeleting">
                             @if (IsLoading)
                             {
                                 <MudProgressCircular Size="Size.Small" Indeterminate="true" />
@@ -61,6 +61,25 @@
                             }
                         </MudButton>
                     </MudItem>
+                    @if (CanDelete)
+                    {
+                        <MudItem>
+                            <MudButton Variant="Variant.Text" 
+                                     Color="Color.Error" 
+                                     StartIcon="@Icons.Material.Filled.Delete"
+                                     OnClick="HandleDeleteClick"
+                                     Disabled="IsLoading || IsDeleting">
+                                @if (IsDeleting)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                }
+                                else
+                                {
+                                    <text>Удалить</text>
+                                }
+                            </MudButton>
+                        </MudItem>
+                    }
                 </MudGrid>
             </MudItem>
         </MudGrid>
@@ -70,15 +89,28 @@
 @code {
     [Parameter, EditorRequired] public PartyEstimationTitle Room { get; set; } = null!;
     [Parameter] public EventCallback<Guid> OnJoin { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
     [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsDeleting { get; set; }
+    [Parameter] public Guid? CurrentUserId { get; set; }
     [Parameter] public string Class { get; set; } = string.Empty;
     [Parameter] public int Elevation { get; set; } = 2;
+
+    private bool CanDelete => CurrentUserId.HasValue && CurrentUserId.Value == Room.RoomCreatorId;
 
     private async Task HandleJoinClick()
     {
         if (OnJoin.HasDelegate)
         {
             await OnJoin.InvokeAsync(Room.Id);
+        }
+    }
+
+    private async Task HandleDeleteClick()
+    {
+        if (OnDelete.HasDelegate)
+        {
+            await OnDelete.InvokeAsync(Room.Id);
         }
     }
 } 

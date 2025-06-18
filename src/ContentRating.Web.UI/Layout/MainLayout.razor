@@ -1,7 +1,9 @@
 ﻿@using ContentRating.Web.UI.Services
 @using Toolbelt.Blazor.PWA.Updater
+@using Toolbelt.Blazor.PWA.Updater.Service
 @inherits LayoutComponentBase
 @inject AuthService AuthService
+@inject IPWAUpdaterService PWAUpdaterService
 
 <MudLayout>
     <MudAppBar Elevation="1">
@@ -30,13 +32,15 @@
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
             @Body
         </MudContainer>
+        <PWAUpdater Text="Доступно новое обновление, обновите сайт "
+                    ButtonCaption="Обновить"
+                    Align="PWAUpdater.Aligns.Bottom">
+        </PWAUpdater>
     </MudMainContent>
+
 </MudLayout>
 
-<PWAUpdater Text="Доступно новое обновление, обновите сайт "
-            ButtonCaption="Обновить"
-            Align="PWAUpdater.Aligns.Bottom">
-</PWAUpdater>
+
 
 @code {
     bool _drawerOpen = true;
@@ -64,7 +68,6 @@
 
     protected override void OnInitialized()
     {
-        // На мобильных устройствах drawer по умолчанию закрыт
         _drawerOpen = true;
     }
 }

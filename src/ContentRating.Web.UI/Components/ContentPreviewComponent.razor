@@ -7,6 +7,7 @@
     {
         case ContentType.Video:
             <ContentRating.Web.UI.Components.LazyVideoPlayerComponent 
+                @key="@($"video-{ContentItem.Id}-{ContentItem.Url?.GetHashCode()}")"
                 Url="@ContentItem.Url" 
                 Width="@Width"
                 Height="@Height"
@@ -16,6 +17,7 @@
 
         case ContentType.Audio:
             <ContentRating.Web.UI.Components.AudioPlayerComponent 
+                @key="@($"audio-{ContentItem.Id}-{ContentItem.Url?.GetHashCode()}")"
                 Url="@ContentItem.Url" 
                 Title="@ContentItem.Name"
                 ShowError="@ShowError" />
@@ -23,6 +25,7 @@
 
         case ContentType.Image:
             <ContentRating.Web.UI.Components.ImageViewerComponent 
+                @key="@($"image-{ContentItem.Id}-{ContentItem.Url?.GetHashCode()}")"
                 Url="@ContentItem.Url" 
                 Alt="@ContentItem.Name"
                 Caption="@(ShowMetadata ? ContentItem.Name : "")"

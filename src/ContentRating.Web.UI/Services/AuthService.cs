@@ -22,6 +22,9 @@ namespace ContentRating.Web.UI.Services
         private string? _accessToken;
         private string? _refreshToken;
         private UserData? _userData;
+        private bool _isInitialized = false;
+        private bool _isInitializing = false;
+        private bool _isRefreshing = false;
 
         public AuthService(
             HttpClient httpClient,
@@ -36,13 +39,25 @@ namespace ContentRating.Web.UI.Services
 
         public async Task InitializeAsync()
         {
+            // Если уже инициализировано или инициализируется, не делаем повторную инициализацию
+            if (_isInitialized || _isInitializing)
+            {
+                return;
+            }
+
+            _isInitializing = true;
             try
             {
                 await CheckAuthStateAsync();
+                _isInitialized = true;
             }
             catch
             {
                 // Игнорируем ошибки инициализации
+            }
+            finally
+            {
+                _isInitializing = false;
             }
         }
 
@@ -59,16 +74,35 @@ namespace ContentRating.Web.UI.Services
 
         public async Task<bool> RefreshTokenAsync()
         {
-            var refreshToken = await GetRefreshTokenAsync();
-            var accessToken = await GetAccessTokenAsync();
-
-            if (string.IsNullOrEmpty(refreshToken) || string.IsNullOrEmpty(accessToken))
+            // Если уже происходит обновление токена, ждем его завершения
+            if (_isRefreshing)
             {
-                return false;
+                // Ждем максимум 10 секунд для завершения обновления
+                var timeout = TimeSpan.FromSeconds(10);
+                var start = DateTime.UtcNow;
+                
+                while (_isRefreshing && DateTime.UtcNow - start < timeout)
+                {
+                    await Task.Delay(100);
+                }
+                
+                // Если обновление завершилось успешно, возвращаем true
+                return IsAuthenticated && !string.IsNullOrEmpty(_accessToken);
             }
 
+            _isRefreshing = true;
             try
             {
+                var refreshToken = await GetRefreshTokenAsync();
+                var accessToken = await GetAccessTokenAsync();
+
+                if (string.IsNullOrEmpty(refreshToken) || string.IsNullOrEmpty(accessToken))
+                {
+                    // Если токенов нет, очищаем состояние
+                    await ClearAuthStateAsync();
+                    return false;
+                }
+
                 var refreshRequest = new RefreshTokenRequest
                 {
                     RefreshToken = refreshToken,
@@ -89,13 +123,22 @@ namespace ContentRating.Web.UI.Services
                         return true;
                     }
                 }
+                
+                // Если обновление не удалось, очищаем состояние
+                await ClearAuthStateAsync();
+                return false;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
+                // При ошибке очищаем состояние
+                await ClearAuthStateAsync();
+                return false;
             }
-
-            return false;
+            finally
+            {
+                _isRefreshing = false;
+            }
         }
 
         public async Task SetTokensAsync(string accessToken, string refreshToken)
@@ -138,6 +181,11 @@ namespace ContentRating.Web.UI.Services
 
         public async Task LogoutAsync()
         {
+            await ClearAuthStateAsync();
+        }
+
+        private async Task ClearAuthStateAsync()
+        {
             // Очищаем токены и состояние
             _accessToken = null;
             _refreshToken = null;
@@ -146,6 +194,8 @@ namespace ContentRating.Web.UI.Services
             UserName = null;
             UserEmail = null;
             UserId = null;
+            _isInitialized = false;
+            _isRefreshing = false;
 
             // Очищаем безопасное хранилище
             await _tokenStorage.ClearAllTokensAsync();
@@ -157,6 +207,12 @@ namespace ContentRating.Web.UI.Services
         {
             try
             {
+                // Если токен уже обновляется, не делаем ничего
+                if (_isRefreshing)
+                {
+                    return;
+                }
+
                 // Проверяем нужно ли обновить токен
                 if (await _tokenStorage.NeedsRefreshAsync())
                 {
@@ -204,20 +260,28 @@ namespace ContentRating.Web.UI.Services
                 }
                 else
                 {
-                    // Нет валидного токена, устанавливаем неавторизованное состояние
-                    IsAuthenticated = false;
-                    UserName = null;
-                    UserEmail = null;
-                    UserId = null;
+                    // Нет валидного токена, очищаем состояние
+                    await ClearAuthStateAsync();
+                    return; // Выходим, так как ClearAuthStateAsync уже вызовет AuthStateChanged
                 }
             }
             catch
             {
-                // Если что-то пошло не так, просто устанавливаем неавторизованное состояние
-                IsAuthenticated = false;
-                UserName = null;
-                UserEmail = null;
-                UserId = null;
+                // Если что-то пошло не так, очищаем состояние
+                try
+                {
+                    await ClearAuthStateAsync();
+                }
+                catch
+                {
+                    // Если не удалось очистить состояние, устанавливаем минимально необходимое
+                    IsAuthenticated = false;
+                    UserName = null;
+                    UserEmail = null;
+                    UserId = null;
+                    AuthStateChanged?.Invoke();
+                }
+                return; // Выходим, так как состояние уже очищено
             }
 
             AuthStateChanged?.Invoke();
@@ -310,3 +374,4 @@ namespace ContentRating.Web.UI.Services
         }
     }
 }
+

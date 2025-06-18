@@ -49,6 +49,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstima
                     content.Name,
                     content.Url,
                     content.ContentType,
+                    content.CreatorId,
                     rating?.RaterScores.Select(s => new RatingByRaterResponse(s.Key, s.Value.Value)) ?? Enumerable.Empty<RatingByRaterResponse>(),
                     rating?.AverageContentScore.Value ?? 0.0
                 );

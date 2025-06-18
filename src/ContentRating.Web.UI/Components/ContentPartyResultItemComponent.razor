@@ -44,10 +44,18 @@
                         @ContentRating.ContentTypeDisplayName
                     </MudChip>
 
-                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2" Class="d-block mb-3">
+                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2" Class="d-block mb-2">
                         <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="mr-1" />
                         Открыть контент
                     </MudLink>
+                    
+                    @if (CreatorName != null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                            Создатель: @CreatorName
+                        </MudText>
+                    }
                     
                     <!-- Средняя оценка -->
                     <MudPaper Class="pa-3 mb-3" Elevation="1">
@@ -138,6 +146,7 @@
     [Parameter] public IEnumerable<RaterViewModel> AllRaters { get; set; } = Enumerable.Empty<RaterViewModel>();
     [Parameter] public int TotalRaters { get; set; } = 0;
     [Parameter] public Guid? CurrentUserId { get; set; }
+    [Parameter] public string? CreatorName { get; set; }
 
     private ContentItemViewModel GetContentItemForPreview()
     {

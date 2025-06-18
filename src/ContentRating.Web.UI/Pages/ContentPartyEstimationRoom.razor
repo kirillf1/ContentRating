@@ -231,7 +231,8 @@
                     MockRaters="@ViewModel.Raters.Where(r => r.IsMock)"
                     OnMockRatingChanged="@((mockUserRating) => OnMockUserRated(contentRating.RatingId, mockUserRating))"
                     CanDeleteContent="ViewModel.CanDeleteContent()"
-                    OnContentDelete="OnContentDeleted" />
+                    OnContentDelete="OnContentDeleted"
+                    CreatorName="@GetCreatorName(contentRating.CreatorId)" />
             </Virtualize>
         }
     }
@@ -402,6 +403,12 @@
             _isCompletingEstimation = false;
             StateHasChanged();
         }
+    }
+
+    private string? GetCreatorName(Guid creatorId)
+    {
+        var creator = ViewModel.Raters.FirstOrDefault(r => r.Id == creatorId);
+        return creator?.DisplayName;
     }
 
     private void OnViewModelStateChanged()

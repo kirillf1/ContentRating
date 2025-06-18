@@ -28,7 +28,8 @@
                 </MudItem>
 
                 <MudItem xs="12">
-                    <MudSelect @bind-Value="model.ContentListId"
+                    <MudSelect T="Guid?" @bind-Value="model.ContentListId"
+                               Placeholder="Выберете комнату"
                                Label="Выберите топ для оценки"
                                For="@(() => model.ContentListId)"
                                Required="true"
@@ -37,7 +38,9 @@
                         {
                             @foreach (var list in contentLists)
                             {
-                                <MudSelectItem Value="@list.Id">@list.Name</MudSelectItem>
+                                <MudSelectItem T="Guid?" Value="@list.Id">
+                                    @list.Name <span style="color: var(--mud-palette-text-secondary);">(создатель: @list.CreatorName)</span>
+                                </MudSelectItem>
                             }
                         }
                     </MudSelect>
@@ -136,7 +139,7 @@
             var request = new CreatePartyEstimationRoomRequest
             {
                 RoomId = model.RoomId,
-                ContentListId = model.ContentListId,
+                ContentListId = model.ContentListId.Value,
                 RoomName = model.RoomName,
                 MinRating = model.MinRating,
                 MaxRating = model.MaxRating
@@ -175,7 +178,7 @@
     private class CreatePartyEstimationRoomModel
     {
         public Guid RoomId { get; set; }
-        public Guid ContentListId { get; set; }
+        public Guid? ContentListId { get; set; }
         public string RoomName { get; set; } = string.Empty;
         public double MinRating { get; set; }
         public double MaxRating { get; set; }

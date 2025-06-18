@@ -5,6 +5,7 @@
 using Ardalis.Result.AspNetCore;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.CompleteContentEstimation;
+using ContentRatingAPI.Application.ContentPartyEstimationRoom.DeleteContentPartyEstimationRoom;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstimationRoom;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstimationRoomTitles;
 using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
@@ -146,6 +147,20 @@ namespace ContentRatingAPI.Controllers
             }
 
             return await mediator.Send(new ChangeRatingRangeCommand(roomId, userInfo.Id, request.MinRating, request.MaxRating));
+        }
+
+        [TranslateResultToActionResult]
+        [Authorize]
+        [HttpDelete("{roomId:guid}")]
+        public async Task<Result<bool>> DeleteRoom(Guid roomId)
+        {
+            var userInfo = userInfoService.TryGetUserInfo();
+            if (userInfo is null)
+            {
+                return Result.Forbidden();
+            }
+
+            return await mediator.Send(new DeleteContentPartyEstimationRoomCommand(roomId, userInfo.Id));
         }
     }
 }

@@ -195,12 +195,14 @@
                        Context="item"
                        ItemSize="250"
                        OverscanCount="8">
-                <ContentListItemComponent 
-                    ContentItem="item"
-                    OnEdit="StartEditingOptimized"
-                    OnSave="SaveContentOptimized"
-                    OnCancel="CancelEditingOptimized"
-                    OnDelete="DeleteContentOptimized" />
+                <div @key="@($"list-item-{item.Id}")">
+                    <ContentListItemComponent 
+                        ContentItem="item"
+                        OnEdit="StartEditingOptimized"
+                        OnSave="SaveContentOptimized"
+                        OnCancel="CancelEditingOptimized"
+                        OnDelete="DeleteContentOptimized" />
+                </div>
             </Virtualize>
         }
     }

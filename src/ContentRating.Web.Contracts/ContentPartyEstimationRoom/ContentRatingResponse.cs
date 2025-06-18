@@ -14,6 +14,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
             string name,
             string address,
             ContentType contentType,
+            Guid creatorId,
             IEnumerable<RatingByRaterResponse> ratings,
             double averageRating
         )
@@ -23,6 +24,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
             Name = name;
             Address = address;
             ContentType = contentType;
+            CreatorId = creatorId;
             Ratings = ratings;
             AverageRating = averageRating;
         }
@@ -32,6 +34,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
         public string Name { get; }
         public string Address { get; }
         public ContentType ContentType { get; }
+        public Guid CreatorId { get; }
         public IEnumerable<RatingByRaterResponse> Ratings { get; }
         public double AverageRating { get; }
     }

@@ -42,6 +42,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstima
                     c.Id,
                     c.Name,
                     c.RoomCreator.Name,
+                    c.RoomCreator.Id,
                     c.Raters.Count,
                     c.ContentForEstimation.Count,
                     c.IsAllContentEstimated

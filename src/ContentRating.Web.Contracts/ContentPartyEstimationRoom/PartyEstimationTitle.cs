@@ -6,11 +6,12 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
 {
     public class PartyEstimationTitle
     {
-        public PartyEstimationTitle(Guid id, string roomName, string roomCreatorName, int ratersCount, int contentCount, bool isEstimated)
+        public PartyEstimationTitle(Guid id, string roomName, string roomCreatorName, Guid roomCreatorId, int ratersCount, int contentCount, bool isEstimated)
         {
             Id = id;
             RoomName = roomName;
             RoomCreatorName = roomCreatorName;
+            RoomCreatorId = roomCreatorId;
             RatersCount = ratersCount;
             ContentCount = contentCount;
             IsEstimated = isEstimated;
@@ -19,6 +20,7 @@ namespace ContentRating.Web.Contracts.ContentPartyEstimationRoom
         public Guid Id { get; }
         public string RoomName { get; }
         public string RoomCreatorName { get; }
+        public Guid RoomCreatorId { get; }
         public int RatersCount { get; }
         public int ContentCount { get; }
         public bool IsEstimated { get; }

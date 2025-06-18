@@ -152,5 +152,19 @@ namespace ContentRating.Web.UI.Services
                 return false;
             }
         }
+
+        public async Task<bool> DeleteRoomAsync(Guid roomId)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/content-party-estimation-room/{roomId}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return false;
+            }
+        }
     }
 } 

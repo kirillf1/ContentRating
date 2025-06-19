@@ -1,8 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-// See the LICENSE file in the project root for more information.
-
-using System.Net;
+﻿using System.Net;
 using System.Text.Json.Serialization;
 using Ardalis.Result.AspNetCore;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
@@ -19,6 +15,7 @@ using ContentRatingAPI.Hubs.NotificationServices;
 using ContentRatingAPI.Infrastructure.AggregateIntegration;
 using ContentRatingAPI.Infrastructure.Authentication;
 using ContentRatingAPI.Infrastructure.Authorization;
+using ContentRatingAPI.Infrastructure.BlazorConfiguration;
 using ContentRatingAPI.Infrastructure.ContentFileManagers;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.MediatrBehaviors;
@@ -55,6 +52,8 @@ try
     Log.Information("Starting host. Environment: {Env}", environment);
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog(Log.Logger);
+
+    // Конфигурация MediatR
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
@@ -69,41 +68,38 @@ try
             ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
     });
 
+    // Валидаторы
     builder.Services.AddSingleton<IValidator<RefreshTokenCommand>, RefreshTokenCommandValidator>();
-
     builder.Services.AddSingleton<
         IValidator<CreateContentEstimationListEditorCommand>,
         CreateContentEstimationListEditorCommandValidator
     >();
-
     builder.Services.AddSingleton<
         IValidator<CreateContentCommand>,
         CreateContentCommandValidator
     >();
-
     builder.Services.AddSingleton<
         IValidator<UpdateContentCommand>,
         UpdateContentCommandValidator
     >();
-
     builder.Services.AddSingleton<
         IValidator<StartContentPartyEstimationCommand>,
         StartContentPartyEstimationCommandValidator
     >();
 
+    // Основные сервисы приложения
     builder.AddMongoDbStorage();
     builder.AddApplicationAuthentication();
     builder.AddAggregateIntegrations();
     builder.AddApplicationAuthorization();
     builder.AddTelemetry();
 
-    // if more services add new extension
     builder.Services.AddScoped<ContentPartyRatingService>();
-
     builder.Services.AddHttpClient();
     builder.Services.AddTransient<IYoutubeClient, HttpYoutubeClient>();
     builder.AddContentFileManager();
 
+    // Конфигурация контроллеров
     builder
         .Services.AddControllers(mvcOptions =>
             mvcOptions.AddResultConvention(resultStatusMap =>
@@ -125,19 +121,14 @@ try
             x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
+    // Blazor WebAssembly
+    builder.AddBlazorWebAssembly();
+
+    // API Documentation (только для разработки)
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 
-    builder.Services.Configure<RequestLocalizationOptions>(options =>
-    {
-        var supportedCultures = new[] { "en-US", "ru-RU" };
-        options
-            .SetDefaultCulture(supportedCultures[0])
-            .AddSupportedCultures(supportedCultures)
-            .AddSupportedUICultures(supportedCultures);
-        options.ApplyCurrentCultureToResponseHeaders = true;
-    });
-
+    // SignalR
     builder.Services.AddSignalR(options => options.AddFilter<LoggingHubFilter>());
     builder.Services.AddTransient<
         IContentPartyEstimationNotificationService,
@@ -148,34 +139,36 @@ try
         ContentEstimationListEditorNotificationHubService
     >();
 
-    // Настройка CORS
-    builder.Services.AddCors(options =>
-    {
-        options.AddDefaultPolicy(policy =>
-        {
-            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-        });
-    });
-
     var app = builder.Build();
+
     app.UseSerilogRequestLogging();
-    // Configure the HTTP request pipeline.
+
+    // Конфигурация pipeline
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI(options => { });
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "ContentRating API V1");
+            options.RoutePrefix = "api/swagger";
+        });
     }
+    else
+    {
+        app.UseExceptionHandler("/Error");
+        app.UseHsts();
+    }
+
     app.UseForwardedHeaders();
     app.UsePathBase("/content-rating");
 
-    app.UseRequestLocalization();
-
-    // Добавляем CORS middleware
-    app.UseCors();
-
+    app.UseRouting();
     app.UseAuthentication();
     app.UseAuthorization();
 
+    app.UseBlazorWebAssembly();
+
+    // Маршрутизация API и SignalR
     app.MapControllers();
     app.MapHub<ContentPartyEstimationHub>("/partyEstimationHub");
     app.MapHub<ContentEstimationListEditorHub>("/contentListEditor");

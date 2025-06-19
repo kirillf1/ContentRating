@@ -23,7 +23,7 @@ services:
       - contentrating-network
 
   contentrating-api:
-    image: kirillf1/contentrating-api:1.0
+    image: kirillf1/contentrating-api:1.2
     container_name: contentrating-api
     restart: unless-stopped
     ports:
@@ -44,6 +44,8 @@ services:
       - ContentFile__Directory=/app/content-files
       - ContentFile__OldCheckedFileTakeIntervalInHours=24
       - ContentFile__CheckUnusedFilesIntervalInHours=24
+      - ClientConfiguration__BaseUrl=http://localhost:8080/content-rating/
+      - ClientConfiguration__SignalRHubUrl=https://localhost:8080/content-rating/
     depends_on:
       - mongodb
     networks:
@@ -52,22 +54,6 @@ services:
       - ./uploads:/app/uploads
       - ./keys:/app/keys
       - content_files:/app/content-files
-
-  contentrating-ui:
-    image: kirillf1/contentrating-ui:1.0
-    container_name: contentrating-ui
-    restart: unless-stopped
-    ports:
-      - "9090:80"
-    environment:
-      - ASPNETCORE_URLS=http://+:80
-      - ASPNETCORE_ENVIRONMENT=Production
-      - API_BASE_URL=http://localhost:8080
-      - SIGNALR_HUB_URL=http://localhost:8080
-    depends_on:
-      - contentrating-api
-    networks:
-      - contentrating-network
 
 volumes:
   mongo_config:

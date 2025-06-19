@@ -24,12 +24,16 @@ EXPOSE 8081
 # Этот этап используется для сборки проекта службы
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
+RUN apt-get update -y
+RUN apt-get install -y python3
+RUN dotnet workload install wasm-tools
 
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/ContentRatingAPI/ContentRatingAPI.csproj", "src/ContentRatingAPI/"]
 COPY ["src/ContentRating.Domain/ContentRating.Domain.csproj", "src/ContentRating.Domain/"]
 COPY ["src/ContentRating.Web.Contracts/ContentRating.Web.Contracts.csproj", "src/ContentRating.Web.Contracts/"]
+COPY ["src/ContentRating.Web.UI/ContentRating.Web.UI.csproj", "src/ContentRating.Web.UI/"]
 RUN dotnet restore "./src/ContentRatingAPI/ContentRatingAPI.csproj"
 COPY . .
 WORKDIR "/src/src/ContentRatingAPI"

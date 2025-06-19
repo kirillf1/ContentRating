@@ -1,4 +1,5 @@
 ﻿using ContentRating.Web.UI.Models;
+using ContentRating.Web.UI.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
@@ -15,8 +16,14 @@ public class Program
         builder.RootComponents.Add<App>("#app");
         builder.RootComponents.Add<HeadOutlet>("head::after");
 
-        var apiSettings = new ApiSettings();
-        builder.Configuration.GetSection("ApiSettings").Bind(apiSettings);
+        var apiBaseUrl = builder.HostEnvironment.BaseAddress;
+
+        // Создаем HttpClient для получения конфигурации
+        var configHttpClient = new HttpClient { BaseAddress = new Uri(apiBaseUrl) };
+        var configService = new ConfigurationService(configHttpClient);
+
+        // Получаем конфигурацию из API
+        var apiSettings = await configService.GetConfigurationAsync();
         builder.Services.AddSingleton(apiSettings);
 
         // Базовый HttpClient без аутентификации
@@ -141,7 +148,7 @@ public class Program
 
         // Services
         builder.Services.AddTransient<Services.ContentItemEditingService>();
-        
+
         // ContentValidationService с аутентифицированным HttpClient
         builder
             .Services.AddHttpClient<Services.ContentValidationService>(
@@ -153,7 +160,7 @@ public class Program
                 }
             )
             .ConfigurePrimaryHttpMessageHandler<Services.AuthenticatedHttpClientHandler>();
-            
+
         builder.Services.AddPWAUpdater();
         var app = builder.Build();
 

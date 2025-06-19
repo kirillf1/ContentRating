@@ -34,7 +34,8 @@
 		<PackageReference Include="MediatR" Version="12.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.6" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.6" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.6" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
 		<PackageReference Include="MimeTypesMap" Version="1.0.8" />
 		<PackageReference Include="Mongo2Go" Version="4.1.0" />
@@ -66,6 +67,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\ContentRating.Domain\ContentRating.Domain.csproj" />
 		<ProjectReference Include="..\ContentRating.Web.Contracts\ContentRating.Web.Contracts.csproj" />
+		<ProjectReference Include="..\ContentRating.Web.UI\ContentRating.Web.UI.csproj" />
 	</ItemGroup>
 
 </Project>

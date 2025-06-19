@@ -1,0 +1,145 @@
+@using MudBlazor
+@inject IDialogService DialogService
+
+<div class="image-viewer-container" style="text-align: center; position: relative; overflow: hidden; border-radius: 8px;">
+    <MudImage Src="@Url" 
+              Alt="@(Alt ?? "Изображение")"
+              Class="@GetImageClass()"
+              Style="@GetImageStyle()"
+              @onclick="@(AllowZoom ? OpenImageDialog : null)"
+              loading="lazy" />
+</div>
+
+@if (ShowError)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-2">
+        Не удалось загрузить изображение. Проверьте корректность ссылки.
+    </MudAlert>
+}
+
+@if (ShowCaption && !string.IsNullOrEmpty(Caption))
+{
+    <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center" Class="mt-2">
+        @Caption
+    </MudText>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Url { get; set; } = string.Empty;
+    [Parameter] public string Alt { get; set; } = string.Empty;
+    [Parameter] public string Caption { get; set; } = string.Empty;
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public string Height { get; set; } = "auto";
+    [Parameter] public string MaxWidth { get; set; } = "100%";
+    [Parameter] public string MaxHeight { get; set; } = "400px";
+    [Parameter] public bool ShowError { get; set; } = false;
+    [Parameter] public bool ShowCaption { get; set; } = false;
+    [Parameter] public bool AllowZoom { get; set; } = true;
+    [Parameter] public bool RoundedCorners { get; set; } = false;
+    [Parameter] public int Elevation { get; set; } = 0;
+    [Parameter] public ObjectFit ObjectFit { get; set; } = ObjectFit.Contain;
+
+    private string GetImageClass()
+    {
+        var classes = new List<string>();
+        
+        if (AllowZoom)
+            classes.Add("cursor-pointer hover:opacity-90 transition-opacity");
+            
+        if (RoundedCorners)
+            classes.Add("mud-border-radius");
+            
+        if (Elevation > 0)
+            classes.Add($"mud-elevation-{Elevation}");
+            
+        return string.Join(" ", classes);
+    }
+
+    private string GetImageStyle()
+    {
+        var styles = new List<string>
+        {
+            $"width: {Width}",
+            $"height: {Height}",
+            $"max-width: {MaxWidth}",
+            $"max-height: {MaxHeight}",
+            $"object-fit: {ObjectFit.ToString().ToLower()}",
+            "display: block",
+            "margin: 0 auto",
+            "border-radius: 8px",
+            "transition: transform 0.2s ease-in-out"
+        };
+
+        if (AllowZoom)
+        {
+            styles.Add("cursor: zoom-in");
+        }
+        
+        return string.Join("; ", styles);
+    }
+
+    private async Task OpenImageDialog()
+    {
+        if (!AllowZoom) return;
+
+        var parameters = new DialogParameters<ImageZoomDialog>
+        {
+            { x => x.ImageUrl, Url },
+            { x => x.ImageAlt, Alt },
+            { x => x.ImageCaption, Caption }
+        };
+
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MudBlazor.MaxWidth.ExtraLarge,
+            FullWidth = true,
+            NoHeader = true
+        };
+
+        await DialogService.ShowAsync<ImageZoomDialog>("", parameters, options);
+    }
+}
+
+@code {
+    // Компонент диалога для зума - упрощенная версия
+    public class ImageZoomDialog : ComponentBase
+    {
+        [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+        [Parameter] public string ImageUrl { get; set; } = string.Empty;
+        [Parameter] public string ImageAlt { get; set; } = string.Empty;
+        [Parameter] public string ImageCaption { get; set; } = string.Empty;
+
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", "text-align: center; padding: 20px;");
+            
+            builder.OpenComponent<MudImage>(2);
+            builder.AddAttribute(3, "Src", ImageUrl);
+            builder.AddAttribute(4, "Alt", ImageAlt);
+            builder.AddAttribute(5, "Style", "max-width: 100%; max-height: 80vh; object-fit: contain; cursor: zoom-out;");
+            builder.AddAttribute(6, "onclick", Microsoft.AspNetCore.Components.EventCallback.Factory.Create(this, CloseDialog));
+            builder.CloseComponent();
+            
+            if (!string.IsNullOrEmpty(ImageCaption))
+            {
+                builder.OpenComponent<MudText>(7);
+                builder.AddAttribute(8, "Typo", Typo.body1);
+                builder.AddAttribute(9, "Class", "mt-3");
+                builder.AddAttribute(10, "ChildContent", (Microsoft.AspNetCore.Components.RenderFragment)(b =>
+                {
+                    b.AddContent(11, ImageCaption);
+                }));
+                builder.CloseComponent();
+            }
+            
+            builder.CloseElement();
+        }
+
+        private void CloseDialog()
+        {
+            MudDialog?.Close();
+        }
+    }
+} 

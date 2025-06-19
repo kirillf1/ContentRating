@@ -1,0 +1,229 @@
+﻿@page "/"
+@using ContentRating.Web.UI.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>ContentRating</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <div style="text-align: center;">
+        <MudText Typo="Typo.h2" Align="Align.Center" GutterBottom="true" Color="Color.Primary">
+            ContentRating
+        </MudText>
+        
+        <MudText Typo="Typo.h6" Align="Align.Center" Class="mb-8" Color="Color.Secondary">
+            Система оценки контента
+        </MudText>
+    </div>
+    
+
+
+    @if (AuthService.IsAuthenticated)
+    {
+        <!-- Приветствие для авторизованного пользователя -->
+        <MudAlert Severity="Severity.Success" Class="mb-6">
+            <MudText Typo="Typo.body1">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
+                Добро пожаловать, @AuthService.UserName!
+            </MudText>
+        </MudAlert>
+
+        <!-- Основные разделы для авторизованных пользователей -->
+        <MudGrid Justify="Justify.Center" Spacing="4">
+            <MudItem xs="12" sm="6" md="5" lg="4">
+                <MudCard Elevation="4" Class="pa-6 hover-card" Style="cursor: pointer;" @onclick="() => NavigateToContentRooms()">
+                    <MudCardContent>
+                        <div style="text-align: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.List" Color="Color.Primary" Size="Size.Large" Class="mb-3" />
+                            <MudText Typo="Typo.h5" Class="mb-2">Редакторы топов</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Создавайте и редактируйте списки контента для оценки
+                            </MudText>
+                        </div>
+                    </MudCardContent>
+                    <MudCardActions Class="justify-center">
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.ArrowForward"
+                                  OnClick="() => NavigateToContentRooms()">
+                            Перейти
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="5" lg="4">
+                <MudCard Elevation="4" Class="pa-6 hover-card" Style="cursor: pointer;" @onclick="() => NavigateToPartyRooms()">
+                    <MudCardContent>
+                        <div style="text-align: center;">
+                            <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Secondary" Size="Size.Large" Class="mb-3" />
+                            <MudText Typo="Typo.h5" Class="mb-2">Групповая оценка</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Участвуйте в совместном оценивании контента с другими пользователями
+                            </MudText>
+                        </div>
+                    </MudCardContent>
+                    <MudCardActions Class="justify-center">
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Secondary" 
+                                  StartIcon="@Icons.Material.Filled.ArrowForward"
+                                  OnClick="() => NavigateToPartyRooms()">
+                            Перейти
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Дополнительная информация -->
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem xs="12" md="8">
+                <MudPaper Class="pa-6" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-4" Align="Align.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                        Как это работает
+                    </MudText>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <div class="d-flex align-center mb-3">
+                                <MudIcon Icon="@Icons.Material.Filled.Create" Color="Color.Primary" Class="mr-3" />
+                                <div>
+                                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Создание топов</MudText>
+                                    <MudText Typo="Typo.body2">Создавайте списки контента для последующей оценки</MudText>
+                                </div>
+                            </div>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <div class="d-flex align-center mb-3">
+                                <MudIcon Icon="@Icons.Material.Filled.Group" Color="Color.Secondary" Class="mr-3" />
+                                <div>
+                                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Совместная работа</MudText>
+                                    <MudText Typo="Typo.body2">Оценивайте контент вместе с другими пользователями</MudText>
+                                </div>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <!-- Информация для неавторизованных пользователей -->
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12" md="8" lg="6">
+                <MudPaper Class="pa-8" Elevation="4">
+                    <div style="text-align: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Color="Color.Warning" Class="mb-4" />
+                        
+                        <MudText Typo="Typo.h4" Class="mb-4" Color="Color.Primary">
+                            Войдите в систему
+                        </MudText>
+                        
+                        <MudText Typo="Typo.body1" Class="mb-6" Color="Color.Secondary">
+                            Для использования всех функций системы оценки контента необходимо войти в систему
+                        </MudText>
+
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Large"
+                                  StartIcon="@Icons.Material.Filled.Login"
+                                  OnClick="LoginWithGoogle"
+                                  Class="mb-4">
+                            Войти через Google
+                        </MudButton>
+
+                        <MudDivider Class="my-6" />
+
+                        <MudText Typo="Typo.h6" Class="mb-4">
+                            Возможности системы:
+                        </MudText>
+
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex align-center mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.List" Color="Color.Primary" Class="mr-3" />
+                                    <div style="text-align: left;">
+                                        <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Редакторы топов</MudText>
+                                        <MudText Typo="Typo.body2">Создание и редактирование списков контента</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex align-center mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Secondary" Class="mr-3" />
+                                    <div style="text-align: left;">
+                                        <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Групповая оценка</MudText>
+                                        <MudText Typo="Typo.body2">Совместное оценивание контента</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex align-center mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Tertiary" Class="mr-3" />
+                                    <div style="text-align: left;">
+                                        <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Аналитика</MudText>
+                                        <MudText Typo="Typo.body2">Анализ результатов оценки</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <div class="d-flex align-center mb-3">
+                                    <MudIcon Icon="@Icons.Material.Filled.Share" Color="Color.Info" Class="mr-3" />
+                                    <div style="text-align: left;">
+                                        <MudText Typo="Typo.subtitle2" Class="font-weight-bold">Совместная работа</MudText>
+                                        <MudText Typo="Typo.body2">Работа в команде над оценкой</MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+<style>
+    .hover-card {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .hover-card:hover {
+        transform: translateY(-4px);
+    }
+</style>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+        await AuthService.InitializeAsync();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void NavigateToContentRooms()
+    {
+        Navigation.NavigateTo("/content-creation-rooms");
+    }
+
+    private void NavigateToPartyRooms()
+    {
+        Navigation.NavigateTo("/party-estimation-rooms");
+    }
+
+    private async Task LoginWithGoogle()
+    {
+        await AuthService.LoginWithGoogle();
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
+    }
+}

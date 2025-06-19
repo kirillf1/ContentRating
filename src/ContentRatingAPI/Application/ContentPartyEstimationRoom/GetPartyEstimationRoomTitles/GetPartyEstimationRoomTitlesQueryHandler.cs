@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 using ContentRatingAPI.Infrastructure.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -41,6 +42,7 @@ namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.GetPartyEstima
                     c.Id,
                     c.Name,
                     c.RoomCreator.Name,
+                    c.RoomCreator.Id,
                     c.Raters.Count,
                     c.ContentForEstimation.Count,
                     c.IsAllContentEstimated

@@ -2,6 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Security.Claims;
+
 namespace ContentRatingAPI.Infrastructure.Authorization
 {
     public class UserInfoService : IUserInfoService
@@ -22,6 +24,21 @@ namespace ContentRatingAPI.Infrastructure.Authorization
 
             var user = httpContextAccessor.HttpContext.User;
 
+            return GetUserInfoFromClaimsPrincipal(user);
+        }
+
+        public UserInfo? TryGetUserInfo(ClaimsPrincipal? claims)
+        {
+            if (claims is null)
+            {
+                return TryGetUserInfo();
+            }
+
+            return GetUserInfoFromClaimsPrincipal(claims);
+        }
+
+        private static UserInfo? GetUserInfoFromClaimsPrincipal(ClaimsPrincipal user)
+        {
             if (!Guid.TryParse(user.GetUserId(), out var userId))
             {
                 return null;

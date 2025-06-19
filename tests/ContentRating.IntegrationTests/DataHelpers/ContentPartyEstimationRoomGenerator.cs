@@ -78,7 +78,8 @@ namespace ContentRating.IntegrationTests.DataHelpers
                     Guid.NewGuid(),
                     Guid.NewGuid().ToString(),
                     faker.Internet.Url(),
-                    contentType
+                    contentType,
+                    Guid.NewGuid()
                 );
                 contentList.Add(content);
             }

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRating.Domain.Shared.Content;
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications
 {

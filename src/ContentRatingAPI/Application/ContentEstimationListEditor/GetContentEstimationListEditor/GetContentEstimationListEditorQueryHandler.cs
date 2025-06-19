@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using AspNetCore.Identity.Mongo.Mongo;
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using ContentRatingAPI.Infrastructure.Data;
 using ContentRatingAPI.Infrastructure.Data.Caching;
 using Microsoft.Extensions.Options;

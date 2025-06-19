@@ -1,0 +1,202 @@
+@page "/content-creation-rooms"
+@using ContentRating.Web.Contracts.ContentEstimationListEditor
+@using ContentRating.Web.UI.Services
+@using MudBlazor
+@inject IContentEstimationListService ContentEstimationListService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Ваши редакторы топов</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudGrid Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudItem>
+            <MudText Typo="Typo.h4" GutterBottom="true">
+                Ваши редакторы топов
+            </MudText>
+        </MudItem>
+        <MudItem>
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Add"
+                      OnClick="OpenCreateRoomDialog"
+                      Disabled="isLoading">
+                Создать топ
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+
+    @if (isLoading)
+    {
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem>
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                <MudText Typo="Typo.body1" Class="mt-2" Align="Align.Center">Загружаем ваши топы...</MudText>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (hasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            Произошла ошибка при загрузке списка топов. Попробуйте обновить страницу.
+        </MudAlert>
+        <MudGrid Justify="Justify.Center" Class="mt-4">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadRoomsAsync">
+                    Попробовать снова
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (rooms?.Any() != true)
+    {
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem xs="12" md="8" lg="6">
+                <MudPaper Class="pa-6" Elevation="2">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        У вас пока нет топов
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        Создайте свой первый топ и начните оценивать контент
+                    </MudText>
+                    <MudGrid Justify="Justify.Center" Class="mt-4">
+                        <MudItem>
+                            <MudButton Variant="Variant.Filled" 
+                                      Color="Color.Primary" 
+                                      StartIcon="@Icons.Material.Filled.Add"
+                                      OnClick="OpenCreateRoomDialog">
+                                Создать топ
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+            Найдено топов: @rooms.Count()
+        </MudText>
+
+        <MudVirtualize Items="rooms" Context="room" ItemSize="120" T="ContentEstimationListEditorTitle">
+            <ContentRating.Web.UI.Components.RoomCard Room="room" 
+                                                      OnEdit="NavigateToRoom"
+                                                      OnDelete="DeleteRoom"
+                                                      IsDeleting="@(deletingRoomId == room.Id)" />
+        </MudVirtualize>
+    }
+</MudContainer>
+
+@code {
+    private ICollection<ContentEstimationListEditorTitle>? rooms;
+    private bool isLoading = true;
+    private bool hasError = false;
+    private Guid? deletingRoomId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoomsAsync();
+    }
+
+    private async Task LoadRoomsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            hasError = false;
+            StateHasChanged();
+
+            var roomsResult = await ContentEstimationListService.GetRoomsAsync();
+            rooms = roomsResult?.ToList();
+            
+            if (rooms == null)
+            {
+                hasError = true;
+                Snackbar.Add("Не удалось загрузить список топов", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            hasError = true;
+            Snackbar.Add("Произошла ошибка при загрузке топов", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToRoom(Guid roomId)
+    {
+        Navigation.NavigateTo($"/content-estimation-list-editor/{roomId}");
+    }
+
+    private async Task DeleteRoom(Guid roomId)
+    {
+        var room = rooms?.FirstOrDefault(r => r.Id == roomId);
+        if (room == null) return;
+
+        var confirmed = await DialogService.ShowMessageBox(
+            "Подтвердить удаление",
+            $"Вы уверены, что хотите удалить топ \"{room.Name}\"? Это действие нельзя отменить.",
+            yesText: "Удалить", 
+            cancelText: "Отмена");
+
+        if (confirmed != true) return;
+
+        try
+        {
+            deletingRoomId = roomId;
+            StateHasChanged();
+
+            var success = await ContentEstimationListService.DeleteRoomAsync(roomId);
+            
+            if (success)
+            {
+                rooms = rooms?.Where(r => r.Id != roomId).ToList();
+                Snackbar.Add($"Топ \"{room.Name}\" был удален", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Не удалось удалить топ", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Произошла ошибка при удалении топа", Severity.Error);
+        }
+        finally
+        {
+            deletingRoomId = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenCreateRoomDialog()
+    {
+        var parameters = new DialogParameters<ContentRating.Web.UI.Components.CreateRoomDialog>
+        {
+            { x => x.OnRoomCreated, EventCallback.Factory.Create(this, LoadRoomsAsync) }
+        };
+
+        var options = new DialogOptions()
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ContentRating.Web.UI.Components.CreateRoomDialog>(
+            "Создать новый топ", 
+            parameters, 
+            options);
+    }
+} 

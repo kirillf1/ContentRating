@@ -1,0 +1,220 @@
+/* Минимальные стили для Blazor */
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.loading-progress {
+    position: relative;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    margin: 20vh auto 1rem auto;
+}
+
+.loading-progress circle {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 0.6rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
+
+.loading-progress circle:last-child {
+    stroke: #1b6ec2;
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: bold;
+    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+}
+
+.loading-progress-text:after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
+
+/* Адаптивные стили для фиксированной кнопки результатов */
+.results-fab {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 1000 !important;
+    box-shadow: 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12), 0 3px 5px -1px rgba(0,0,0,.2) !important;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .results-fab {
+        bottom: 15px !important;
+        right: 15px !important;
+        transform: scale(0.9) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .results-fab {
+        bottom: 10px !important;
+        right: 10px !important;
+        transform: scale(0.8) !important;
+    }
+}
+
+/* === PWA Updater Стили === */
+/* Кастомизация встроенного компонента PWA Updater */
+body .pwa-updater[b-pwa-updater] {
+    --pwa-updater-bar-height: auto;
+    --pwa-updater-bar-color: #ffffff;
+    --pwa-updater-bar-backcolor: #1976d2;
+    --pwa-updater-bar-z-index: 1100;
+    --pwa-updater-font-family: 'Roboto', sans-serif;
+    --pwa-updater-font-size: 14px;
+    
+    /* Позиционирование внизу экрана */
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    
+    /* Анимация появления */
+    animation: pwa-slide-up 0.3s ease-out;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Кастомное содержимое уведомления */
+.pwa-update-notification {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: white;
+    gap: 16px;
+    min-height: 64px;
+}
+
+.pwa-update-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.pwa-update-icon {
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.pwa-update-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pwa-update-title {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    line-height: 1.3 !important;
+}
+
+.pwa-update-subtitle {
+    color: #e3f2fd !important;
+    opacity: 0.9 !important;
+    line-height: 1.2 !important;
+}
+
+.pwa-update-button {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(10px);
+    font-weight: 500 !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap;
+}
+
+.pwa-update-button:hover {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pwa-update-button:active {
+    transform: translateY(0);
+}
+
+/* Анимация появления снизу */
+@keyframes pwa-slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .pwa-update-notification {
+        padding: 12px 16px;
+        gap: 12px;
+        min-height: 56px;
+    }
+    
+    .pwa-update-content {
+        gap: 8px;
+    }
+    
+    .pwa-update-text {
+        gap: 2px;
+    }
+    
+    .pwa-update-button {
+        padding: 6px 12px !important;
+        font-size: 0.875rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .pwa-update-notification {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px 16px;
+    }
+    
+    .pwa-update-content {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .pwa-update-button {
+        align-self: center;
+        min-width: 140px;
+    }
+}

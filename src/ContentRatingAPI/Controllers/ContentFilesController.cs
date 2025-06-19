@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using Ardalis.Result.AspNetCore;
+using ContentRating.Web.Contracts.ContentFileManager;
 using ContentRatingAPI.Application.ContentFileManager;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,10 +22,17 @@ namespace ContentRatingAPI.Controllers
             this.contentFileManager = contentFileManager;
         }
 
+        [AllowAnonymous]
         [HttpGet("{fileId:guid}")]
         public async Task<IActionResult> GetFile(Guid fileId)
         {
-            var baseUrlForManifest = Url.Action(nameof(GetFile), null, null, HttpContext.Request.Scheme, Request.Host.ToUriComponent());
+            var baseUrlForManifest = Url.Action(
+                nameof(GetFile),
+                null,
+                null,
+                HttpContext.Request.Scheme,
+                Request.Host.ToUriComponent()
+            );
             var fileResult = await contentFileManager.GetFile(fileId, baseUrlForManifest);
             if (fileResult.IsSuccess)
             {
@@ -38,7 +46,9 @@ namespace ContentRatingAPI.Controllers
 
             if (fileResult.IsInvalid())
             {
-                return BadRequest(string.Join("\n\r", fileResult.ValidationErrors.Select(c => c.ErrorMessage)));
+                return BadRequest(
+                    string.Join("\n\r", fileResult.ValidationErrors.Select(c => c.ErrorMessage))
+                );
             }
 
             return new StatusCodeResult(StatusCodes.Status500InternalServerError);
@@ -61,7 +71,9 @@ namespace ContentRatingAPI.Controllers
 
             if (fileResult.IsInvalid())
             {
-                return BadRequest(string.Join("\n\r", fileResult.ValidationErrors.Select(c => c.ErrorMessage)));
+                return BadRequest(
+                    string.Join("\n\r", fileResult.ValidationErrors.Select(c => c.ErrorMessage))
+                );
             }
 
             return new StatusCodeResult(StatusCodes.Status500InternalServerError);
@@ -75,7 +87,10 @@ namespace ContentRatingAPI.Controllers
             using var stream = file.OpenReadStream();
             var buffer = new byte[stream.Length];
             await stream.ReadAsync(buffer);
-            var newFileInfoResult = await contentFileManager.SaveNewContentFile(file.FileName, buffer);
+            var newFileInfoResult = await contentFileManager.SaveNewContentFile(
+                file.FileName,
+                buffer
+            );
             if (newFileInfoResult.IsSuccess)
             {
                 var response = new SavedFileResponse

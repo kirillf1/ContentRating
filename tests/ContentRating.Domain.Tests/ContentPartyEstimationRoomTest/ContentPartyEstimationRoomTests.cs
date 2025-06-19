@@ -174,7 +174,8 @@ namespace ContentRating.Domain.Tests.ContentPartyEstimationRoomTest
                     Guid.NewGuid(),
                     Guid.NewGuid().ToString(),
                     Guid.NewGuid().ToString(),
-                    Shared.Content.ContentType.Audio
+                    Shared.Content.ContentType.Audio,
+                    Guid.NewGuid()
                 );
             }
         }

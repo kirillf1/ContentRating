@@ -1,0 +1,134 @@
+@using MudBlazor
+@using ContentRating.Web.UI.Services
+@inject IContentEstimationListService ContentEstimationListService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Style="max-width: 600px;">
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                Создать новый топ
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Default">
+                Введите название для вашего нового топа контента
+            </MudText>
+            
+            <MudTextField @bind-Value="roomName"
+                         Label="Название топа"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Normal"
+                         FullWidth="true"
+                         MaxLength="100"
+                         Counter="100"
+                         HelperText="Максимум 100 символов"
+                         Required="true"
+                         RequiredError="Название обязательно"
+                         @onkeypress="OnKeyPress"
+                         Disabled="isCreating" />
+                         
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-3">
+                    @errorMessage
+                </MudAlert>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Disabled="isCreating">
+            Отмена
+        </MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="CreateRoom"
+                   Disabled="@(string.IsNullOrWhiteSpace(roomName) || isCreating)"
+                   StartIcon="@Icons.Material.Filled.Add">
+            @if (isCreating)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <text>Создание...</text>
+            }
+            else
+            {
+                <text>Создать</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    IMudDialogInstance MudDialog { get; set; } = null!;
+    
+    [Parameter] 
+    public EventCallback OnRoomCreated { get; set; }
+
+    private string roomName = string.Empty;
+    private bool isCreating = false;
+    private string errorMessage = string.Empty;
+
+    private async Task CreateRoom()
+    {
+        if (string.IsNullOrWhiteSpace(roomName))
+        {
+            errorMessage = "Введите название топа";
+            return;
+        }
+
+        if (roomName.Length > 100)
+        {
+            errorMessage = "Название слишком длинное";
+            return;
+        }
+
+        try
+        {
+            isCreating = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            var success = await ContentEstimationListService.CreateRoomAsync(roomName.Trim());
+            
+            if (success)
+            {
+                Snackbar.Add($"Топ \"{roomName}\" успешно создан", Severity.Success);
+                
+                if (OnRoomCreated.HasDelegate)
+                {
+                    await OnRoomCreated.InvokeAsync();
+                }
+                
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                errorMessage = "Не удалось создать топ. Попробуйте еще раз.";
+                Snackbar.Add("Ошибка при создании топа", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Произошла ошибка при создании топа";
+            Snackbar.Add("Произошла ошибка при создании топа", Severity.Error);
+        }
+        finally
+        {
+            isCreating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    
+    private async Task OnKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(roomName) && !isCreating)
+        {
+            await CreateRoom();
+        }
+    }
+} 

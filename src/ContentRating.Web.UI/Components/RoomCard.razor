@@ -1,0 +1,95 @@
+@using ContentRating.Web.Contracts.ContentEstimationListEditor
+@using MudBlazor
+
+<MudCard Class="@($"mb-3 {Class}")" Elevation="Elevation">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    @Room.Name
+                </MudText>
+                <MudGrid>
+                    <MudItem>
+                        <MudChip T="string"
+                                Color="Color.Info" 
+                                Size="Size.Small" 
+                                Icon="@Icons.Material.Filled.Movie">
+                            @Room.AddedContentCount контента
+                        </MudChip>
+                    </MudItem>
+                    <MudItem>
+                        <MudChip T="string"
+                                Color="Color.Secondary" 
+                                Size="Size.Small" 
+                                Icon="@Icons.Material.Filled.Person">
+                            @Room.CreatorName
+                        </MudChip>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudGrid Justify="Justify.FlexEnd">
+                    <MudItem>
+                        <MudButton Variant="Variant.Filled" 
+                                 Color="Color.Primary" 
+                                 StartIcon="@Icons.Material.Filled.Edit"
+                                 OnClick="HandleEditClick"
+                                 Disabled="IsLoading || IsDeleting"
+                                 Class="mr-2">
+                            @if (IsLoading)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            }
+                            else
+                            {
+                                <text>Редактировать</text>
+                            }
+                        </MudButton>
+                    </MudItem>
+                    <MudItem>
+                        <MudButton Variant="Variant.Filled" 
+                                 Color="Color.Error" 
+                                 StartIcon="@Icons.Material.Filled.Delete"
+                                 OnClick="HandleDeleteClick"
+                                 Disabled="IsLoading || IsDeleting">
+                            @if (IsDeleting)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            }
+                            else
+                            {
+                                <text>Удалить</text>
+                            }
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public ContentEstimationListEditorTitle Room { get; set; } = null!;
+    [Parameter] public EventCallback<Guid> OnEdit { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsDeleting { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public int Elevation { get; set; } = 2;
+
+    private async Task HandleEditClick()
+    {
+        if (OnEdit.HasDelegate)
+        {
+            await OnEdit.InvokeAsync(Room.Id);
+        }
+    }
+
+    private async Task HandleDeleteClick()
+    {
+        if (OnDelete.HasDelegate)
+        {
+            await OnDelete.InvokeAsync(Room.Id);
+        }
+    }
+} 

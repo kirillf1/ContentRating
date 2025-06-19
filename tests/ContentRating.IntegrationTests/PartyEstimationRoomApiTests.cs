@@ -10,9 +10,8 @@ using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
 using ContentRating.IntegrationTests.Fixtures;
-using ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange;
-using ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater;
-using ContentRatingAPI.Application.ContentPartyEstimationRoom.StartContentPartyEstimation;
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
+using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -64,9 +63,7 @@ namespace ContentRating.IntegrationTests
         {
             await CreatePartyEstimationRoom();
 
-            var response = await _httpClient.GetAsync(
-                $"api/content-party-estimation-room"
-            );
+            var response = await _httpClient.GetAsync($"api/content-party-estimation-room");
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -101,9 +98,7 @@ namespace ContentRating.IntegrationTests
         public async Task Delete_RaterFromRoom_Success()
         {
             var room = await CreatePartyEstimationRoom();
-            var raterForKickId = room
-                .Raters.First(c => c.Id != room.RoomCreator.Id)
-                .Id;
+            var raterForKickId = room.Raters.First(c => c.Id != room.RoomCreator.Id).Id;
 
             var response = await _httpClient.DeleteAsync(
                 $"api/content-party-estimation-room/{room.Id}/rater/{raterForKickId}"
@@ -297,26 +292,19 @@ namespace ContentRating.IntegrationTests
             Assert.False(response.IsSuccessStatusCode);
         }
 
-        private async Task<ChangeRatingRangeRequest> CreateChangeRatingRangeRequest(
-            Guid roomId
-        )
+        private async Task<ChangeRatingRangeRequest> CreateChangeRatingRangeRequest(Guid roomId)
         {
             await CreatePartyEstimationRoom(roomId);
-            return new ChangeRatingRangeRequest()
-            {
-                MaxRating = 10,
-                MinRating = 0,
-            };
+            return new ChangeRatingRangeRequest() { MaxRating = 10, MinRating = 0 };
         }
 
         private async Task<CreatePartyEstimationRoomRequest> CreatePartyEstimationRoomRequestBody()
         {
             var repository =
                 _serviceProvider.GetRequiredService<IContentEstimationListEditorRepository>();
-            var contentList =
-                ContentEstimationListEditorGenerator.ContentEstimationListEditor(
-                    _userId
-                );
+            var contentList = ContentEstimationListEditorGenerator.ContentEstimationListEditor(
+                _userId
+            );
             repository.Add(contentList);
             await repository.UnitOfWork.SaveChangesAsync();
 
@@ -350,11 +338,10 @@ namespace ContentRating.IntegrationTests
         {
             var repository =
                 _serviceProvider.GetRequiredService<IContentPartyEstimationRoomRepository>();
-            var room =
-                ContentPartyEstimationRoomGenerator.GeneratePartyEstimationRoom(
-                    _userId,
-                    roomId
-                );
+            var room = ContentPartyEstimationRoomGenerator.GeneratePartyEstimationRoom(
+                _userId,
+                roomId
+            );
             repository.Add(room);
             await repository.UnitOfWork.SaveChangesAsync();
             return room;

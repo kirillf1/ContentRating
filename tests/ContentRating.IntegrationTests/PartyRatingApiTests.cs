@@ -9,7 +9,7 @@ using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyRatingAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
 using ContentRating.IntegrationTests.Fixtures;
-using ContentRatingAPI.Application.ContentPartyRating.EstimateContent;
+using ContentRating.Web.Contracts.ContentPartyRating;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -36,9 +36,7 @@ namespace ContentRating.IntegrationTests
         {
             var rating = await CreateContentPartyRating();
 
-            var response = await _httpClient.GetAsync(
-                $"api/content-party-rating/{rating.Id}"
-            );
+            var response = await _httpClient.GetAsync($"api/content-party-rating/{rating.Id}");
             var s = await response.Content.ReadAsStringAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -100,18 +98,11 @@ namespace ContentRating.IntegrationTests
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
-        private async Task<(
-            EstimateContentRequest,
-            Guid
-        )> CreateEstimateContentRequest()
+        private async Task<(EstimateContentRequest, Guid)> CreateEstimateContentRequest()
         {
             var rating = await CreateContentPartyRating();
             return (
-                new EstimateContentRequest()
-                {
-                    RaterForChangeScoreId = _userId,
-                    NewScore = 4,
-                },
+                new EstimateContentRequest() { RaterForChangeScoreId = _userId, NewScore = 4 },
                 rating.Id
             );
         }
@@ -120,18 +111,12 @@ namespace ContentRating.IntegrationTests
         {
             var partyEstimationRepository =
                 _serviceProvider.GetRequiredService<IContentPartyEstimationRoomRepository>();
-            var room =
-                ContentPartyEstimationRoomGenerator.GeneratePartyEstimationRoom(
-                    _userId
-                );
+            var room = ContentPartyEstimationRoomGenerator.GeneratePartyEstimationRoom(_userId);
             partyEstimationRepository.Add(room);
             await partyEstimationRepository.UnitOfWork.SaveChangesAsync();
             var contentPartyRatingRepository =
                 _serviceProvider.GetRequiredService<IContentPartyRatingRepository>();
-            var ratings =
-                await contentPartyRatingRepository.GetContentRatingsByRoom(
-                    room.Id
-                );
+            var ratings = await contentPartyRatingRepository.GetContentRatingsByRoom(room.Id);
             return ratings.First();
         }
     }

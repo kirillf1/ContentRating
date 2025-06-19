@@ -1,0 +1,121 @@
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="audio-player-container" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+    @if (IsInitializing)
+    {
+        <!-- Индикатор загрузки -->
+        <div style="padding: 40px; display: flex; align-items: center; justify-content: center;">
+            <div style="background: rgba(255,255,255,0.95); border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 16px;">
+                <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                <div style="color: #333; font-weight: 500;">
+                    Загружаем аудио...
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="padding: 20px;">
+            <!-- Аудио элемент -->
+            <audio id="@AudioId" 
+                   controls 
+                   style="width: 100%; height: 40px;"
+                   @ref="AudioElement">
+                <source src="@Url" type="audio/mpeg">
+                <source src="@Url" type="audio/wav">
+                <source src="@Url" type="audio/ogg">
+                Ваш браузер не поддерживает воспроизведение аудио.
+            </audio>
+            
+            <!-- Информация об аудио -->
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <div style="margin-top: 12px; color: white; text-align: center;">
+                    <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 4px;">
+                        @Title
+                    </div>
+                    @if (!string.IsNullOrEmpty(Artist))
+                    {
+                        <div style="font-size: 0.9rem; opacity: 0.8;">
+                            @Artist
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Дефолтная информация -->
+                <div style="margin-top: 12px; color: white; text-align: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <MudIcon Icon="@Icons.Material.Filled.AudioFile" Style="font-size: 1.2rem; opacity: 0.9;" />
+                        <span style="font-size: 1rem; font-weight: 500;">Аудиофайл</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (ShowError)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-2">
+        Не удалось загрузить аудиофайл. Проверьте корректность ссылки.
+    </MudAlert>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Url { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Artist { get; set; } = string.Empty;
+    [Parameter] public bool ShowError { get; set; } = false;
+
+    private readonly string AudioId = $"audio-player-{Guid.NewGuid():N}";
+    private bool IsInitializing { get; set; } = true;
+    private ElementReference AudioElement;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Автоматически загружаем аудио
+            await LoadAudioAsync();
+        }
+    }
+
+    private async Task LoadAudioAsync()
+    {
+        IsInitializing = false;
+        StateHasChanged();
+
+        // Небольшая задержка, чтобы аудио элемент успел отрендериться
+        await Task.Delay(100);
+
+        try
+        {
+            // Инициализируем аудиоплеер с сохранением громкости
+            await JSRuntime.InvokeVoidAsync("initializeAudioPlayerWithVolume", AudioId, Url);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка инициализации аудиоплеера: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!IsInitializing)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("destroyAudioPlayer", AudioId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка очистки аудиоплеера: {ex.Message}");
+            }
+        }
+    }
+} 

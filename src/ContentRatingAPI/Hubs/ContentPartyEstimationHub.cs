@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRatingAPI.Application.ContentPartyRating.EstimateContent;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,10 @@ namespace ContentRatingAPI.Hubs
 
         public async Task JoinEstimationRoom(Guid roomId)
         {
-            var userInfo = userInfoService.TryGetUserInfo() ?? throw new HubException("Unknown user info");
+            var userInfo =
+                userInfoService.TryGetUserInfo(Context.User)
+                ?? throw new HubException("Unknown user info");
+
             if (!await estimationRoomRepository.HasRaterInRoom(roomId, userInfo.Id))
             {
                 throw new HubException("Forbidden to connect to this room");
@@ -46,9 +50,18 @@ namespace ContentRatingAPI.Hubs
 
         public async Task EstimateContent(Guid contentRatingId, EstimateContentRequest request)
         {
-            var userInfo = userInfoService.TryGetUserInfo() ?? throw new HubException("Unknown user info");
+            var userInfo =
+                userInfoService.TryGetUserInfo(Context.User)
+                ?? throw new HubException("Unknown user info");
 
-            await mediator.Send(new EstimateContentCommand(contentRatingId, userInfo.Id, request.RaterForChangeScoreId, request.NewScore));
+            await mediator.Send(
+                new EstimateContentCommand(
+                    contentRatingId,
+                    userInfo.Id,
+                    request.RaterForChangeScoreId,
+                    request.NewScore
+                )
+            );
         }
     }
 }

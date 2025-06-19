@@ -4,6 +4,7 @@
 
 using ContentRatingAPI.Application.Identity;
 using Microsoft.AspNetCore.Authentication.Google;
+using ContentRating.Web.Contracts.YoutubeContent;
 using Microsoft.AspNetCore.Identity;
 
 namespace ContentRatingAPI.Application.YoutubeContent.GetYoutubeVideos

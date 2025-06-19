@@ -31,7 +31,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         {
             if (IsAllContentEstimated)
             {
-                throw new InvalidRoomStageOperationException("Сan't kick rater when all content estimated");
+                throw new InvalidRoomStageOperationException(
+                    "Сan't kick rater when all content estimated"
+                );
             }
 
             var initiator = _raters.Find(c => c.Id == kickInitiatorId);
@@ -42,7 +44,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             }
             if (!RoomSpecification.CanKickAnotherRater(initiator))
             {
-                throw new ForbiddenRoomOperationException("This rater does not have the right to kick other users ");
+                throw new ForbiddenRoomOperationException(
+                    "This rater does not have the right to kick other users "
+                );
             }
 
             if (initiator == raterForKick)
@@ -63,7 +67,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         {
             if (IsAllContentEstimated)
             {
-                throw new InvalidRoomStageOperationException("Сan't invite rater when the room is not working");
+                throw new InvalidRoomStageOperationException(
+                    "Сan't invite rater when the room is not working"
+                );
             }
 
             if (_raters.Contains(newRater))
@@ -71,11 +77,15 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
                 throw new ArgumentException("This rater is already invited");
             }
 
-            var inviter = _raters.Find(c => c.Id == inviterId) ?? throw new ArgumentException("Unknown inviter");
+            var inviter =
+                _raters.Find(c => c.Id == inviterId)
+                ?? throw new ArgumentException("Unknown inviter");
 
             if (!RoomSpecification.CanInviteAnotherRater(inviter))
             {
-                throw new ForbiddenRoomOperationException("This rater does not have the access to kick other raters");
+                throw new ForbiddenRoomOperationException(
+                    "This rater does not have the access to kick other raters"
+                );
             }
 
             _raters.Add(newRater);
@@ -87,17 +97,27 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         {
             if (IsAllContentEstimated)
             {
-                throw new InvalidRoomStageOperationException("Сan't remove content when the room is not working");
+                throw new InvalidRoomStageOperationException(
+                    "Сan't remove content when the room is not working"
+                );
             }
 
-            var rater = _raters.Find(c => c.Id == removeContentInitiatorId) ?? throw new ArgumentNullException("Unknown rater");
+            var rater =
+                _raters.Find(c => c.Id == removeContentInitiatorId)
+                ?? throw new ArgumentNullException("Unknown rater");
 
             if (!RoomSpecification.CanEditContentList(rater))
             {
-                throw new ForbiddenRoomOperationException("This rater does not have the access to remove content");
+                throw new ForbiddenRoomOperationException(
+                    "This rater does not have the access to remove content"
+                );
             }
 
-            var content = _contentList.Find(c => c.Id == contentId) ?? throw new ArgumentNullException("Unknown contentId");
+            var content =
+                _contentList.Find(c => c.Id == contentId)
+                ?? throw new ArgumentNullException("Unknown contentId");
+
+            _contentList.Remove(content);
             AddDomainEvent(new UnavailableContentRemovedDomainEvent(Id, content, rater));
         }
 
@@ -113,7 +133,13 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
 
             if (oldRatingRange != RatingRange)
             {
-                AddDomainEvent(new RatingRangeChangedDomainEvent(Id, RatingRange.MaxRating, RatingRange.MinRating));
+                AddDomainEvent(
+                    new RatingRangeChangedDomainEvent(
+                        Id,
+                        RatingRange.MaxRating,
+                        RatingRange.MinRating
+                    )
+                );
             }
         }
 
@@ -121,7 +147,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
         {
             if (rater != RoomCreator)
             {
-                throw new ForbiddenRoomOperationException("Can complete estimation only room creator");
+                throw new ForbiddenRoomOperationException(
+                    "Can complete estimation only room creator"
+                );
             }
 
             IsAllContentEstimated = true;
@@ -157,7 +185,14 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             RoomSpecification = specification;
             _contentList = new(contentList);
 
-            AddDomainEvent(new ContentEstimationStartedDomainEvent(Id, Raters, ContentForEstimation, RatingRange));
+            AddDomainEvent(
+                new ContentEstimationStartedDomainEvent(
+                    Id,
+                    Raters,
+                    ContentForEstimation,
+                    RatingRange
+                )
+            );
         }
 
         public static ContentPartyEstimationRoom Create(
@@ -172,7 +207,15 @@ namespace ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggrega
             otherInvitedRaters ??= new List<Rater>();
             ratingRange ??= new RatingRange();
             otherInvitedRaters.Add(creator);
-            return new ContentPartyEstimationRoom(id, creator, new RoomControlSpecification(), otherInvitedRaters, contentList, ratingRange, name);
+            return new ContentPartyEstimationRoom(
+                id,
+                creator,
+                new RoomControlSpecification(),
+                otherInvitedRaters,
+                contentList,
+                ratingRange,
+                name
+            );
         }
     }
 }

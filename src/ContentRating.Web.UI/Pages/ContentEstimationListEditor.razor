@@ -1,0 +1,452 @@
+@page "/content-estimation-list-editor/{RoomId:guid}"
+@using ContentRating.Domain.Shared.Content
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.Components
+@using MudBlazor
+@using System.Web
+@using Microsoft.AspNetCore.Components.Forms
+@inject ContentEstimationListEditorViewModel ViewModel
+@inject ContentRating.Web.UI.Services.ContentItemEditingService EditingService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@implements IDisposable
+
+<PageTitle>Редактор топа - @ViewModel.RoomName</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4" Style="flex-direction:column; flex-shrink: 0;">
+    @if (ViewModel.IsLoading)
+    {
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem>
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                <MudText Typo="Typo.body1" Class="mt-2" Align="Align.Center">Загружаем редактор...</MudText>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (ViewModel.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            @ViewModel.ErrorMessage
+        </MudAlert>
+        <MudGrid Justify="Justify.Center" Class="mt-4">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">
+                    Попробовать снова
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <!-- Заголовок страницы -->
+        <MudGrid Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudItem>
+                <MudButton Variant="Variant.Text" 
+                          StartIcon="@Icons.Material.Filled.ArrowBack" 
+                          OnClick="NavigateBack">
+                    Назад к списку
+                </MudButton>
+                <MudText Typo="Typo.h4" GutterBottom="true" Class="mt-2">
+                    @ViewModel.RoomName
+                </MudText>
+                <MudGrid>
+                    <MudItem>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                            Создатель: @ViewModel.CreatorName
+                        </MudText>
+                    </MudItem>
+                    <MudItem>
+                        <MudChip T="string" 
+                                Color="Color.Info" 
+                                Icon="@Icons.Material.Filled.Edit"
+                                Size="Size.Medium">
+                            @ViewModel.InvitedEditors.Count редакторов
+                        </MudChip>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem>
+                <MudGrid>
+                    @if (ViewModel.CanManageEditors())
+                    {
+                        <MudItem>
+                            <MudButton Variant="Variant.Outlined" 
+                                      StartIcon="@Icons.Material.Filled.SupervisedUserCircle" 
+                                      Color="Color.Warning"
+                                      Size="Size.Medium"
+                                      OnClick="OpenManageEditorsDialog">
+                                Управление редакторами
+                            </MudButton>
+                        </MudItem>
+                    }
+                    <MudItem>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.CloudUpload"
+                                  OnClick="OpenFileUploadDialog"
+                                  Size="Size.Large">
+                            Загрузить файл
+                        </MudButton>
+                    </MudItem>
+                    <MudItem>
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Error" 
+                                  StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                                  OnClick="OpenYoutubeDialog"
+                                  Size="Size.Large">
+                            Импорт из YouTube
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Форма добавления контента -->
+        <ContentAddFormComponent NewContent="ViewModel.NewContent"
+                                ExistingContent="ViewModel.ContentItems"
+                                IsAddingContent="ViewModel.IsAddingContent"
+                                ValidationService="ViewModel.ContentValidation"
+                                OnContentAdd="AddContent"
+                                OnUrlChangedCallback="OnUrlChanged"
+                                Snackbar="Snackbar" />
+
+        <!-- Информация о редакторах -->
+        @if (ViewModel.InvitedEditors.Any())
+        {
+            <MudExpansionPanels Class="mb-4">
+                <MudExpansionPanel Text="Редакторы топа">
+                    <MudGrid>
+                        @foreach (var editor in ViewModel.InvitedEditors)
+                        {
+                            <MudItem xs="6" md="4" lg="3">
+                                <MudChip T="string" 
+                                        Color="@(editor.Id == ViewModel.CurrentUserId ? Color.Primary : Color.Default)"
+                                        Icon="@Icons.Material.Filled.Person"
+                                        Size="Size.Small">
+                                    @editor.Name @(editor.Id == ViewModel.CurrentUserId ? "(Вы)" : "")
+                                </MudChip>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
+        <!-- Список контента -->
+        <MudGrid Align="Align.Center" Class="mb-3">
+            <MudItem xs="12" sm="8">
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    Контент (@ViewModel.FilteredContentItems.Count из @ViewModel.ContentItems.Count)
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="ViewModel.SearchText"
+                              Label="Поиск контента"
+                              Placeholder="Введите название или ссылку..."
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true"
+                              Immediate="true"
+                              OnClearButtonClick="OnSearchCleared" />
+            </MudItem>
+        </MudGrid>
+
+        @if (!ViewModel.FilteredContentItems.Any())
+        {
+            @if (string.IsNullOrWhiteSpace(ViewModel.SearchText))
+            {
+                <MudPaper Class="pa-6" Elevation="1">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Large" Class="mb-3" Color="Color.Tertiary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        Пока нет контента
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        Добавьте первый элемент контента в ваш топ
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Class="pa-6" Elevation="1">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Class="mb-3" Color="Color.Secondary" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                        Ничего не найдено
+                    </MudText>
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                        Попробуйте изменить поисковый запрос
+                    </MudText>
+                </MudPaper>
+            }
+        }
+        else
+        {
+            <!-- Виртуализированный список для оптимизации производительности -->
+            <Virtualize Items="@ViewModel.FilteredContentItems" 
+                       Context="item"
+                       ItemSize="250"
+                       OverscanCount="8">
+                <div @key="@($"list-item-{item.Id}")">
+                    <ContentListItemComponent 
+                        ContentItem="item"
+                        OnEdit="StartEditingOptimized"
+                        OnSave="SaveContentOptimized"
+                        OnCancel="CancelEditingOptimized"
+                        OnDelete="DeleteContentOptimized" />
+                </div>
+            </Virtualize>
+        }
+    }
+</MudContainer>
+
+<!-- YouTube Import Component -->
+<YoutubeImportComponent ViewModel="ViewModel.YoutubeImport" 
+                        ExistingContent="ViewModel.ContentItems" 
+                        OnStateChanged="StateHasChanged" />
+
+<!-- File Upload Component -->
+<FileUploadComponent ViewModel="ViewModel.FileUpload" 
+                     OnStateChanged="StateHasChanged" />
+
+@code {
+    [Parameter] public Guid RoomId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Подписываемся на событие изменения состояния ViewModel
+        ViewModel.StateChanged += OnViewModelStateChanged;
+        await LoadData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ViewModel.RoomId != RoomId)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        await ViewModel.LoadRoomDataAsync(RoomId);
+        StateHasChanged();
+    }
+
+    private async Task AddContent()
+    {
+        var success = await ViewModel.AddContentAsync();
+        if (success)
+        {
+            StateHasChanged();
+        }
+    }
+
+    // Оптимизированные методы без лишних StateHasChanged
+    private void StartEditingOptimized(ContentItemViewModel item)
+    {
+        ViewModel.StartEditing(item);
+        // Не вызываем StateHasChanged - компонент сам управляет перерисовкой
+    }
+
+    private async Task SaveContentOptimized(ContentItemViewModel item)
+    {
+        var success = await ViewModel.UpdateContentAsync(item);
+        // Не вызываем StateHasChanged - компонент сам управляет перерисовкой
+    }
+
+    private void CancelEditingOptimized(ContentItemViewModel item)
+    {
+        ViewModel.CancelEditing(item);
+        // Не вызываем StateHasChanged - компонент сам управляет перерисовкой
+    }
+
+    private async Task DeleteContentOptimized(ContentItemViewModel item)
+    {
+        var success = await ViewModel.DeleteContentAsync(item);
+        if (success)
+        {
+            StateHasChanged(); // Только здесь нужен StateHasChanged, т.к. удаляется элемент из списка
+        }
+    }
+
+    // Старые методы - оставляем для совместимости
+    private void StartEditing(ContentItemViewModel item)
+    {
+        ViewModel.StartEditing(item);
+        StateHasChanged();
+    }
+
+    private async Task SaveContent(ContentItemViewModel item)
+    {
+        var success = await ViewModel.UpdateContentAsync(item);
+        if (success)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void CancelEditing(ContentItemViewModel item)
+    {
+        ViewModel.CancelEditing(item);
+        StateHasChanged();
+    }
+
+    private async Task DeleteContent(ContentItemViewModel item)
+    {
+        var success = await ViewModel.DeleteContentAsync(item);
+        if (success)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/content-creation-rooms");
+    }
+
+    private Color GetContentTypeColor(ContentType contentType) => contentType switch
+    {
+        ContentType.Video => Color.Primary,
+        ContentType.Audio => Color.Secondary,
+        ContentType.Image => Color.Tertiary,
+        _ => Color.Default
+    };
+
+    private string GetContentTypeIcon(ContentType contentType) => contentType switch
+    {
+        ContentType.Video => Icons.Material.Filled.VideoLibrary,
+        ContentType.Audio => Icons.Material.Filled.AudioFile,
+        ContentType.Image => Icons.Material.Filled.Image,
+        _ => Icons.Material.Filled.QuestionMark
+    };
+
+    private void OnUrlChanged()
+    {
+        ViewModel.OnUrlChanged(ViewModel.NewContent.Url);
+        StateHasChanged();
+    }
+
+    private void ExtractNameFromUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(ViewModel.NewContent.Url))
+        {
+            var suggestedName = ViewModel.ContentValidation.ExtractNameFromUrl(ViewModel.NewContent.Url);
+            if (!string.IsNullOrEmpty(suggestedName))
+            {
+                ViewModel.NewContent.Name = suggestedName;
+                StateHasChanged();
+                Snackbar.Add($"Название извлечено: {suggestedName}", Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add("Не удалось извлечь название из URL", Severity.Warning);
+            }
+        }
+    }
+
+    private void OnViewModelStateChanged()
+    {
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void OnSearchCleared()
+    {
+        ViewModel.SearchText = string.Empty;
+        StateHasChanged();
+    }
+
+    // YouTube методы
+    private async Task OpenYoutubeDialog()
+    {
+        await ViewModel.YoutubeImport.OpenYoutubeDialogAsync();
+    }
+
+    private void CloseYoutubeDialog()
+    {
+        ViewModel.YoutubeImport.CloseYoutubeDialog();
+    }
+
+    private async Task ImportFromPlaylist()
+    {
+        await ViewModel.YoutubeImport.ImportFromPlaylistAsync(ViewModel.ContentItems);
+    }
+
+    // Файловые методы
+    private void OpenFileUploadDialog()
+    {
+        ViewModel.FileUpload.OpenFileUploadDialog();
+    }
+
+    private void CloseFileUploadDialog()
+    {
+        ViewModel.FileUpload.CloseFileUploadDialog();
+    }
+
+    private void OnFileSelected(IBrowserFile file)
+    {
+        ViewModel.FileUpload.OnFileSelected(file);
+        StateHasChanged();
+    }
+
+    private async Task UploadFile()
+    {
+        await ViewModel.FileUpload.UploadFileAsync();
+        StateHasChanged();
+    }
+
+    // Методы для управления редакторами
+    private async Task OpenManageEditorsDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["Editors"] = ViewModel.InvitedEditors,
+            ["RoomId"] = RoomId,
+            ["CurrentUserId"] = ViewModel.CurrentUserId,
+            ["CreatorId"] = ViewModel.CreatorId,
+            ["OnEditorRemoved"] = EventCallback.Factory.Create(this, OnEditorRemoved),
+            ["OnEditorInvited"] = EventCallback.Factory.Create(this, OnEditorInvited)
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<Components.ManageEditorsDialog>("Управление редакторами", parameters, options);
+    }
+
+    private async Task OnEditorRemoved()
+    {
+        // Обновляем данные комнаты после удаления редактора
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private async Task OnEditorInvited()
+    {
+        // Обновляем данные комнаты после приглашения редактора
+        await LoadData();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+} 

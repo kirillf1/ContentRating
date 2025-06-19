@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: contentrating-mongodb
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - 27017:27017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
+    volumes:
+      - "./mongo_data:/data/db"
+      - "mongo_config:/data/configdb"
+    networks:
+      - contentrating-network
+
+  contentrating-api:
+    image: kirillf1/contentrating-api:1.2
+    container_name: contentrating-api
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - MongoDB__Connection=mongodb://mongodb:27017
+      - MongoDB__DatabaseName=content_rating
+      - Authentication__IdentityDbConnectionString=mongodb://mongodb:27017/identity
+      - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
+      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
+      - Authentication__JWT__AsymmetricKeyPath=/app/keys/jwtKey
+      - Authentication__JWT__Issuer=${JWT_ISSUER}
+      - Authentication__JWT__Audience=${JWT_AUDIENCE}
+      - Authentication__JWT__TokenLiveTimeSeconds=130000
+      - ContentFile__Directory=/app/content-files
+      - ContentFile__OldCheckedFileTakeIntervalInHours=24
+      - ContentFile__CheckUnusedFilesIntervalInHours=24
+      - ClientConfiguration__BaseUrl=http://localhost:8080/content-rating/
+      - ClientConfiguration__SignalRHubUrl=https://localhost:8080/content-rating/
+    depends_on:
+      - mongodb
+    networks:
+      - contentrating-network
+    volumes:
+      - ./uploads:/app/uploads
+      - ./keys:/app/keys
+      - content_files:/app/content-files
+
+volumes:
+  mongo_config:
+  content_files:
+
+networks:
+  contentrating-network:
+    driver: bridge 

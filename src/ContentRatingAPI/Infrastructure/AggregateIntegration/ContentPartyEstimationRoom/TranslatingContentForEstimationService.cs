@@ -20,7 +20,7 @@ namespace ContentRatingAPI.Infrastructure.AggregateIntegration.ContentPartyEstim
         public async Task<IEnumerable<ContentForEstimation>> RequestContentForEstimationFromEditor(Guid contentListId, Guid raterId)
         {
             var room = await contentEditorRoomRepository.GetContentEstimationListEditor(contentListId);
-            return room.AddedContent.Select(c => new ContentForEstimation(c.Id, c.Name, c.Path, c.Type));
+            return room.AddedContent.Select(c => new ContentForEstimation(c.Id, c.Name, c.Path, c.Type, c.ContentModificationHistory.EditorId));
         }
     }
 }

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
+using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater
 {

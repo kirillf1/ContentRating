@@ -4,16 +4,21 @@
 
 using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRatingAPI.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ContentRatingAPI.Hubs
 {
+    [Authorize]
     public class ContentEstimationListEditorHub : Hub
     {
         private readonly IUserInfoService _userInfoService;
         private readonly IContentEstimationListEditorRepository _estimationListEditorRepository;
 
-        public ContentEstimationListEditorHub(IUserInfoService userInfoService, IContentEstimationListEditorRepository estimationListEditorRepository)
+        public ContentEstimationListEditorHub(
+            IUserInfoService userInfoService,
+            IContentEstimationListEditorRepository estimationListEditorRepository
+        )
         {
             this._userInfoService = userInfoService;
             this._estimationListEditorRepository = estimationListEditorRepository;
@@ -21,8 +26,16 @@ namespace ContentRatingAPI.Hubs
 
         public async Task JoinContentEditing(Guid contentListId)
         {
-            var userInfo = _userInfoService.TryGetUserInfo() ?? throw new HubException("Unknown user info");
-            if (!await _estimationListEditorRepository.HasEditorInContentEstimationList(contentListId, userInfo.Id))
+            var userInfo =
+                _userInfoService.TryGetUserInfo(Context.User)
+                ?? throw new HubException("Unknown user info");
+
+            if (
+                !await _estimationListEditorRepository.HasEditorInContentEstimationList(
+                    contentListId,
+                    userInfo.Id
+                )
+            )
             {
                 throw new HubException("Forbidden to connect to this content list editor");
             }

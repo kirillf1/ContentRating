@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<InvariantGlobalization>false</InvariantGlobalization>
@@ -26,21 +26,22 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Ardalis.Result.AspNetCore" Version="9.1.0" />
-		<PackageReference Include="Ardalis.Result.FluentValidation" Version="9.1.0" />
-		<PackageReference Include="AspNet.Security.OAuth.Vkontakte" Version="8.1.0" />
-		<PackageReference Include="AspNetCore.Identity.Mongo" Version="8.3.3" />
+		<PackageReference Include="Ardalis.Result.AspNetCore" Version="10.1.0" />
+		<PackageReference Include="Ardalis.Result.FluentValidation" Version="10.1.0" />
+		<PackageReference Include="AspNet.Security.OAuth.Vkontakte" Version="9.4.0" />
+		<PackageReference Include="AspNetCore.Identity.Mongo" Version="10.1.0" />
+		<PackageReference Include="gstreamer-sharp-netcore" Version="0.0.8" />
 		<PackageReference Include="MediatR" Version="12.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.6" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="8.0.6" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.6" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.6" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.6" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
 		<PackageReference Include="MimeTypesMap" Version="1.0.8" />
-		<PackageReference Include="Mongo2Go" Version="3.1.3" />
-		<PackageReference Include="MongoDB.Analyzer" Version="1.4.0" />
-		<PackageReference Include="MongoDB.Driver" Version="2.23.1" />
-		<PackageReference Include="MongoDB.Driver.Core" Version="2.23.1" />
-		<PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.4.0" />
+		<PackageReference Include="Mongo2Go" Version="4.1.0" />
+		<PackageReference Include="MongoDB.Analyzer" Version="2.0.0" />
+		<PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+		<PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="2.1.0" />
 		<PackageReference Include="OpenTelemetry" Version="1.9.0" />
 		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
@@ -49,8 +50,8 @@
 		<PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="0.5.0-beta.6" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
 		<PackageReference Include="Scrutor" Version="4.2.2" />
-		<PackageReference Include="Serilog" Version="4.0.0" />
-		<PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+		<PackageReference Include="Serilog" Version="4.3.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 		<PackageReference Include="Serilog.Enrichers.Sensitive" Version="1.7.3" />
 		<PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
 		<PackageReference Include="Serilog.Sinks.Async" Version="2.0.0" />
@@ -59,12 +60,14 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-		<PackageReference Include="System.Text.Json" Version="8.0.4" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+		<PackageReference Include="System.Text.Json" Version="9.0.4" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\ContentRating.Domain\ContentRating.Domain.csproj" />
+		<ProjectReference Include="..\ContentRating.Web.Contracts\ContentRating.Web.Contracts.csproj" />
+		<ProjectReference Include="..\ContentRating.Web.UI\ContentRating.Web.UI.csproj" />
 	</ItemGroup>
 
 </Project>

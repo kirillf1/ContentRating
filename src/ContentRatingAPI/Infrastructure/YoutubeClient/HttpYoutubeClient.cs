@@ -5,6 +5,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using ContentRatingAPI.Application.YoutubeContent;
+using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRatingAPI.Infrastructure.YoutubeClient.Models;
 
 namespace ContentRatingAPI.Infrastructure.YoutubeClient

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRatingAPI.Infrastructure.Authorization;
+using ContentRating.Web.Contracts.Identity;
 using Microsoft.AspNetCore.Identity;
 
 namespace ContentRatingAPI.Application.Identity.RefreshToken

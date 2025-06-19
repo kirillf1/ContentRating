@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using ContentRatingAPI.Infrastructure.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -28,7 +29,7 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.GetContentEst
             return await collection
                 .AsQueryable()
                 .Where(c => c.InvitedEditors.Any(c => c.Id == request.EditorId) || c.ContentListCreator.Id == request.EditorId)
-                .Select(c => new ContentEstimationListEditorTitle(c.Id, c.Name, c.AddedContent.Count, c.Name))
+                .Select(c => new ContentEstimationListEditorTitle(c.Id, c.Name, c.AddedContent.Count, c.ContentListCreator.Name))
                 .ToListAsync(cancellationToken);
         }
     }

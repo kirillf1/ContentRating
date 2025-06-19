@@ -1,0 +1,220 @@
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Domain.Shared.Content
+@using MudBlazor
+
+<div style="margin-bottom: 16px;">
+    <MudCard Elevation="2">
+        <MudCardContent>
+            <MudGrid>
+                <!-- Ранг -->
+                <MudItem xs="12" md="1" Class="d-flex align-center justify-center">
+                    <MudChip T="string" 
+                            Color="@GetRankColor()"
+                            Size="Size.Large"
+                            Class="font-weight-bold">
+                        #@Rank
+                    </MudChip>
+                </MudItem>
+
+                <!-- Предварительный просмотр контента -->
+                <MudItem xs="12" md="4">
+                    <ContentRating.Web.UI.Components.ContentPreviewComponent 
+                        ContentItem="@GetContentItemForPreview()"
+                        Width="100%"
+                        MaxHeight="300px"
+                        ShowContentInfo="false"
+                        ShowMetadata="false"
+                        RoundedCorners="true"
+                        Elevation="1"
+                        ImageObjectFit="ObjectFit.Contain"
+                        AutoLoadVideos="false" />
+                </MudItem>
+
+                <!-- Информация о контенте и средняя оценка -->
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.h5" GutterBottom="true">
+                        @ContentRating.Name
+                    </MudText>
+                    
+                    <MudChip T="string" 
+                            Color="@GetContentTypeColor()"
+                            Icon="@GetContentTypeIcon()"
+                            Size="Size.Small"
+                            Class="mb-2">
+                        @ContentRating.ContentTypeDisplayName
+                    </MudChip>
+
+                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2" Class="d-block mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="mr-1" />
+                        Открыть контент
+                    </MudLink>
+                    
+                    @if (CreatorName != null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mb-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-1" />
+                            Создатель: @CreatorName
+                        </MudText>
+                    }
+                    
+                    <!-- Средняя оценка -->
+                    <MudPaper Class="pa-3 mb-3" Elevation="1">
+                                                <MudGrid AlignItems="Center.Center">
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.h4" Color="Color.Primary" Class="font-weight-bold">
+                                    @ContentRating.AverageRating.ToString("F1")
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    из @MaxRating.ToString("F0")
+                                </MudText>
+                            </MudItem>
+                          </MudGrid>
+                    </MudPaper>
+
+                </MudItem>
+
+                <!-- Детальные оценки всех участников -->
+                <MudItem xs="12" md="3">
+                    <MudText Typo="Typo.h6" GutterBottom="true" Class="mb-3">
+                        Оценки участников
+                    </MudText>
+                    
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        @foreach (var rater in AllRaters.OrderBy(r => r.DisplayName))
+                        {
+                            var raterRating = ContentRating.Ratings.FirstOrDefault(r => r.RaterId == rater.Id);
+                            <MudPaper Class="pa-2 mb-2" Elevation="1">
+                                <MudGrid AlignItems="Center.Center">
+                                    <MudItem xs="1">
+                                        @if (rater.IsMock)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.SmartToy" 
+                                                   Size="Size.Small" 
+                                                   Color="Color.Secondary" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" 
+                                                   Size="Size.Small" 
+                                                   Color="Color.Primary" />
+                                        }
+                                    </MudItem>
+                                    <MudItem xs="7">
+                                        <MudText Typo="Typo.body2">
+                                            @rater.DisplayName
+                                            @if (rater.Id == CurrentUserId)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">(Вы)</MudChip>
+                                            }
+                                        </MudText>
+                                    </MudItem>
+                                    <MudItem xs="4" Class="text-right">
+                                        @if (raterRating != null)
+                                        {
+                                            <MudChip T="string" 
+                                                   Color="@GetRatingColor(raterRating.Rating)" 
+                                                   Size="Size.Small"
+                                                   Class="font-weight-bold">
+                                                @raterRating.Rating.ToString("F1")
+                                            </MudChip>
+                                        }
+                                        else
+                                        {
+                                            <MudChip T="string" 
+                                                   Color="Color.Default" 
+                                                   Size="Size.Small"
+                                                   Variant="Variant.Text">
+                                                Не оценено
+                                            </MudChip>
+                                        }
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        }
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+</div>
+
+@code {
+    [Parameter] public ContentPartyRatingViewModel ContentRating { get; set; } = null!;
+    [Parameter] public int Rank { get; set; } = 1;
+    [Parameter] public double MinRating { get; set; } = 0.0;
+    [Parameter] public double MaxRating { get; set; } = 10.0;
+    [Parameter] public IEnumerable<RaterViewModel> AllRaters { get; set; } = Enumerable.Empty<RaterViewModel>();
+    [Parameter] public int TotalRaters { get; set; } = 0;
+    [Parameter] public Guid? CurrentUserId { get; set; }
+    [Parameter] public string? CreatorName { get; set; }
+
+    private ContentItemViewModel GetContentItemForPreview()
+    {
+        return new ContentItemViewModel
+        {
+            Id = ContentRating.ContentId,
+            Name = ContentRating.Name,
+            Url = ContentRating.Address,
+            ContentType = ContentRating.ContentType
+        };
+    }
+
+    private Color GetRankColor()
+    {
+        return Rank switch
+        {
+            1 => Color.Warning,   // Золото
+            2 => Color.Secondary, // Серебро  
+            3 => Color.Info,      // Бронза
+            _ => Color.Default
+        };
+    }
+
+    private Color GetContentTypeColor()
+    {
+        return ContentRating.ContentType switch
+        {
+            ContentType.Video => Color.Primary,
+            ContentType.Audio => Color.Secondary,
+            ContentType.Image => Color.Tertiary,
+            _ => Color.Default
+        };
+    }
+
+    private string GetContentTypeIcon()
+    {
+        return ContentRating.ContentType switch
+        {
+            ContentType.Video => Icons.Material.Filled.VideoLibrary,
+            ContentType.Audio => Icons.Material.Filled.AudioFile,
+            ContentType.Image => Icons.Material.Filled.Image,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private int GetStarRating()
+    {
+        // Преобразуем оценку в диапазон 1-5 звезд
+        var normalizedRating = (ContentRating.AverageRating / MaxRating) * 5.0;
+        return (int)Math.Round(normalizedRating);
+    }
+
+    private double GetRatingProgress()
+    {
+        if (TotalRaters == 0) return 0;
+        return ((double)ContentRating.Ratings.Count / TotalRaters) * 100;
+    }
+
+    private Color GetRatingColor(double rating)
+    {
+        var normalizedRating = rating / MaxRating;
+        return normalizedRating switch
+        {
+            >= 0.8 => Color.Success,   // 80%+ - зеленый
+            >= 0.6 => Color.Warning,   // 60-80% - желтый  
+            >= 0.4 => Color.Info,      // 40-60% - синий
+            >= 0.2 => Color.Secondary, // 20-40% - серый
+            _ => Color.Error           // <20% - красный
+        };
+    }
+} 

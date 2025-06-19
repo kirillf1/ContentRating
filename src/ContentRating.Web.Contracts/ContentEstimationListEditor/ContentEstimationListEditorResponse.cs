@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace ContentRating.Web.Contracts.ContentEstimationListEditor
+﻿namespace ContentRating.Web.Contracts.ContentEstimationListEditor
 {
     public class ContentEstimationListEditorResponse
     {

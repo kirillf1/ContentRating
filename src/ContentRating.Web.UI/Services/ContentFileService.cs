@@ -1,5 +1,4 @@
-using System.Net.Http;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using ContentRating.Web.Contracts.ContentFileManager;
 using Microsoft.AspNetCore.Components.Forms;
@@ -32,7 +31,8 @@ namespace ContentRating.Web.UI.Services
                 using var stream = file.OpenReadStream(maxAllowedSize: 200_000_000);
                 using var streamContent = new StreamContent(stream);
 
-                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                streamContent.Headers.ContentType =
+                    new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
                 content.Add(streamContent, "file", file.Name);
 
                 var response = await _httpClient.PostAsync("api/content-files", content);
@@ -66,4 +66,4 @@ namespace ContentRating.Web.UI.Services
             }
         }
     }
-} 
+}

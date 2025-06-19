@@ -2,9 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
-
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.ChangeRatingRange
 {
-    public record ChangeRatingRangeCommand(Guid RoomId, Guid EditorId, double MinRating, double MaxRating) : IRequest<Result<bool>>;
+    public record ChangeRatingRangeCommand(
+        Guid RoomId,
+        Guid EditorId,
+        double MinRating,
+        double MaxRating
+    ) : IRequest<Result<bool>>;
 }

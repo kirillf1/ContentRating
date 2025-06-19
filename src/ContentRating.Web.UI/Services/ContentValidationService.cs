@@ -1,6 +1,4 @@
-﻿using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using ContentRating.Domain.Shared.Content;
 using ContentRating.Web.Contracts.YoutubeContent;
 using ContentRating.Web.UI.ViewModels;

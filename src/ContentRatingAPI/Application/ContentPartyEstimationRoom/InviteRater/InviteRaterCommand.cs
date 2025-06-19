@@ -3,10 +3,14 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
-using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 
 namespace ContentRatingAPI.Application.ContentPartyEstimationRoom.InviteRater
 {
-    public record InviteRaterCommand(Guid RoomId, Guid InviteInitiatorId, Guid RaterForInviteId, RoleType RoleType, string RaterName)
-        : IRequest<Result<bool>>;
+    public record InviteRaterCommand(
+        Guid RoomId,
+        Guid InviteInitiatorId,
+        Guid RaterForInviteId,
+        RoleType RoleType,
+        string RaterName
+    ) : IRequest<Result<bool>>;
 }

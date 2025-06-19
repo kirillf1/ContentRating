@@ -1,9 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
-using System.Security.Claims;
 using ContentRating.Web.Contracts.Identity;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -80,12 +78,12 @@ namespace ContentRating.Web.UI.Services
                 // Ждем максимум 10 секунд для завершения обновления
                 var timeout = TimeSpan.FromSeconds(10);
                 var start = DateTime.UtcNow;
-                
+
                 while (_isRefreshing && DateTime.UtcNow - start < timeout)
                 {
                     await Task.Delay(100);
                 }
-                
+
                 // Если обновление завершилось успешно, возвращаем true
                 return IsAuthenticated && !string.IsNullOrEmpty(_accessToken);
             }
@@ -123,7 +121,7 @@ namespace ContentRating.Web.UI.Services
                         return true;
                     }
                 }
-                
+
                 // Если обновление не удалось, очищаем состояние
                 await ClearAuthStateAsync();
                 return false;
@@ -374,4 +372,3 @@ namespace ContentRating.Web.UI.Services
         }
     }
 }
-

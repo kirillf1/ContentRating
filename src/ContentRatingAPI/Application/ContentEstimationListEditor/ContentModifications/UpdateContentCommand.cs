@@ -3,10 +3,15 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRating.Domain.Shared.Content;
-using ContentRating.Web.Contracts.ContentEstimationListEditor;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.ContentModifications
 {
-    public record UpdateContentCommand(Guid Id, Guid RoomId, Guid EditorId, string Name, string Url, ContentType ContentType)
-        : IRequest<Result<bool>>;
+    public record UpdateContentCommand(
+        Guid Id,
+        Guid RoomId,
+        Guid EditorId,
+        string Name,
+        string Url,
+        ContentType ContentType
+    ) : IRequest<Result<bool>>;
 }

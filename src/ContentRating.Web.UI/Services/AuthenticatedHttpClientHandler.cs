@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -23,6 +24,7 @@ namespace ContentRating.Web.UI.Services
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
+            request.SetBrowserRequestStreamingEnabled(true);
 
             var response = await base.SendAsync(request, cancellationToken);
 

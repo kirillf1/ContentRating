@@ -2,9 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using ContentRating.Web.Contracts.ContentEstimationListEditor;
-
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.InviteEditor
 {
-    public record InviteEditorCommand(Guid RoomId, Guid InitiatorId, Guid NewEditorId, string NewEditorName) : IRequest<Result<bool>>;
+    public record InviteEditorCommand(
+        Guid RoomId,
+        Guid InitiatorId,
+        Guid NewEditorId,
+        string NewEditorName
+    ) : IRequest<Result<bool>>;
 }

@@ -1,8 +1,7 @@
-﻿using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
+﻿using System.Timers;
 using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRating.Web.UI.Services;
 using MudBlazor;
-using System.Timers;
 
 namespace ContentRating.Web.UI.ViewModels
 {
@@ -58,10 +57,10 @@ namespace ContentRating.Web.UI.ViewModels
         public string ErrorMessage { get; set; } = string.Empty;
 
         // Поиск контента с debounce
-        public string SearchText 
-        { 
+        public string SearchText
+        {
             get => _searchText;
-            set 
+            set
             {
                 if (_searchText != value)
                 {
@@ -72,7 +71,7 @@ namespace ContentRating.Web.UI.ViewModels
                 }
             }
         }
-        
+
         // Отфильтрованный список контента на основе поиска
         public List<ContentPartyRatingViewModel> FilteredContentRatings
         {
@@ -84,10 +83,12 @@ namespace ContentRating.Web.UI.ViewModels
                 }
 
                 var searchLower = _debouncedSearchText.ToLowerInvariant();
-                return ContentRatings.Where(rating =>
-                    rating.Name.ToLowerInvariant().Contains(searchLower) ||
-                    rating.Address.ToLowerInvariant().Contains(searchLower)
-                ).ToList();
+                return ContentRatings
+                    .Where(rating =>
+                        rating.Name.ToLowerInvariant().Contains(searchLower)
+                        || rating.Address.ToLowerInvariant().Contains(searchLower)
+                    )
+                    .ToList();
             }
         }
 
@@ -436,7 +437,7 @@ namespace ContentRating.Web.UI.ViewModels
             if (content != null)
             {
                 UpdateLocalRating(ratingId, raterId, score);
-                
+
                 // Показываем уведомление о том, что пользователь оценил контент
                 var rater = Raters.FirstOrDefault(r => r.Id == raterId);
                 if (rater != null)
@@ -444,7 +445,7 @@ namespace ContentRating.Web.UI.ViewModels
                     var raterName = rater.DisplayName;
                     var contentName = content.Name;
                     var scoreFormatted = score.ToString("F1");
-                    
+
                     _snackbar.Add(
                         $"{raterName} оценил «{contentName}» на {scoreFormatted}",
                         Severity.Info,
@@ -457,7 +458,7 @@ namespace ContentRating.Web.UI.ViewModels
                         }
                     );
                 }
-                
+
                 StateChanged?.Invoke();
             }
         }

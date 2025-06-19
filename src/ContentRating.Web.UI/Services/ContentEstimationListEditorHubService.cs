@@ -1,7 +1,5 @@
-﻿using ContentRating.Domain.Shared.Content;
-using ContentRating.Web.UI.Models;
+﻿using ContentRating.Web.UI.Models;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Options;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -216,7 +214,7 @@ namespace ContentRating.Web.UI.Services
                     "SignalR connection lost, attempting to reconnect: {Error}",
                     error?.Message
                 );
-                
+
                 // Уведомляем UI о потере соединения
                 ConnectionLost?.Invoke();
 
@@ -260,11 +258,14 @@ namespace ContentRating.Web.UI.Services
                             "JoinContentEditing",
                             _currentRoomId.Value
                         );
-                        
+
                         // Уведомляем UI о восстановлении соединения для перезагрузки данных
                         ConnectionRestored?.Invoke();
-                        
-                        _logger.LogInformation("Successfully rejoined content editing room {RoomId} after reconnection", _currentRoomId.Value);
+
+                        _logger.LogInformation(
+                            "Successfully rejoined content editing room {RoomId} after reconnection",
+                            _currentRoomId.Value
+                        );
                     }
                     catch (Exception ex)
                     {
@@ -280,18 +281,20 @@ namespace ContentRating.Web.UI.Services
             _hubConnection.Closed += async (error) =>
             {
                 _logger.LogWarning("SignalR connection closed: {Error}", error?.Message);
-                
+
                 // Уведомляем UI о потере соединения
                 ConnectionLost?.Invoke();
-                
+
                 // Если соединение закрыто не по нашей инициативе, пытаемся переподключиться
                 if (error != null && _currentRoomId.HasValue)
                 {
-                    _logger.LogInformation("Attempting to reconnect after connection closed unexpectedly");
-                    
+                    _logger.LogInformation(
+                        "Attempting to reconnect after connection closed unexpectedly"
+                    );
+
                     // Ждем немного перед попыткой переподключения
                     await Task.Delay(TimeSpan.FromSeconds(2));
-                    
+
                     try
                     {
                         await ConnectAsync(_currentRoomId.Value);

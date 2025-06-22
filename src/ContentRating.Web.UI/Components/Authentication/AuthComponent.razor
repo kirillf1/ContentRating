@@ -1,0 +1,79 @@
+@using ContentRating.Web.UI.Services
+@using ContentRating.Web.UI.Services.Authentication
+@inject AuthService AuthService
+@implements IDisposable
+
+<div class="auth-component">
+    @if (AuthService.IsAuthenticated)
+    {
+        <MudMenu>
+            <ActivatorContent>
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Inherit" 
+                          StartIcon="@Icons.Material.Filled.AccountCircle">
+                    @AuthService.UserName
+                </MudButton>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Material.Filled.AccountCircle">
+                    <MudText>@AuthService.UserEmail</MudText>
+                </MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout" 
+                            OnClick="LogoutAsync">
+                    Выйти
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    }
+    else
+    {
+        <MudMenu>
+            <ActivatorContent>
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Inherit" 
+                          StartIcon="@Icons.Material.Filled.Login">
+                    Войти
+                </MudButton>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Custom.Brands.Google"
+                             OnClick="LoginWithGoogleAsync">
+                    Войти через Google
+                </MudMenuItem>
+                @* Здесь можно добавить другие провайдеры *@
+            </ChildContent>
+        </MudMenu>
+    }
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+        // Инициализируем AuthService если это еще не было сделано
+        await AuthService.InitializeAsync();
+        // Обновляем состояние при инициализации
+        StateHasChanged();
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoginWithGoogleAsync()
+    {
+        await AuthService.LoginWithGoogle();
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
+    }
+} 

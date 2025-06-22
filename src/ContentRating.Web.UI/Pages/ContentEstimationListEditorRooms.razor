@@ -1,6 +1,7 @@
 @page "/content-creation-rooms"
 @using ContentRating.Web.Contracts.ContentEstimationListEditor
 @using ContentRating.Web.UI.Services
+@using ContentRating.Web.UI.Services.Content
 @using MudBlazor
 @inject IContentEstimationListService ContentEstimationListService
 @inject NavigationManager Navigation
@@ -86,7 +87,7 @@
         </MudText>
 
         <MudVirtualize Items="rooms" Context="room" ItemSize="120" T="ContentEstimationListEditorTitle">
-            <ContentRating.Web.UI.Components.RoomCard Room="room" 
+            <RoomCard Room="room" 
                                                       OnEdit="NavigateToRoom"
                                                       OnDelete="DeleteRoom"
                                                       IsDeleting="@(deletingRoomId == room.Id)" />
@@ -182,7 +183,7 @@
 
     private async Task OpenCreateRoomDialog()
     {
-        var parameters = new DialogParameters<ContentRating.Web.UI.Components.CreateRoomDialog>
+        var parameters = new DialogParameters<CreateRoomDialog>
         {
             { x => x.OnRoomCreated, EventCallback.Factory.Create(this, LoadRoomsAsync) }
         };
@@ -194,7 +195,7 @@
             FullWidth = true
         };
 
-        var dialog = await DialogService.ShowAsync<ContentRating.Web.UI.Components.CreateRoomDialog>(
+        var dialog = await DialogService.ShowAsync<CreateRoomDialog>(
             "Создать новый топ", 
             parameters, 
             options);

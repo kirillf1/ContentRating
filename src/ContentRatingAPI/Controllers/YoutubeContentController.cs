@@ -2,10 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System.Text.RegularExpressions;
 using Ardalis.Result.AspNetCore;
 using ContentRating.Web.Contracts.YoutubeContent;
-using ContentRatingAPI.Application.YoutubeContent;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubePlayLists;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubeVideos;
 using ContentRatingAPI.Application.YoutubeContent.GetYoutubeVideoTitle;

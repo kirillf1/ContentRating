@@ -1,0 +1,86 @@
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+@inject ILogger<HlsPlayerComponent> Logger
+@implements IAsyncDisposable
+
+<div class="hls-video-container" style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+    @if (IsInitializing)
+    {
+        <!-- Индикатор загрузки -->
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: rgba(255,255,255,0.95); border-radius: 20px; padding: 30px; display: flex; align-items: center; flex-direction: column;">
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                <div style="font-size: 1rem; margin-top: 12px; color: #333; font-weight: 500;">
+                    Загружаем видео...
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <video id="@VideoId" 
+               controls 
+               style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+               @ref="VideoElement">
+            <source src="@Url" type="application/x-mpegURL">
+            Ваш браузер не поддерживает воспроизведение HLS видео.
+        </video>
+    }
+</div>
+
+@if (ShowError)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-2">
+        Не удалось загрузить HLS видео. Проверьте корректность ссылки.
+    </MudAlert>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Url { get; set; } = string.Empty;
+    [Parameter] public bool AutoLoad { get; set; } = false;
+    [Parameter] public bool ShowError { get; set; } = false;
+
+    private readonly string VideoId = $"hls-video-{Guid.NewGuid():N}";
+    private bool IsInitializing { get; set; } = true;
+    private ElementReference VideoElement;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(Url))
+        {
+            await InitializeVideoAsync();
+        }
+    }
+
+    private bool _isVideoInitialized = false;
+
+    private async Task InitializeVideoAsync()
+    {
+        try
+        {
+            // Инициализируем HLS.js и настройки громкости
+            await JSRuntime.InvokeVoidAsync("initializeHlsPlayerWithVolume", VideoId, Url);
+            _isVideoInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Ошибка инициализации HLS плеера для видео {VideoId}", VideoId);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isVideoInitialized)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("destroyHlsPlayer", VideoId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Ошибка очистки HLS плеера для видео {VideoId}", VideoId);
+            }
+        }
+    }
+} 

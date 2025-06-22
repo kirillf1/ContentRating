@@ -1,20 +1,27 @@
-using Ardalis.Result;
-using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
+﻿using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 
 namespace ContentRatingAPI.Application.ContentEstimationListEditor.DeleteContentEstimationListEditor
 {
-    public class DeleteContentEstimationListEditorCommandHandler : IRequestHandler<DeleteContentEstimationListEditorCommand, Result<bool>>
+    public class DeleteContentEstimationListEditorCommandHandler
+        : IRequestHandler<DeleteContentEstimationListEditorCommand, Result<bool>>
     {
         private readonly IContentEstimationListEditorRepository contentEditorRoomRepository;
 
-        public DeleteContentEstimationListEditorCommandHandler(IContentEstimationListEditorRepository contentEditorRoomRepository)
+        public DeleteContentEstimationListEditorCommandHandler(
+            IContentEstimationListEditorRepository contentEditorRoomRepository
+        )
         {
             this.contentEditorRoomRepository = contentEditorRoomRepository;
         }
 
-        public async Task<Result<bool>> Handle(DeleteContentEstimationListEditorCommand request, CancellationToken cancellationToken)
+        public async Task<Result<bool>> Handle(
+            DeleteContentEstimationListEditorCommand request,
+            CancellationToken cancellationToken
+        )
         {
-            var room = await contentEditorRoomRepository.GetContentEstimationListEditor(request.RoomId);
+            var room = await contentEditorRoomRepository.GetContentEstimationListEditor(
+                request.RoomId
+            );
             if (room is null)
             {
                 return Result.NotFound("Топ не найден");
@@ -31,4 +38,4 @@ namespace ContentRatingAPI.Application.ContentEstimationListEditor.DeleteContent
             return Result.Success(true);
         }
     }
-} 
+}

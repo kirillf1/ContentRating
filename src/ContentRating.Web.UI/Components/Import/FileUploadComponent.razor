@@ -1,0 +1,143 @@
+@using ContentRating.Domain.Shared.Content
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Import
+@using Microsoft.AspNetCore.Components.Forms
+@using MudBlazor
+@implements IDisposable
+
+@if (ViewModel.ShowFileUploadDialog)
+{
+    <MudOverlay Visible="true" DarkBackground="true" Absolute="false">
+        <MudPaper Class="pa-6 ma-4" Style="max-width: 600px; width: 100%; margin: auto;">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Class="mr-3" />
+                        Загрузить файл
+                    </MudText>
+                </MudItem>
+                
+                <MudItem xs="12">
+                    <MudFileUpload T="IBrowserFile" Accept=".mp4,.avi,.mkv,.mov,.wmv,.flv,.webm,.m4v,.3gp,.ogv,.mp3,.wav,.flac,.aac,.ogg,.wma,.m4a,.opus,.aiff,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.tiff,.ico" 
+                                  FilesChanged="OnFileSelected" MaximumFileCount="1">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                      Color="Color.Primary"
+                                      StartIcon="@Icons.Material.Filled.AttachFile">
+                                Выбрать файл
+                            </MudButton>
+                        </ActivatorContent>
+                        <SelectedTemplate>
+                            @if (context != null)
+                            {
+                                <MudChip T="string" Color="Color.Primary" Icon="@Icons.Material.Filled.AttachFile">
+                                    @context.Name (@FormatFileSize(context.Size))
+                                </MudChip>
+                            }
+                        </SelectedTemplate>
+                    </MudFileUpload>
+                </MudItem>
+
+                @if (ViewModel.SelectedFile != null)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="ViewModel.FileUploadName"
+                                     Label="Название контента"
+                                     Required="true"
+                                     MaxLength="300" />
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6">
+                        <MudSelect @bind-Value="ViewModel.SelectedFileContentType" Label="Тип контента">
+                            <MudSelectItem T="ContentType" Value="@ContentType.Video">Видео</MudSelectItem>
+                            <MudSelectItem T="ContentType" Value="@ContentType.Audio">Аудио</MudSelectItem>
+                            <MudSelectItem T="ContentType" Value="@ContentType.Image">Изображение</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" Class="mt-2">
+                            <MudText>
+                                <strong>Размер файла:</strong> @FormatFileSize(ViewModel.SelectedFile.Size)<br/>
+                                <strong>Тип:</strong> @ViewModel.SelectedFile.ContentType<br/>
+                                <strong>Максимальный размер:</strong> 200 МБ
+                            </MudText>
+                        </MudAlert>
+                    </MudItem>
+                }
+                
+                <MudItem xs="12" Class="d-flex justify-end gap-2 mt-4">
+                    <MudButton OnClick="OnCancel">Отмена</MudButton>
+                    <MudButton Color="Color.Primary" 
+                               Variant="Variant.Filled"
+                               OnClick="OnUpload"
+                               Disabled="@(ViewModel.SelectedFile == null || string.IsNullOrWhiteSpace(ViewModel.FileUploadName) || ViewModel.IsUploadingFile)">
+                        @if (ViewModel.IsUploadingFile)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            <span class="ml-2">Загружаем...</span>
+                        }
+                        else
+                        {
+                            <text>Загрузить</text>
+                        }
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudOverlay>
+}
+
+@code {
+    [Parameter] public FileUploadViewModel ViewModel { get; set; } = null!;
+    [Parameter] public EventCallback OnStateChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        ViewModel.StateChanged += OnViewModelStateChanged;
+    }
+
+    private void OnViewModelStateChanged()
+    {
+        InvokeAsync(() => 
+        {
+            StateHasChanged();
+            OnStateChanged.InvokeAsync();
+        });
+    }
+
+    private void OnFileSelected(IBrowserFile file)
+    {
+        ViewModel.OnFileSelected(file);
+    }
+
+    private void OnCancel()
+    {
+        ViewModel.CloseFileUploadDialog();
+    }
+
+    private async Task OnUpload()
+    {
+        await ViewModel.UploadFileAsync();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024)
+            return $"{bytes} Б";
+        if (bytes < 1024 * 1024)
+            return $"{bytes / 1024:F1} КБ";
+        if (bytes < 1024 * 1024 * 1024)
+            return $"{bytes / (1024 * 1024):F1} МБ";
+        
+        return $"{bytes / (1024 * 1024 * 1024):F1} ГБ";
+    }
+
+    public void Dispose()
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+} 

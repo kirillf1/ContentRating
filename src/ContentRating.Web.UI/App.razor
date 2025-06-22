@@ -1,6 +1,8 @@
 ﻿@using ContentRating.Web.UI.Services
+@using ContentRating.Web.UI.Services.Theme
 @inject ThemeService ThemeService
 @implements IDisposable
+
 
 <MudThemeProvider Theme="@ThemeService.CurrentTheme" IsDarkMode="@ThemeService.IsDarkMode" />
 <MudPopoverProvider />

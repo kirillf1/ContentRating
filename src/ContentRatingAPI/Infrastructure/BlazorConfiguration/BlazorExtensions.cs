@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Microsoft.AspNetCore.Localization;
+﻿using ContentRating.Web.UI;
 
 namespace ContentRatingAPI.Infrastructure.BlazorConfiguration;
 
@@ -26,13 +25,7 @@ public static class BlazorExtensions
         });
 
         // CORS для Blazor
-        builder.Services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(policy =>
-            {
-                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-            });
-        });
+        builder.Services.AddCors(options => { });
 
         return builder;
     }
@@ -43,15 +36,18 @@ public static class BlazorExtensions
         {
             app.UseWebAssemblyDebugging();
         }
+        app.UseAntiforgery();
         // Blazor middleware
-        app.UseBlazorFrameworkFiles();
-        app.UseStaticFiles();
+        app.MapStaticAssets();
         app.UseRequestLocalization();
         app.UseCors();
 
-        // Маршрутизация для Blazor
         app.MapRazorPages();
         app.MapFallbackToFile("index.html");
+        // Маршрутизация для Blazor
+        //app.MapRazorComponents<App>()
+        //    .AddInteractiveServerRenderMode()
+        //    .AddInteractiveWebAssemblyRenderMode();
 
         return app;
     }

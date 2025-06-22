@@ -8,10 +8,10 @@
   </PropertyGroup>
   <PropertyGroup>
     <RunAOTCompilation>true</RunAOTCompilation>
+    <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
   </PropertyGroup>
   <ItemGroup>
-    <ServiceWorker Include="wwwroot\service-worker.js"
-      PublishedContent="wwwroot\service-worker.published.js" />
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
 

@@ -1,10 +1,15 @@
 @page "/party-estimation-rooms"
 @using ContentRating.Web.Contracts.ContentPartyEstimationRoom
+@using ContentRating.Web.UI.Components
 @using ContentRating.Web.UI.Services
+@using ContentRating.Web.UI.Services.Authentication
+@using ContentRating.Web.UI.Services.Content
 @using MudBlazor
 @inject IContentPartyEstimationService PartyEstimationService
-@inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject ILogger<ContentPartyEstimationRooms> Logger
 @inject IDialogService DialogService
 @inject AuthService AuthService
 
@@ -119,9 +124,9 @@
         </MudText>
 
         <MudVirtualize Items="filteredRooms.ToList()" Context="room" ItemSize="140" T="PartyEstimationTitle">
-            <ContentRating.Web.UI.Components.PartyEstimationRoomCard Room="room" 
-                                                                    OnJoin="JoinRoom"
-                                                                    OnDelete="DeleteRoom"
+            <PartyEstimationRoomCard Room="room" 
+                                                                    OnJoin="JoinRoomAsync"
+                                                                    OnDelete="DeleteRoomAsync"
                                                                     IsLoading="@(joiningRoomId == room.Id)"
                                                                     IsDeleting="@(deletingRoomId == room.Id)"
                                                                     CurrentUserId="@AuthService.UserId" />
@@ -167,8 +172,9 @@
                 UpdateFilteredRooms();
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при загрузке списка комнат для оценки");
             hasError = true;
             Snackbar.Add("Произошла ошибка при загрузке комнат", Severity.Error);
         }
@@ -214,7 +220,7 @@
         await LoadRoomsAsync();
     }
 
-    private void JoinRoom(Guid roomId)
+    private async Task JoinRoomAsync(Guid roomId)
     {
         try
         {
@@ -235,8 +241,9 @@
                 Navigation.NavigateTo($"/party-estimation/{roomId}");
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при переходе к комнате {RoomId}", roomId);
             Snackbar.Add("Произошла ошибка при переходе к комнате", Severity.Error);
         }
         finally
@@ -248,7 +255,7 @@
 
     private async Task OpenCreateRoomDialog()
     {
-        var parameters = new DialogParameters<ContentRating.Web.UI.Components.CreatePartyEstimationRoomDialog>
+        var parameters = new DialogParameters<CreatePartyEstimationRoomDialog>
         {
             { x => x.OnRoomCreated, EventCallback.Factory.Create(this, LoadRoomsAsync) }
         };
@@ -260,13 +267,13 @@
             FullWidth = true
         };
 
-        var dialog = await DialogService.ShowAsync<ContentRating.Web.UI.Components.CreatePartyEstimationRoomDialog>(
+        var dialog = await DialogService.ShowAsync<CreatePartyEstimationRoomDialog>(
             "Создать новую комнату", 
             parameters, 
             options);
     }
 
-    private async Task DeleteRoom(Guid roomId)
+    private async Task DeleteRoomAsync(Guid roomId)
     {
         if (!AuthService.IsAuthenticated)
         {
@@ -319,7 +326,7 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Logger.LogError(ex, "Ошибка при удалении комнаты {RoomId}", roomId);
                 Snackbar.Add("Произошла ошибка при удалении комнаты", Severity.Error);
             }
             finally

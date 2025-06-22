@@ -1,16 +1,25 @@
 @page "/content-estimation-list-editor/{RoomId:guid}"
-@using ContentRating.Domain.Shared.Content
-@using ContentRating.Web.UI.ViewModels
-@using ContentRating.Web.UI.Components
-@using MudBlazor
+@using System.Linq
 @using System.Web
+@using ContentRating.Domain.Shared.Content
+@using ContentRating.Web.UI.Components
+@using ContentRating.Web.UI.Components.Dialogs
+@using ContentRating.Web.UI.Services.Content
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Content
+@using ContentRating.Web.UI.ViewModels.Estimation
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using MudBlazor
 @inject ContentEstimationListEditorViewModel ViewModel
-@inject ContentRating.Web.UI.Services.ContentItemEditingService EditingService
+@inject ContentItemEditingService EditingService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 @implements IDisposable
+@implements IAsyncDisposable
+
 
 <PageTitle>Редактор топа - @ViewModel.RoomName</PageTitle>
 
@@ -149,6 +158,7 @@
                               AdornmentIcon="@Icons.Material.Filled.Search"
                               Clearable="true"
                               Immediate="true"
+                              DebounceInterval="300"
                               OnClearButtonClick="OnSearchCleared" />
             </MudItem>
         </MudGrid>
@@ -190,11 +200,9 @@
         }
         else
         {
-            <!-- Виртуализированный список для оптимизации производительности -->
-            <Virtualize Items="@ViewModel.FilteredContentItems" 
-                       Context="item"
-                       ItemSize="250"
-                       OverscanCount="8">
+            <!-- Список контента (постраничная загрузка) -->
+            @foreach (var item in ViewModel.FilteredContentItems.Take(_visibleItemCount))
+            {
                 <div @key="@($"list-item-{item.Id}")">
                     <ContentListItemComponent 
                         ContentItem="item"
@@ -203,7 +211,10 @@
                         OnCancel="CancelEditingOptimized"
                         OnDelete="DeleteContentOptimized" />
                 </div>
-            </Virtualize>
+            }
+
+            <!-- Сентинел для бесконечной прокрутки -->
+            <div style="height:1px;" @ref="_sentinel"></div>
         }
     }
 </MudContainer>
@@ -219,6 +230,15 @@
 
 @code {
     [Parameter] public Guid RoomId { get; set; }
+
+    // Постраничная загрузка
+    private int _visibleItemCount = _pageSize;
+    private const int _pageSize = 10;
+    private bool _isLoadingBatch = false;
+    private ElementReference _sentinel;
+    private ElementReference _prevSentinel;
+    private DotNetObjectReference<ContentEstimationListEditor>? _dotNetRef;
+    private string _lastSearchText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -238,6 +258,8 @@
     private async Task LoadData()
     {
         await ViewModel.LoadRoomDataAsync(RoomId);
+
+        _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentItems.Count);
         StateHasChanged();
     }
 
@@ -356,12 +378,25 @@
 
     private void OnViewModelStateChanged()
     {
-        InvokeAsync(() => StateHasChanged());
+        if (_visibleItemCount > ViewModel.FilteredContentItems.Count)
+        {
+            _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentItems.Count);
+        }
+
+        if (string.IsNullOrWhiteSpace(ViewModel.SearchText) && !string.IsNullOrWhiteSpace(_lastSearchText))
+        {
+            _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentItems.Count);
+        }
+
+        _lastSearchText = ViewModel.SearchText;
+
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnSearchCleared()
     {
         ViewModel.SearchText = string.Empty;
+        _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentItems.Count);
         StateHasChanged();
     }
 
@@ -425,7 +460,7 @@
             Position = DialogPosition.Center
         };
 
-        await DialogService.ShowAsync<Components.ManageEditorsDialog>("Управление редакторами", parameters, options);
+        await DialogService.ShowAsync<ManageEditorsDialog>("Управление редакторами", parameters, options);
     }
 
     private async Task OnEditorRemoved()
@@ -442,7 +477,57 @@
         StateHasChanged();
     }
 
-    public void Dispose()
+    [JSInvokable]
+    public void LoadMoreContent()
+    {
+        if (_isLoadingBatch) return;
+        _isLoadingBatch = true;
+        if (_visibleItemCount < ViewModel.FilteredContentItems.Count)
+        {
+            _visibleItemCount = Math.Min(_visibleItemCount + _pageSize, ViewModel.FilteredContentItems.Count);
+            InvokeAsync(StateHasChanged);
+        }
+        _isLoadingBatch = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_sentinel.Equals(default))
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+
+            if (!_sentinel.Equals(_prevSentinel))
+            {
+                if (!_prevSentinel.Equals(default))
+                {
+                    await JSRuntime.InvokeVoidAsync("infiniteScroll.unregisterIntersection", _prevSentinel);
+                }
+                await JSRuntime.InvokeVoidAsync("infiniteScroll.registerIntersection", _sentinel, _dotNetRef);
+                _prevSentinel = _sentinel;
+            }
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        try
+        {
+            if (!_prevSentinel.Equals(default))
+            {
+                await JSRuntime.InvokeVoidAsync("infiniteScroll.unregisterIntersection", _prevSentinel);
+            }
+        }
+        catch { }
+
+        _dotNetRef?.Dispose();
+
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+
+    void IDisposable.Dispose()
     {
         if (ViewModel != null)
         {

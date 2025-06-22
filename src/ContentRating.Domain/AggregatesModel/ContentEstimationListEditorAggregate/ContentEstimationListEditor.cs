@@ -52,10 +52,6 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
 
             var oldContent = _addedContent.Single(c => c.Id == contentModification.Id);
             var contentEditor = oldContent.ContentModificationHistory.EditorId;
-            if (contentEditor != editor.Id && ContentListCreator != editor)
-            {
-                throw new ForbiddenRoomOperationException("Can't edit foreign content");
-            }
 
             oldContent.ModifyContent(contentModification);
 
@@ -67,10 +63,6 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             if (!_invitedEditors.Contains(editor) && editor != ContentListCreator)
             {
                 throw new ForbiddenRoomOperationException("Editor don't exist in this room");
-            }
-            if (content.ContentModificationHistory.EditorId != editor.Id && ContentListCreator != editor)
-            {
-                throw new ForbiddenRoomOperationException("Can't edit foreign content");
             }
 
             var isRemoved = _addedContent.Remove(content);
@@ -117,7 +109,9 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
         {
             if (roomName.Length < 3 || roomName.Length > 300)
             {
-                throw new ArgumentException("Room name must be more than 3 and less than 300 symbols");
+                throw new ArgumentException(
+                    "Room name must be more than 3 and less than 300 symbols"
+                );
             }
             Name = roomName;
         }
@@ -137,7 +131,11 @@ namespace ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggreg
             AddDomainEvent(new ContentRoomEditorCreatedDomainEvent(id, roomCreator, name));
         }
 
-        public static ContentEstimationListEditor Create(Guid id, ContentEditor roomCreator, string name)
+        public static ContentEstimationListEditor Create(
+            Guid id,
+            ContentEditor roomCreator,
+            string name
+        )
         {
             return new ContentEstimationListEditor(id, roomCreator, name);
         }

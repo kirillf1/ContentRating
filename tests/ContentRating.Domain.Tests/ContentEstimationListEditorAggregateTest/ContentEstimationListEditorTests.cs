@@ -83,22 +83,10 @@ namespace ContentRating.Domain.Tests.ContentEstimationListEditorAggregateTest
                 .FirstOrDefault();
 
             Assert.NotNull(contentUpdatedEvent);
-            Assert.Equal(
-                newContentData.Name,
-                contentUpdatedEvent.UpdatedContent.Name
-            );
-            Assert.Equal(
-                newContentData.Id,
-                contentUpdatedEvent.UpdatedContent.Id
-            );
-            Assert.Equal(
-                newContentData.Type,
-                contentUpdatedEvent.UpdatedContent.Type
-            );
-            Assert.Equal(
-                newContentData.Path,
-                contentUpdatedEvent.UpdatedContent.Path
-            );
+            Assert.Equal(newContentData.Name, contentUpdatedEvent.UpdatedContent.Name);
+            Assert.Equal(newContentData.Id, contentUpdatedEvent.UpdatedContent.Id);
+            Assert.Equal(newContentData.Type, contentUpdatedEvent.UpdatedContent.Type);
+            Assert.Equal(newContentData.Path, contentUpdatedEvent.UpdatedContent.Path);
         }
 
         [Fact]
@@ -122,43 +110,10 @@ namespace ContentRating.Domain.Tests.ContentEstimationListEditorAggregateTest
                 .FirstOrDefault();
 
             Assert.NotNull(contentUpdatedEvent);
-            Assert.Equal(
-                newContentData.Name,
-                contentUpdatedEvent.UpdatedContent.Name
-            );
-            Assert.Equal(
-                newContentData.Id,
-                contentUpdatedEvent.UpdatedContent.Id
-            );
-            Assert.Equal(
-                newContentData.Type,
-                contentUpdatedEvent.UpdatedContent.Type
-            );
-            Assert.Equal(
-                newContentData.Path,
-                contentUpdatedEvent.UpdatedContent.Path
-            );
-        }
-
-        [Fact]
-        public void UpdateContent_ContentNotBelongThisEditor_ThrowForbiddenRoomOperationException()
-        {
-            var room = CreateEmptyRoomEditor();
-            var contentData = CreateRandomContentData();
-            var foreignEditor = new ContentEditor(Guid.NewGuid(), "new_editor");
-            room.InviteEditor(room.ContentListCreator, foreignEditor);
-
-            room.CreateContent(room.ContentListCreator, contentData);
-            var newContentData = new ContentData(
-                contentData.Id,
-                "new_name",
-                "/new_path",
-                ContentType.Image
-            );
-
-            Assert.Throws<ForbiddenRoomOperationException>(
-                () => room.UpdateContent(foreignEditor, newContentData)
-            );
+            Assert.Equal(newContentData.Name, contentUpdatedEvent.UpdatedContent.Name);
+            Assert.Equal(newContentData.Id, contentUpdatedEvent.UpdatedContent.Id);
+            Assert.Equal(newContentData.Type, contentUpdatedEvent.UpdatedContent.Type);
+            Assert.Equal(newContentData.Path, contentUpdatedEvent.UpdatedContent.Path);
         }
 
         private static ContentEstimationListEditor CreateEmptyRoomEditor()

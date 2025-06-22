@@ -10,7 +10,6 @@ using ContentRating.Domain.AggregatesModel.ContentEstimationListEditorAggregate;
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.IntegrationTests.DataHelpers;
 using ContentRating.IntegrationTests.Fixtures;
-using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;

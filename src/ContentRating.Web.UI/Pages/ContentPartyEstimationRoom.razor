@@ -1,14 +1,19 @@
 @page "/party-estimation/{RoomId:guid}"
-@using ContentRating.Web.UI.ViewModels
+@using System.Linq
 @using ContentRating.Web.UI.Components
+@using ContentRating.Web.UI.Services.Authentication
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Estimation
+@using Microsoft.JSInterop
 @using MudBlazor
 @inject ContentPartyEstimationRoomViewModel ViewModel
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ContentRating.Web.UI.Services.AuthService AuthService
+@inject AuthService AuthService
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
+@implements IAsyncDisposable
 
 <PageTitle>Групповая оценка - @ViewModel.RoomName</PageTitle>
 
@@ -161,7 +166,7 @@
         <MudGrid Align="Align.Center" Class="mb-3">
             <MudItem xs="12" sm="8">
                 <MudText Typo="Typo.h6" GutterBottom="true">
-                    Контент для оценки (@ViewModel.FilteredContentRatings.Count из @ViewModel.ContentRatings.Count)
+                    Контент для оценки (@ViewModel.FilteredContentRatings.Count() из @ViewModel.ContentRatings.Count)
                 </MudText>
             </MudItem>
             <MudItem xs="12" sm="4">
@@ -173,6 +178,7 @@
                               AdornmentIcon="@Icons.Material.Filled.Search"
                               Clearable="true"
                               Immediate="true"
+                              DebounceInterval="300"
                               OnClearButtonClick="OnSearchCleared" />
             </MudItem>
         </MudGrid>
@@ -214,11 +220,9 @@
         }
         else
         {
-            <!-- Виртуализированный список контента для оптимизации -->
-            <Virtualize Items="@ViewModel.FilteredContentRatings" 
-                       Context="contentRating"
-                       ItemSize="320"
-                       OverscanCount="8">
+            <!-- Отображаем контент порциями для уменьшения нагрузки на страницу -->
+            @foreach (var contentRating in ViewModel.FilteredContentRatings.Take(_visibleItemCount))
+            {
                 <ContentPartyRatingItemComponent 
                     @key="contentRating.RatingId"
                     ContentRating="contentRating"
@@ -233,7 +237,10 @@
                     CanDeleteContent="ViewModel.CanDeleteContent()"
                     OnContentDelete="OnContentDeleted"
                     CreatorName="@GetCreatorName(contentRating.CreatorId)" />
-            </Virtualize>
+            }
+
+            <!-- Сентинел для бесконечной прокрутки -->
+            <div style="height:1px;" @ref="_sentinel"></div>
         }
     }
 </MudContainer>
@@ -242,6 +249,14 @@
     [Parameter] public Guid RoomId { get; set; }
     
     private bool _isCompletingEstimation = false;
+    // Количество элементов, отображаемых на странице одновременно
+    private int _visibleItemCount = _pageSize;
+    private const int _pageSize = 5;
+    private bool _isLoadingBatch = false;
+    private ElementReference _sentinel;
+    private ElementReference _prevSentinel;
+    private DotNetObjectReference<ContentPartyEstimationRoom>? _dotNetRef;
+    private string _lastSearchText = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -258,6 +273,7 @@
         if (ViewModel.RoomId != RoomId)
         {
             await LoadData();
+            _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentRatings.Count);
         }
     }
 
@@ -278,6 +294,9 @@
             Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
             return;
         }
+        
+        // Сбрасываем счётчик видимых элементов при загрузке данных
+        _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentRatings.Count);
         
         StateHasChanged();
     }
@@ -341,7 +360,7 @@
             Position = DialogPosition.Center
         };
 
-        await DialogService.ShowAsync<Components.InviteUsersDialog>("Пригласить участников", parameters, options);
+        await DialogService.ShowAsync<InviteUsersDialog>("Пригласить участников", parameters, options);
     }
 
     private async Task OnUserInvited()
@@ -373,7 +392,7 @@
             Position = DialogPosition.Center
         };
 
-        await DialogService.ShowAsync<Components.ManageParticipantsDialog>("Управление участниками", parameters, options);
+        await DialogService.ShowAsync<ManageParticipantsDialog>("Управление участниками", parameters, options);
     }
 
     private async Task OnParticipantRemoved()
@@ -393,9 +412,7 @@
             var success = await ViewModel.CompleteEstimationAsync();
             if (success)
             {
-                // Автоматически перенаправляем на страницу результатов через 2 секунды
-                await Task.Delay(2000);
-                Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
+               Navigation.NavigateTo($"/party-estimation/{RoomId}/results");
             }
         }
         finally
@@ -413,16 +430,81 @@
 
     private void OnViewModelStateChanged()
     {
-        InvokeAsync(() => StateHasChanged());
+        // Если количество отфильтрованных элементов меньше текущего видимого - корректируем
+        if (_visibleItemCount > ViewModel.FilteredContentRatings.Count)
+        {
+            _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentRatings.Count);
+        }
+
+        // Если поисковый запрос был очищен – снова показываем первую страницу
+        if (string.IsNullOrWhiteSpace(ViewModel.SearchText) && !string.IsNullOrWhiteSpace(_lastSearchText))
+        {
+            _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentRatings.Count);
+        }
+
+        _lastSearchText = ViewModel.SearchText;
+
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnSearchCleared()
     {
         ViewModel.SearchText = string.Empty;
+        _visibleItemCount = Math.Min(_pageSize, ViewModel.FilteredContentRatings.Count);
         StateHasChanged();
     }
 
-    public void Dispose()
+    [JSInvokable]
+    public void LoadMoreContent()
+    {
+        if (_isLoadingBatch) return;
+        _isLoadingBatch = true;
+        if (_visibleItemCount < ViewModel.FilteredContentRatings.Count())
+        {
+            _visibleItemCount = Math.Min(_visibleItemCount + _pageSize, ViewModel.FilteredContentRatings.Count());
+            InvokeAsync(StateHasChanged);
+        }
+        _isLoadingBatch = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_sentinel.Equals(default))
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+
+            if (!_sentinel.Equals(_prevSentinel))
+            {
+                if (!_prevSentinel.Equals(default))
+                {
+                    await JSRuntime.InvokeVoidAsync("infiniteScroll.unregisterIntersection", _prevSentinel);
+                }
+
+                await JSRuntime.InvokeVoidAsync("infiniteScroll.registerIntersection", _sentinel, _dotNetRef);
+                _prevSentinel = _sentinel;
+            }
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        try
+        {
+            if (!_prevSentinel.Equals(default))
+            {
+                await JSRuntime.InvokeVoidAsync("infiniteScroll.unregisterIntersection", _prevSentinel);
+            }
+        }
+        catch { }
+        _dotNetRef?.Dispose();
+
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+
+    void IDisposable.Dispose()
     {
         if (ViewModel != null)
         {

@@ -1,0 +1,198 @@
+@using ContentRating.Domain.Shared.Content
+@using ContentRating.Web.UI.Services
+@using ContentRating.Web.UI.Services.Validation
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Content
+@using MudBlazor
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.h6" GutterBottom="true">Добавить контент</MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="NewContent.Name"
+                         Label="Название контента"
+                         Placeholder="Введите название..."
+                         Required="true"
+                         MaxLength="300"
+                         Adornment="Adornment.End"
+                         AdornmentIcon="@Icons.Material.Filled.AutoAwesome"
+                         AdornmentColor="Color.Primary"
+                         OnAdornmentClick="ExtractNameFromUrl"
+                         AdornmentAriaLabel="Извлечь название из URL" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="NewContent.Url"
+                         @bind-Value:after="OnUrlChanged"
+                         Label="URL контента"
+                         Placeholder="https://..."
+                         Required="true"
+                         Error="@IsUrlDuplicate()"
+                         ErrorText="@GetUrlErrorText()"
+                         HelperText="@GetUrlHelperText()" />
+        </MudItem>
+        <MudItem xs="12" md="2">
+            <MudSelect @bind-Value="NewContent.ContentType" Label="Тип контента">
+                <MudSelectItem T="ContentType" Value="@ContentType.Video">Видео</MudSelectItem>
+                <MudSelectItem T="ContentType" Value="@ContentType.Audio">Аудио</MudSelectItem>
+                <MudSelectItem T="ContentType" Value="@ContentType.Image">Изображение</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="2">
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Add"
+                      OnClick="OnAddContent"
+                      Disabled="@(IsAddingContent || IsUrlDuplicate() || string.IsNullOrWhiteSpace(NewContent.Name) || string.IsNullOrWhiteSpace(NewContent.Url))"
+                      FullWidth="true">
+                @if (IsAddingContent)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                }
+                else
+                {
+                    <text>Добавить</text>
+                }
+            </MudButton>
+        </MudItem>
+        
+        <!-- Предварительный просмотр для нового контента -->
+        @if (!string.IsNullOrEmpty(NewContent.Url) && !string.IsNullOrEmpty(NewContent.Name))
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.subtitle2" GutterBottom="true">Предварительный просмотр:</MudText>
+                                    <ContentPreviewComponent 
+                    ContentItem="NewContent"
+                    Width="100%"
+                    MaxHeight="350px"
+                    ShowContentInfo="false"
+                    ShowMetadata="true"
+                    RoundedCorners="true"
+                    Elevation="1"
+                    ImageObjectFit="ObjectFit.Contain" />
+            </MudItem>
+        }
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter] public ContentItemViewModel NewContent { get; set; } = new();
+    [Parameter] public List<ContentItemViewModel> ExistingContent { get; set; } = new();
+    [Parameter] public bool IsAddingContent { get; set; }
+    [Parameter] public ContentValidationService ValidationService { get; set; } = null!;
+    [Parameter] public EventCallback OnContentAdd { get; set; }
+    [Parameter] public EventCallback OnUrlChangedCallback { get; set; }
+    [Parameter] public ISnackbar Snackbar { get; set; } = null!;
+
+    private async Task ExtractNameFromUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(NewContent.Url))
+        {
+            string suggestedName;
+            
+            // Для YouTube видео используем специальный асинхронный метод
+            if (ValidationService.IsYouTubeUrl(NewContent.Url))
+            {
+               
+                suggestedName = await ValidationService.ExtractYouTubeNameAsync(NewContent.Url);
+            }
+            else
+            {
+                suggestedName = ValidationService.ExtractNameFromUrl(NewContent.Url);
+            }
+            
+            if (!string.IsNullOrEmpty(suggestedName))
+            {
+                NewContent.Name = suggestedName;
+                StateHasChanged();
+                Snackbar.Add($"Название извлечено: {suggestedName}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Не удалось извлечь название из URL", Severity.Warning);
+            }
+        }
+    }
+
+    private bool IsUrlDuplicate()
+    {
+        if (string.IsNullOrWhiteSpace(NewContent.Url))
+            return false;
+
+        return ExistingContent.Any(item => 
+            string.Equals(NormalizeUrlForComparison(item.Url), 
+                         NormalizeUrlForComparison(NewContent.Url), 
+                         StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetUrlErrorText()
+    {
+        if (IsUrlDuplicate())
+            return "Контент с таким URL уже добавлен";
+        return string.Empty;
+    }
+
+    private string GetUrlHelperText()
+    {
+        if (!string.IsNullOrWhiteSpace(NewContent.Url) && !IsUrlDuplicate())
+        {
+            var existingItem = FindSimilarUrl(NewContent.Url);
+            if (existingItem != null)
+                return $"Похожий URL уже есть: {existingItem.Name}";
+        }
+        return string.Empty;
+    }
+
+    private ContentItemViewModel? FindSimilarUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        try
+        {
+            var inputUri = new Uri(url);
+            return ExistingContent.FirstOrDefault(item =>
+            {
+                try
+                {
+                    var itemUri = new Uri(item.Url);
+                    return string.Equals(inputUri.Host, itemUri.Host, StringComparison.OrdinalIgnoreCase) &&
+                           !string.Equals(NormalizeUrlForComparison(item.Url), 
+                                         NormalizeUrlForComparison(url), 
+                                         StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string NormalizeUrlForComparison(string url)
+    {
+        return ValidationService.NormalizeUrl(url);
+    }
+
+    private async Task OnAddContent()
+    {
+        await OnContentAdd.InvokeAsync();
+    }
+
+    private async Task OnUrlChanged()
+    {
+        // Если URL - YouTube видео и название пустое, автоматически извлекаем название
+        if (!string.IsNullOrWhiteSpace(NewContent.Url) && 
+            string.IsNullOrWhiteSpace(NewContent.Name) && 
+            ValidationService.IsYouTubeUrl(NewContent.Url))
+        {
+            await ExtractNameFromUrl();
+        }
+        
+        await OnUrlChangedCallback.InvokeAsync();
+    }
+} 

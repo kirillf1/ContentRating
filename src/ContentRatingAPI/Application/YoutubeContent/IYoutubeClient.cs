@@ -3,12 +3,13 @@
 // See the LICENSE file in the project root for more information.
 
 using ContentRating.Web.Contracts.YoutubeContent;
+using ContentRatingAPI.Application.Identity;
 
 namespace ContentRatingAPI.Application.YoutubeContent
 {
     public interface IYoutubeClient
     {
-        public Task<Result<IEnumerable<YoutubeVideo>>> GetVideosFromPlayList(string playListId, string accessToken);
-        public Task<Result<IEnumerable<YoutubePlaylist>>> GetAvailablePlayLists(string accessToken);
+        public Task<Result<IEnumerable<YoutubeVideo>>> GetVideosFromPlayList(string playListId, ApplicationUser user);
+        public Task<Result<IEnumerable<YoutubePlaylist>>> GetAvailablePlayLists(ApplicationUser user);
     }
 }

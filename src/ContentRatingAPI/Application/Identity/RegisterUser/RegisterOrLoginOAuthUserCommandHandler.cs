@@ -37,6 +37,8 @@ namespace ContentRatingAPI.Application.Identity.RegisterUser
                 user = new ApplicationUser(userId, token.RefreshToken, request.AuthScheme, request.Email, request.Name)
                 {
                     ExternalResourceAccessToken = request.AccessToken,
+                    ExternalResourceRefreshToken = request.RefreshToken,
+                    ExternalResourceTokenExpiresAt = ParseExpiresAt(request.ExpiresAt)
                 };
                 var result = await userManager.CreateAsync(user);
                 if (!result.Succeeded)
@@ -51,12 +53,31 @@ namespace ContentRatingAPI.Application.Identity.RegisterUser
                     user.ExternalResourceAccessToken = request.AccessToken;
                 }
 
+                if (!string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    user.ExternalResourceRefreshToken = request.RefreshToken;
+                }
+
+                user.ExternalResourceTokenExpiresAt = ParseExpiresAt(request.ExpiresAt);
                 user.AuthenticationScheme = request.AuthScheme;
                 user.RefreshToken = token.RefreshToken;
                 user.RefreshTokenExpirationDate = DateTime.UtcNow.AddDays(30);
                 await userManager.UpdateAsync(user);
             }
             return new LoginResult(user.Id, token.Token, token.RefreshToken);
+        }
+
+        private static DateTime? ParseExpiresAt(string? expiresAt)
+        {
+            if (string.IsNullOrEmpty(expiresAt))
+                return null;
+
+            if (DateTimeOffset.TryParse(expiresAt, out var dateTimeOffset))
+            {
+                return dateTimeOffset.UtcDateTime;
+            }
+
+            return null;
         }
     }
 }

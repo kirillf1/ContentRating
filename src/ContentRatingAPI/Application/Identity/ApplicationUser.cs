@@ -10,6 +10,8 @@ namespace ContentRatingAPI.Application.Identity
     {
         public string RefreshToken { get; set; }
         public string? ExternalResourceAccessToken { get; set; }
+        public string? ExternalResourceRefreshToken { get; set; }
+        public DateTime? ExternalResourceTokenExpiresAt { get; set; }
         public string AuthenticationScheme { get; set; }
         public DateTime RefreshTokenExpirationDate { get; set; }
 

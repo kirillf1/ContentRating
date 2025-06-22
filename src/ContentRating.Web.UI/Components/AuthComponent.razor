@@ -47,9 +47,11 @@
 </div>
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         AuthService.AuthStateChanged += OnAuthStateChanged;
+        // Инициализируем AuthService если это еще не было сделано
+        await AuthService.InitializeAsync();
         // Обновляем состояние при инициализации
         StateHasChanged();
     }

@@ -15,6 +15,7 @@ using ContentRatingAPI.Hubs.NotificationServices;
 using ContentRatingAPI.Infrastructure.AggregateIntegration;
 using ContentRatingAPI.Infrastructure.Authentication;
 using ContentRatingAPI.Infrastructure.Authorization;
+using ContentRatingAPI.Infrastructure.Authorization.Google;
 using ContentRatingAPI.Infrastructure.BlazorConfiguration;
 using ContentRatingAPI.Infrastructure.ContentFileManagers;
 using ContentRatingAPI.Infrastructure.Data;
@@ -96,6 +97,7 @@ try
 
     builder.Services.AddScoped<ContentPartyRatingService>();
     builder.Services.AddHttpClient();
+    builder.Services.AddTransient<GoogleTokenRefreshService>();
     builder.Services.AddTransient<IYoutubeClient, HttpYoutubeClient>();
     builder.AddContentFileManager();
 

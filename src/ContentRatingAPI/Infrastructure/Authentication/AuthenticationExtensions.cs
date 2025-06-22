@@ -15,7 +15,9 @@ namespace ContentRatingAPI.Infrastructure.Authentication
 {
     public static class AuthenticationExtensions
     {
-        public static IServiceCollection AddApplicationAuthentication(this IHostApplicationBuilder builder)
+        public static IServiceCollection AddApplicationAuthentication(
+            this IHostApplicationBuilder builder
+        )
         {
             var services = builder.Services;
             var configuration = builder.Configuration;
@@ -27,7 +29,8 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                     securityScheme: new OpenApiSecurityScheme
                     {
                         Name = "Authorization",
-                        Description = "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
+                        Description =
+                            "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
                         In = ParameterLocation.Header,
                         Type = SecuritySchemeType.ApiKey,
                         BearerFormat = "JWT",
@@ -43,7 +46,11 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                             {
                                 Name = "Bearer",
                                 In = ParameterLocation.Header,
-                                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer",
+                                },
                             },
                             new string[] { }
                         },
@@ -60,7 +67,9 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                 },
                 mongo =>
                 {
-                    mongo.ConnectionString = configuration["Authentication:IdentityDbConnectionString"];
+                    mongo.ConnectionString = configuration[
+                        "Authentication:IdentityDbConnectionString"
+                    ];
                 }
             );
 
@@ -75,12 +84,25 @@ namespace ContentRatingAPI.Infrastructure.Authentication
                 .AddJwtBearer()
                 .AddGoogle(options =>
                 {
-                    var googleAuthNSection = builder.Configuration.GetSection("Authentication:Google");
+                    var googleAuthNSection = builder.Configuration.GetSection(
+                        "Authentication:Google"
+                    );
                     options.ClientId = googleAuthNSection["ClientId"];
                     options.ClientSecret = googleAuthNSection["ClientSecret"];
                     options.Scope.Add("https://www.googleapis.com/auth/youtube.readonly");
                     options.Scope.Add("profile");
                     options.SaveTokens = true;
+                    options.AccessType = "offline";
+                    options.Events.OnRedirectToAuthorizationEndpoint = context =>
+                    {
+                        var uri = context.RedirectUri;
+                        if (!uri.Contains("prompt=consent"))
+                        {
+                            context.RedirectUri = uri + "&prompt=consent";
+                        }
+                        context.Response.Redirect(context.RedirectUri);
+                        return Task.CompletedTask;
+                    };
                 });
 
             builder.Services.AddSingleton(c =>

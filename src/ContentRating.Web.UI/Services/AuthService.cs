@@ -7,7 +7,7 @@ namespace ContentRating.Web.UI.Services
 {
     public class AuthService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly NavigationManager _navigationManager;
         private readonly SecureTokenStorage _tokenStorage;
 
@@ -25,14 +25,19 @@ namespace ContentRating.Web.UI.Services
         private bool _isRefreshing = false;
 
         public AuthService(
-            HttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             NavigationManager navigationManager,
             SecureTokenStorage tokenStorage
         )
         {
-            _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
             _navigationManager = navigationManager;
             _tokenStorage = tokenStorage;
+        }
+
+        private HttpClient CreateHttpClient()
+        {
+            return _httpClientFactory.CreateClient("AuthHttpClient");
         }
 
         public async Task InitializeAsync()
@@ -64,8 +69,10 @@ namespace ContentRating.Web.UI.Services
             var returnUrl = Uri.EscapeDataString(
                 _navigationManager.ToAbsoluteUri("/login-callback").ToString()
             );
+
+            using var httpClient = CreateHttpClient();
             var redirectUrl =
-                $"{_httpClient.BaseAddress}accounts/login-google?returnUrl={returnUrl}";
+                $"{httpClient.BaseAddress}accounts/login-google?returnUrl={returnUrl}";
             _navigationManager.NavigateTo(redirectUrl, forceLoad: true);
             return Task.CompletedTask;
         }
@@ -106,7 +113,9 @@ namespace ContentRating.Web.UI.Services
                     RefreshToken = refreshToken,
                     ExpiredAccessToken = accessToken,
                 };
-                var response = await _httpClient.PostAsJsonAsync(
+
+                using var httpClient = CreateHttpClient();
+                var response = await httpClient.PostAsJsonAsync(
                     "accounts/refresh-token",
                     refreshRequest
                 );

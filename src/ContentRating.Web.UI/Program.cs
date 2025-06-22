@@ -124,9 +124,17 @@ public class Program
             config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
         });
 
+        // HttpClient для AuthService
+        builder.Services.AddHttpClient("AuthHttpClient", (sp, client) =>
+        {
+            var settings = sp.GetRequiredService<ApiSettings>();
+            client.BaseAddress = new Uri(settings.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         builder.Services.AddScoped<Services.ThemeService>();
-        builder.Services.AddScoped<Services.SecureTokenStorage>();
-        builder.Services.AddScoped<Services.AuthService>();
+        builder.Services.AddSingleton<Services.SecureTokenStorage>();
+        builder.Services.AddSingleton<Services.AuthService>();
 
         // SignalR сервис для редактора контента
         builder.Services.AddTransient<

@@ -4,10 +4,10 @@
 
 using System.Security.Claims;
 using Ardalis.Result.AspNetCore;
+using ContentRating.Web.Contracts.Identity;
 using ContentRatingAPI.Application.Identity.GetAllUsers;
 using ContentRatingAPI.Application.Identity.RefreshToken;
 using ContentRatingAPI.Application.Identity.RegisterUser;
-using ContentRating.Web.Contracts.Identity;
 using ContentRatingAPI.Infrastructure.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -30,32 +30,57 @@ namespace ContentRatingAPI.Controllers
         )
         {
             var userInfo = userInfoService.TryGetUserInfo();
-            return userInfo is null ? (Result<IEnumerable<UserResponse>>)Result.Forbidden() : await mediator.Send(new GetAllUsersQuery(userInfo.Id));
+            return userInfo is null
+                ? (Result<IEnumerable<UserResponse>>)Result.Forbidden()
+                : await mediator.Send(new GetAllUsersQuery(userInfo.Id));
         }
 
         [HttpGet("login-google")]
         public IActionResult Login([FromQuery] string? returnUrl = null)
         {
-            var props = new AuthenticationProperties 
-            { 
-                RedirectUri = Url.Action(nameof(GoogleSignInCallback), new { returnUrl }) 
+            var props = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleSignInCallback), new { returnUrl }),
             };
             return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
 
         [TranslateResultToActionResult()]
         [HttpPost("refresh-token")]
-        public async Task<Result<LoginResult>> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest, [FromServices] IMediator mediator)
+        public async Task<Result<LoginResult>> RefreshToken(
+            [FromBody] RefreshTokenRequest refreshTokenRequest,
+            [FromServices] IMediator mediator
+        )
         {
-            var refreshTokenCommand = new RefreshTokenCommand(refreshTokenRequest.ExpiredAccessToken, refreshTokenRequest.RefreshToken);
+            var refreshTokenCommand = new RefreshTokenCommand(
+                refreshTokenRequest.ExpiredAccessToken,
+                refreshTokenRequest.RefreshToken
+            );
             return await mediator.Send(refreshTokenCommand);
         }
 
         [HttpGet("signin-google")]
-        public async Task<IActionResult> GoogleSignInCallback([FromServices] IMediator mediator, [FromQuery] string? returnUrl = null)
+        public async Task<IActionResult> GoogleSignInCallback(
+            [FromServices] IMediator mediator,
+            [FromServices] ILogger<AccountsController> logger,
+            [FromQuery] string? returnUrl = null
+        )
         {
-            var response = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, "access_token");
+            var response = await HttpContext.AuthenticateAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+            var accessToken = await HttpContext.GetTokenAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                "access_token"
+            );
+            var refreshToken = await HttpContext.GetTokenAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                "refresh_token"
+            );
+            var expiresAt = await HttpContext.GetTokenAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                "expires_at"
+            );
 
             if (response.Principal == null)
             {
@@ -65,14 +90,27 @@ namespace ContentRatingAPI.Controllers
 
             var name = response.Principal.FindFirstValue(ClaimTypes.Name)!;
             var email = response.Principal.FindFirstValue(ClaimTypes.Email)!;
-            
-            var loginResult = await mediator.Send(new RegisterOrLoginOAuthUserCommand(name, email, GoogleDefaults.AuthenticationScheme, accessToken));
+
+            var loginResult = await mediator.Send(
+                new RegisterOrLoginOAuthUserCommand(
+                    name,
+                    email,
+                    GoogleDefaults.AuthenticationScheme,
+                    accessToken,
+                    refreshToken,
+                    expiresAt
+                )
+            );
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
+
             if (loginResult.IsSuccess)
             {
-                var successUrl = BuildCallbackUrl(returnUrl, loginResult.Value.Token, loginResult.Value.RefreshToken);
+                var successUrl = BuildCallbackUrl(
+                    returnUrl,
+                    loginResult.Value.Token,
+                    loginResult.Value.RefreshToken
+                );
                 return Redirect(successUrl);
             }
             else
@@ -82,17 +120,22 @@ namespace ContentRatingAPI.Controllers
             }
         }
 
-        private string BuildCallbackUrl(string? returnUrl, string? token = null, string? refreshToken = null, string? error = null)
+        private string BuildCallbackUrl(
+            string? returnUrl,
+            string? token = null,
+            string? refreshToken = null,
+            string? error = null
+        )
         {
             var baseUrl = returnUrl ?? "http://localhost:5173/login-callback";
             var queryParams = new List<string>();
 
             if (!string.IsNullOrEmpty(token))
                 queryParams.Add($"token={Uri.EscapeDataString(token)}");
-            
+
             if (!string.IsNullOrEmpty(refreshToken))
                 queryParams.Add($"refreshToken={Uri.EscapeDataString(refreshToken)}");
-            
+
             if (!string.IsNullOrEmpty(error))
                 queryParams.Add($"error={Uri.EscapeDataString(error)}");
 

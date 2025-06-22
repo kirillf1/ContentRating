@@ -6,5 +6,5 @@ using ContentRating.Web.Contracts.Identity;
 
 namespace ContentRatingAPI.Application.Identity.RegisterUser
 {
-    public record RegisterOrLoginOAuthUserCommand(string Name, string Email, string AuthScheme, string? AccessToken) : IRequest<Result<LoginResult>>;
+    public record RegisterOrLoginOAuthUserCommand(string Name, string Email, string AuthScheme, string? AccessToken, string? RefreshToken, string? ExpiresAt) : IRequest<Result<LoginResult>>;
 }

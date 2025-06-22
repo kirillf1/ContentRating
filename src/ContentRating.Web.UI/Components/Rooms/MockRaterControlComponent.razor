@@ -1,0 +1,124 @@
+@using System.Globalization
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Content
+@using ContentRating.Web.UI.ViewModels.Shared
+@using MudBlazor
+
+<MudExpansionPanel Text="@($"Управление mock пользователями ({MockRaters.Count()})")">
+    <TitleContent>
+        <span class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.SmartToy" Class="mr-2" />
+            <MudText>Управление mock пользователями (@MockRaters.Count())</MudText>
+        </span>
+    </TitleContent>
+    <ChildContent>
+        <div>
+        @if (MockRaters.Any())
+        {
+            <MudGrid>
+                @foreach (var mockRater in MockRaters)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Elevation="1" Class="pa-3">
+                            <MudGrid AlignItems="Center">
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small" Class="mr-1" />
+                                        @mockRater.DisplayName
+                                    </MudText>
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudNumericField Value="@GetMockRatingValue(mockRater.Id)"
+                                                   ValueChanged="@((double value) => HandleMockRatingValueChanged(mockRater.Id, value))"
+                                                   Min="@MinRating"
+                                                   Max="@MaxRating"
+                                                   Step="0.01"
+                                                   Variant="Variant.Outlined"
+                                                   Placeholder="Оценка (используйте точку: 7.5)"
+                                                   Format="F2"
+                                                   HelperText="@($"От {MinRating:F2} до {MaxRating:F2} (используйте точку как разделитель)")"
+                                                   Class="mb-2"
+                                                   Culture="@_invariantCulture" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.caption" Class="text-center">
+                                        Текущая: @GetCurrentMockRating(mockRater.Id)
+                                    </MudText>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">
+                В комнате нет mock пользователей для управления оценками
+            </MudAlert>
+        }
+        </div>
+    </ChildContent>
+</MudExpansionPanel>
+
+@code {
+    [Parameter] public IEnumerable<RaterViewModel> MockRaters { get; set; } = Enumerable.Empty<RaterViewModel>();
+    [Parameter] public ContentPartyRatingViewModel ContentRating { get; set; } = null!;
+    [Parameter] public double MinRating { get; set; } = 0.0;
+    [Parameter] public double MaxRating { get; set; } = 10.0;
+    [Parameter] public EventCallback<(Guid MockUserId, double Rating)> OnMockRatingChanged { get; set; }
+
+    private Dictionary<Guid, double> _mockRatingValues = new();
+    private readonly CultureInfo _invariantCulture = CultureInfo.InvariantCulture;
+
+    protected override void OnParametersSet()
+    {
+        // Инициализируем значения оценок для каждого mock пользователя
+        foreach (var mockRater in MockRaters)
+        {
+            if (!_mockRatingValues.ContainsKey(mockRater.Id))
+            {
+                var currentRating = GetCurrentMockRatingValue(mockRater.Id);
+                _mockRatingValues[mockRater.Id] = currentRating ?? Math.Min(5.0, MaxRating);
+            }
+        }
+    }
+
+    private double GetMockRatingValue(Guid mockRaterId)
+    {
+        return _mockRatingValues.GetValueOrDefault(mockRaterId, MinRating);
+    }
+
+    private void SetMockRatingValue(Guid mockRaterId, double value)
+    {
+        _mockRatingValues[mockRaterId] = value;
+    }
+
+    private async Task HandleMockRatingValueChanged(Guid mockRaterId, double value)
+    {
+        // Устанавливаем новое значение
+        SetMockRatingValue(mockRaterId, value);
+        
+        // Сразу отправляем изменение
+        await OnMockRatingChanged.InvokeAsync((mockRaterId, value));
+    }
+
+    private double? GetCurrentMockRatingValue(Guid mockRaterId)
+    {
+        return ContentRating.Ratings.FirstOrDefault(r => r.RaterId == mockRaterId)?.Rating;
+    }
+
+    private string GetCurrentMockRating(Guid mockRaterId)
+    {
+        var rating = GetCurrentMockRatingValue(mockRaterId);
+        return rating?.ToString("F2") ?? "Не оценено";
+    }
+
+    private async Task HandleMockRatingChanged(Guid mockRaterId)
+    {
+        var rating = GetMockRatingValue(mockRaterId);
+        await OnMockRatingChanged.InvokeAsync((mockRaterId, rating));
+    }
+
+
+} 

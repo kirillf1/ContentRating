@@ -1,0 +1,112 @@
+@using ContentRating.Domain.Shared.Content
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Content
+@using MudBlazor
+
+<div class="content-preview-container">
+    @switch (ContentItem.ContentType)
+    {
+        case ContentType.Video:
+            <LazyVideoPlayerComponent 
+                @key="@($"video-{ContentItem.Id}-{ContentItem.Url?.GetHashCode()}")"
+                Url="@ContentItem.Url" 
+                Width="@Width"
+                Height="@Height"
+                ShowError="@ShowError"
+                AutoLoad="@AutoLoadVideos" />
+            break;
+
+        case ContentType.Audio:
+            <AudioPlayerComponent 
+                @key="@($"audio-{ContentItem.Id}-{ContentItem.Url?.GetHashCode()}")"
+                Url="@ContentItem.Url" 
+                Title="@ContentItem.Name"
+                ShowError="@ShowError" />
+            break;
+
+        case ContentType.Image:
+            <ImageViewerComponent 
+                @key="@($"image-{ContentItem.Id}-{ContentItem.Url?.GetHashCode()}")"
+                Url="@ContentItem.Url" 
+                Alt="@ContentItem.Name"
+                Caption="@(ShowMetadata ? ContentItem.Name : "")"
+                Width="@Width"
+                Height="auto"
+                MaxWidth="@MaxWidth"
+                MaxHeight="@MaxHeight"
+                ShowError="@ShowError"
+                ShowCaption="@ShowMetadata"
+                AllowZoom="@AllowZoom"
+                RoundedCorners="@RoundedCorners"
+                Elevation="@Elevation"
+                ObjectFit="@ImageObjectFit" />
+            break;
+
+        default:
+            <MudAlert Severity="Severity.Info">
+                Неподдерживаемый тип контента: @ContentItem.ContentType
+            </MudAlert>
+            break;
+    }
+
+    @if (ShowContentInfo)
+    {
+        <MudPaper Class="pa-3 mt-3" Elevation="1">
+            <MudGrid>
+                <MudItem xs="12" sm="8">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @ContentItem.Name
+                    </MudText>
+                    <MudLink Href="@ContentItem.Url" Target="_blank" Typo="Typo.body2" Class="wrap-long-link">
+                        @ContentItem.Url
+                    </MudLink>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudStack AlignItems="AlignItems.End" Spacing="1">
+                        <MudChip T="string" 
+                                Color="@GetContentTypeColor(ContentItem.ContentType)" 
+                                Icon="@GetContentTypeIcon(ContentItem.ContentType)"
+                                Size="Size.Small">
+                            @ContentItem.ContentTypeDisplayName
+                        </MudChip>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @ContentItem.LastModificationDate.ToString("dd.MM.yyyy HH:mm")
+                        </MudText>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ContentItemViewModel ContentItem { get; set; } = null!;
+    [Parameter] public string Width { get; set; } = "100%";
+    [Parameter] public string Height { get; set; } = "auto";
+    [Parameter] public string MaxWidth { get; set; } = "100%";
+    [Parameter] public string MaxHeight { get; set; } = "400px";
+    [Parameter] public bool ShowError { get; set; } = false;
+    [Parameter] public bool ShowMetadata { get; set; } = true;
+    [Parameter] public bool ShowContentInfo { get; set; } = false;
+    [Parameter] public bool AllowZoom { get; set; } = true;
+    [Parameter] public bool RoundedCorners { get; set; } = false;
+    [Parameter] public int Elevation { get; set; } = 0;
+    [Parameter] public ObjectFit ImageObjectFit { get; set; } = ObjectFit.Contain;
+    [Parameter] public bool AutoLoadVideos { get; set; } = false;
+
+    private Color GetContentTypeColor(ContentType contentType) => contentType switch
+    {
+        ContentType.Video => Color.Primary,
+        ContentType.Audio => Color.Secondary,
+        ContentType.Image => Color.Tertiary,
+        _ => Color.Default
+    };
+
+    private string GetContentTypeIcon(ContentType contentType) => contentType switch
+    {
+        ContentType.Video => Icons.Material.Filled.VideoLibrary,
+        ContentType.Audio => Icons.Material.Filled.AudioFile,
+        ContentType.Image => Icons.Material.Filled.Image,
+        _ => Icons.Material.Filled.QuestionMark
+    };
+} 

@@ -1,0 +1,58 @@
+@using ContentRating.Web.UI.Services
+@using ContentRating.Web.UI.Services.Theme
+@inject ThemeService ThemeService
+@implements IDisposable
+
+<MudButton Variant="Variant.Text" 
+           Color="Color.Inherit" 
+           StartIcon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+           OnClick="ToggleTheme"
+           title="@(_isDarkMode ? "Переключить на светлую тему" : "Переключить на темную тему")">
+    @(_isDarkMode ? "Светлая" : "Темная")
+</MudButton>
+
+@code {
+    private bool _isDarkMode;
+    private bool _isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_isInitialized)
+        {
+            try
+            {
+                await ThemeService.InitializeAsync();
+                _isDarkMode = ThemeService.IsDarkMode;
+                _isInitialized = true;
+                StateHasChanged();
+            }
+            catch
+            {
+                // Игнорируем ошибки инициализации темы
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    protected override void OnInitialized()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        ThemeService.OnThemeChanged += OnThemeChanged;
+    }
+
+    private async Task ToggleTheme()
+    {
+        await ThemeService.ToggleThemeAsync();
+    }
+
+    private void OnThemeChanged()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= OnThemeChanged;
+    }
+} 

@@ -1,13 +1,15 @@
 @page "/party-estimation/{RoomId:guid}"
-@using ContentRating.Web.UI.ViewModels
-@using ContentRating.Web.UI.Components
-@using MudBlazor
 @using System.Linq
+@using ContentRating.Web.UI.Components
+@using ContentRating.Web.UI.Services.Authentication
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Estimation
 @using Microsoft.JSInterop
+@using MudBlazor
 @inject ContentPartyEstimationRoomViewModel ViewModel
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ContentRating.Web.UI.Services.AuthService AuthService
+@inject AuthService AuthService
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
@@ -358,7 +360,7 @@
             Position = DialogPosition.Center
         };
 
-        await DialogService.ShowAsync<Components.InviteUsersDialog>("Пригласить участников", parameters, options);
+        await DialogService.ShowAsync<InviteUsersDialog>("Пригласить участников", parameters, options);
     }
 
     private async Task OnUserInvited()
@@ -390,7 +392,7 @@
             Position = DialogPosition.Center
         };
 
-        await DialogService.ShowAsync<Components.ManageParticipantsDialog>("Управление участниками", parameters, options);
+        await DialogService.ShowAsync<ManageParticipantsDialog>("Управление участниками", parameters, options);
     }
 
     private async Task OnParticipantRemoved()

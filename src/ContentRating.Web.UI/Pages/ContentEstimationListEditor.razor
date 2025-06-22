@@ -1,14 +1,18 @@
 @page "/content-estimation-list-editor/{RoomId:guid}"
-@using ContentRating.Domain.Shared.Content
-@using ContentRating.Web.UI.ViewModels
-@using ContentRating.Web.UI.Components
-@using MudBlazor
-@using System.Web
-@using Microsoft.AspNetCore.Components.Forms
 @using System.Linq
+@using System.Web
+@using ContentRating.Domain.Shared.Content
+@using ContentRating.Web.UI.Components
+@using ContentRating.Web.UI.Components.Dialogs
+@using ContentRating.Web.UI.Services.Content
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Content
+@using ContentRating.Web.UI.ViewModels.Estimation
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
+@using MudBlazor
 @inject ContentEstimationListEditorViewModel ViewModel
-@inject ContentRating.Web.UI.Services.ContentItemEditingService EditingService
+@inject ContentItemEditingService EditingService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -456,7 +460,7 @@
             Position = DialogPosition.Center
         };
 
-        await DialogService.ShowAsync<Components.ManageEditorsDialog>("Управление редакторами", parameters, options);
+        await DialogService.ShowAsync<ManageEditorsDialog>("Управление редакторами", parameters, options);
     }
 
     private async Task OnEditorRemoved()

@@ -1,12 +1,15 @@
 @page "/party-estimation/{RoomId:guid}/results"
-@using ContentRating.Web.UI.ViewModels
-@using MudBlazor
 @using System.Linq
+@using ContentRating.Web.UI.Services.Authentication
+@using ContentRating.Web.UI.ViewModels
+@using ContentRating.Web.UI.ViewModels.Content
+@using ContentRating.Web.UI.ViewModels.Estimation
 @using Microsoft.JSInterop
+@using MudBlazor
 @inject ContentPartyEstimationRoomViewModel ViewModel
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ContentRating.Web.UI.Services.AuthService AuthService
+@inject AuthService AuthService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
 @implements IAsyncDisposable
@@ -140,7 +143,7 @@
             @foreach (var content in GetSortedContentRatings().Take(_visibleItemCount))
             {
                 <div @key="@($"detailed-{content.content.ContentId}")">
-                    <ContentRating.Web.UI.Components.ContentPartyResultItemComponent 
+                    <ContentPartyResultItemComponent 
                         ContentRating="@content.content"
                         Rank="@content.rank"
                         MinRating="@ViewModel.MinRating"

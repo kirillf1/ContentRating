@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using ContentRating.Web.Contracts.ContentFileManager;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -15,10 +16,12 @@ namespace ContentRating.Web.UI.Services
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILogger<ContentFileService> _logger;
 
-        public ContentFileService(HttpClient httpClient)
+        public ContentFileService(HttpClient httpClient, ILogger<ContentFileService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
@@ -47,7 +50,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка загрузки файла: {ex.Message}");
+                _logger.LogError(ex, "Ошибка загрузки файла {FileName}", file.Name);
                 return null;
             }
         }
@@ -61,7 +64,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка удаления файла: {ex.Message}");
+                _logger.LogError(ex, "Ошибка удаления файла {FileId}", fileId);
                 return false;
             }
         }

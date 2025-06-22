@@ -489,7 +489,7 @@ namespace ContentRating.Web.UI.ViewModels
                 {
                     await LoadRoomDataAsync(RoomId);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     _snackbar.Add(
                         "Ошибка при обновлении данных после переподключения",

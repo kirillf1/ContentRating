@@ -1,7 +1,9 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using ContentRating.Web.Contracts.Identity;
 using Microsoft.JSInterop;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -12,11 +14,13 @@ namespace ContentRating.Web.UI.Services
         private const string ACCESS_TOKEN_KEY = "cr_at";
         private const string REFRESH_TOKEN_KEY = "cr_rt";
         private const string USER_DATA_KEY = "cr_ud";
+        private readonly ILogger<SecureTokenStorage> _logger;
 
-        public SecureTokenStorage(IJSRuntime jsRuntime)
+        public SecureTokenStorage(IJSRuntime jsRuntime, ILogger<SecureTokenStorage> logger)
         {
             _jsRuntime = jsRuntime;
             _encryptionKey = GenerateOrGetEncryptionKey();
+            _logger = logger;
         }
 
         public async Task SetTokensAsync(
@@ -71,7 +75,7 @@ namespace ContentRating.Web.UI.Services
             catch (Exception ex)
             {
                 // Логируем ошибку, но не пробрасываем её
-                Console.WriteLine($"Error storing tokens: {ex.Message}");
+                _logger.LogError(ex, "Ошибка при сохранении токенов");
             }
         }
 

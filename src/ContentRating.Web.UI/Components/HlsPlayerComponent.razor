@@ -1,6 +1,7 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @inject IJSRuntime JSRuntime
+@inject ILogger<HlsPlayerComponent> Logger
 @implements IAsyncDisposable
 
 <div class="hls-video-container" style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden;">
@@ -46,15 +47,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && !string.IsNullOrEmpty(Url))
         {
-            // Сначала показываем элемент
-            IsInitializing = false;
-            StateHasChanged();
-        }
-        else if (!IsInitializing && !_isVideoInitialized)
-        {
-            // Во втором рендере инициализируем видео
             await InitializeVideoAsync();
         }
     }
@@ -63,8 +57,6 @@
 
     private async Task InitializeVideoAsync()
     {
-        if (_isVideoInitialized) return;
-        
         try
         {
             // Инициализируем HLS.js и настройки громкости
@@ -73,8 +65,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка инициализации HLS плеера: {ex.Message}");
-            // Fallback на нативное воспроизведение
+            Logger.LogError(ex, "Ошибка инициализации HLS плеера для видео {VideoId}", VideoId);
         }
     }
 
@@ -88,7 +79,7 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка очистки HLS плеера: {ex.Message}");
+                Logger.LogError(ex, "Ошибка очистки HLS плеера для видео {VideoId}", VideoId);
             }
         }
     }

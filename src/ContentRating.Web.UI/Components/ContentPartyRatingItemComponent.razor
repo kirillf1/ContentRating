@@ -3,6 +3,9 @@
 @using ContentRating.Web.UI.Services
 @using MudBlazor
 @using System.Globalization
+@using ContentRating.Web.Contracts.ContentPartyRating
+@inject IContentPartyEstimationHubService HubService
+@inject ILogger<ContentPartyRatingItemComponent> Logger
 @implements IDisposable
 
 <div style="margin-bottom: 12px;">
@@ -26,7 +29,7 @@
                     <MudText Typo="Typo.h6" GutterBottom="true">
                         @ContentRating.Name
                     </MudText>
-                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2" Class="d-block mb-2">
+                    <MudLink Href="@ContentRating.Address" Target="_blank" Typo="Typo.body2" Class="d-block mb-2 wrap-long-link">
                         @ContentRating.Address
                     </MudLink>
                     
@@ -162,6 +165,9 @@
 </div>
 
 @code {
+
+
+
     [Parameter] public ContentPartyRatingViewModel ContentRating { get; set; } = null!;
     [Parameter] public double MinRating { get; set; } = 0.0;
     [Parameter] public double MaxRating { get; set; } = 10.0;
@@ -169,19 +175,19 @@
     [Parameter] public bool CanRate { get; set; } = false;
     [Parameter] public bool IsEstimationCompleted { get; set; } = false;
     [Parameter] public EventCallback<(Guid ContentRatingId, double Rating)> OnRatingChanged { get; set; }
-    [Parameter] public IContentPartyEstimationHubService? HubService { get; set; }
     [Parameter] public IEnumerable<RaterViewModel> MockRaters { get; set; } = Enumerable.Empty<RaterViewModel>();
     [Parameter] public EventCallback<(Guid MockUserId, double Rating)> OnMockRatingChanged { get; set; }
     [Parameter] public bool CanDeleteContent { get; set; } = false;
     [Parameter] public EventCallback<Guid> OnContentDelete { get; set; }
     [Parameter] public string? CreatorName { get; set; }
-    
+
     private double? _lastCurrentUserRating = null;
     private double _lastAverageRating = 0;
     private double _numericRating = 5.0;
     private bool _hasValidationError = false;
     private string _validationErrorText = "";
     private readonly CultureInfo _invariantCulture = CultureInfo.InvariantCulture;
+    private int _lastRatersCount = 0;
 
     protected override void OnParametersSet()
     {
@@ -202,11 +208,13 @@
     {
         // Оптимизация перерисовки - обновляем только при изменении важных параметров
         var shouldRender = CurrentUserRating != _lastCurrentUserRating ||
-                          ContentRating.AverageRating != _lastAverageRating;
-        
+                          ContentRating.AverageRating != _lastAverageRating ||
+                          ContentRating.Ratings.Count != _lastRatersCount;
+
         _lastCurrentUserRating = CurrentUserRating;
         _lastAverageRating = ContentRating.AverageRating;
-        
+        _lastRatersCount = ContentRating.Ratings.Count;
+
         return shouldRender;
     }
 
@@ -251,7 +259,7 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"SignalR error: {ex.Message}");
+                Logger.LogError(ex, "Ошибка SignalR при изменении рейтинга для контента {RatingId}", ContentRating.RatingId);
                 // Fallback на обычный callback
                 if (OnRatingChanged.HasDelegate)
                 {
@@ -292,8 +300,6 @@
             await OnContentDelete.InvokeAsync(ContentRating.ContentId);
         }
     }
-
-
 
     public void Dispose()
     {

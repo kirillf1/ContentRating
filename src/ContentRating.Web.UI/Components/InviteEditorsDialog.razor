@@ -5,6 +5,7 @@
 @inject IUserService UserService
 @inject IContentEstimationListService ContentService
 @inject ISnackbar Snackbar
+@inject ILogger<InviteEditorsDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -99,6 +100,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка загрузки пользователей для приглашения редакторов");
             Snackbar.Add($"Ошибка загрузки пользователей: {ex.Message}", Severity.Error);
         }
         finally
@@ -133,6 +135,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при приглашении редактора {UserName} в комнату {RoomId}", user.Name, RoomId);
             Snackbar.Add($"Ошибка при приглашении редактора: {ex.Message}", Severity.Error);
         }
         finally

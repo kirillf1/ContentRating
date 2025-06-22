@@ -1,6 +1,7 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @inject IJSRuntime JSRuntime
+@inject ILogger<AudioPlayerComponent> Logger
 @implements IAsyncDisposable
 
 <div class="audio-player-container" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
@@ -78,21 +79,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && !string.IsNullOrEmpty(Url))
         {
-            // Автоматически загружаем аудио
-            await LoadAudioAsync();
+            await InitializeAudioAsync();
         }
     }
 
-    private async Task LoadAudioAsync()
+    private async Task InitializeAudioAsync()
     {
-        IsInitializing = false;
-        StateHasChanged();
-
-        // Небольшая задержка, чтобы аудио элемент успел отрендериться
-        await Task.Delay(100);
-
         try
         {
             // Инициализируем аудиоплеер с сохранением громкости
@@ -100,22 +94,19 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Ошибка инициализации аудиоплеера: {ex.Message}");
+            Logger.LogError(ex, "Ошибка инициализации аудиоплеера для {AudioId}", AudioId);
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (!IsInitializing)
+        try
         {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("destroyAudioPlayer", AudioId);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка очистки аудиоплеера: {ex.Message}");
-            }
+            await JSRuntime.InvokeVoidAsync("destroyAudioPlayer", AudioId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Ошибка очистки аудиоплеера для {AudioId}", AudioId);
         }
     }
 } 

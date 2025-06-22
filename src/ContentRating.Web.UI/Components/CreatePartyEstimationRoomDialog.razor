@@ -5,6 +5,7 @@
 @inject IContentPartyEstimationService PartyEstimationService
 @inject IContentEstimationListService ContentEstimationListService
 @inject ISnackbar Snackbar
+@inject ILogger<CreatePartyEstimationRoomDialog> Logger
 
 <MudDialog Class="pa-4">
     <DialogContent>
@@ -115,7 +116,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Logger.LogError(ex, "Ошибка при загрузке списка топов для создания комнаты оценки");
             Snackbar.Add("Ошибка при загрузке списка топов", Severity.Error);
         }
     }
@@ -160,7 +161,7 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Logger.LogError(ex, "Ошибка при создании комнаты оценки");
             Snackbar.Add("Произошла ошибка при создании комнаты", Severity.Error);
         }
         finally

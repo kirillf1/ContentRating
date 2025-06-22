@@ -1,8 +1,10 @@
 ﻿using System.Text.Json;
 using ContentRating.Domain.Shared.Content;
 using ContentRating.Web.Contracts.YoutubeContent;
+using ContentRating.Web.Contracts.ContentEstimationListEditor;
 using ContentRating.Web.UI.ViewModels;
 using MudBlazor;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -11,11 +13,13 @@ namespace ContentRating.Web.UI.Services
         private readonly ISnackbar _snackbar;
         private readonly HttpClient _httpClient;
         private List<ContentItemViewModel> _existingContent = new();
+        private readonly ILogger<ContentValidationService> _logger;
 
-        public ContentValidationService(ISnackbar snackbar, HttpClient httpClient)
+        public ContentValidationService(ISnackbar snackbar, HttpClient httpClient, ILogger<ContentValidationService> logger)
         {
             _snackbar = snackbar;
             _httpClient = httpClient;
+            _logger = logger;
         }
 
         public void Initialize(List<ContentItemViewModel> existingContent)
@@ -264,7 +268,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при получении названия YouTube видео по URL {Url}", url);
                 // Fallback к базовому названию
                 var videoId = ExtractYouTubeVideoId(url);
                 if (!string.IsNullOrEmpty(videoId))

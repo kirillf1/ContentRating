@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ContentRating.Web.Contracts.ContentPartyRating;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -9,10 +10,12 @@ namespace ContentRating.Web.UI.Services
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILogger<ContentPartyRatingService> _logger;
 
-        public ContentPartyRatingService(HttpClient httpClient)
+        public ContentPartyRatingService(HttpClient httpClient, ILogger<ContentPartyRatingService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
@@ -33,7 +36,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при получении рейтинга контента {ContentRatingId}", contentRatingId);
                 return null;
             }
         }
@@ -50,7 +53,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при оценке контента {ContentRatingId}", contentRatingId);
                 return false;
             }
         }

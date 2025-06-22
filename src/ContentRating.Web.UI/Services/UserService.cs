@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using ContentRating.Domain.AggregatesModel.ContentPartyEstimationRoomAggregate;
 using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
 using ContentRating.Web.Contracts.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -25,11 +26,17 @@ namespace ContentRating.Web.UI.Services
         private readonly IContentPartyEstimationService _estimationService;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly List<UserResponse> _mockUsers = new();
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(HttpClient httpClient, IContentPartyEstimationService estimationService)
+        public UserService(
+            HttpClient httpClient,
+            IContentPartyEstimationService estimationService,
+            ILogger<UserService> logger
+        )
         {
             _httpClient = httpClient;
             _estimationService = estimationService;
+            _logger = logger;
             _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
@@ -61,7 +68,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при получении пользователей: {ex.Message}");
+                _logger.LogError(ex, "Ошибка при получении пользователей");
                 return _mockUsers.AsEnumerable();
             }
         }
@@ -86,7 +93,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при приглашении пользователя: {ex.Message}");
+                _logger.LogError(ex, "Ошибка при приглашении пользователя {UserName} в комнату {RoomId}", userName, roomId);
                 return false;
             }
         }
@@ -108,7 +115,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при приглашении mock пользователя: {ex.Message}");
+                _logger.LogError(ex, "Ошибка при создании и приглашении mock пользователя {MockUserName} в комнату {RoomId}", mockUserName, roomId);
                 return false;
             }
         }

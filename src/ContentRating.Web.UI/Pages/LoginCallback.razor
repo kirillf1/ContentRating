@@ -4,6 +4,7 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ILogger<LoginCallback> Logger
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
     <MudCard>
@@ -61,8 +62,9 @@
                 errorMessage = "Неверные параметры авторизации";
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при обработке колбэка авторизации");
             errorMessage = "Произошла ошибка при обработке авторизации";
         }
         finally

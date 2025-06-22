@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ContentRating.Web.Contracts.ContentPartyEstimationRoom;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -9,10 +10,12 @@ namespace ContentRating.Web.UI.Services
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILogger<ContentPartyEstimationService> _logger;
 
-        public ContentPartyEstimationService(HttpClient httpClient)
+        public ContentPartyEstimationService(HttpClient httpClient, ILogger<ContentPartyEstimationService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
@@ -34,7 +37,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при получении списка комнат для оценки контента");
                 return null;
             }
         }
@@ -51,7 +54,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при создании комнаты для оценки контента");
                 return false;
             }
         }
@@ -72,7 +75,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при получении комнаты для оценки контента {RoomId}", roomId);
                 return null;
             }
         }
@@ -89,7 +92,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при приглашении оценщика в комнату {RoomId}", roomId);
                 return false;
             }
         }
@@ -103,7 +106,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при исключении оценщика {RaterId} из комнаты {RoomId}", raterId, roomId);
                 return false;
             }
         }
@@ -117,7 +120,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при завершении оценки в комнате {RoomId}", roomId);
                 return false;
             }
         }
@@ -131,7 +134,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при удалении недоступного контента {ContentId} из комнаты {RoomId}", contentId, roomId);
                 return false;
             }
         }
@@ -148,7 +151,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при изменении диапазона оценок в комнате {RoomId}", roomId);
                 return false;
             }
         }
@@ -162,7 +165,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при удалении комнаты для оценки контента {RoomId}", roomId);
                 return false;
             }
         }

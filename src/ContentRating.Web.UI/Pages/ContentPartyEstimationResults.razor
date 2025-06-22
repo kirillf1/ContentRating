@@ -1,11 +1,15 @@
 @page "/party-estimation/{RoomId:guid}/results"
 @using ContentRating.Web.UI.ViewModels
 @using MudBlazor
+@using System.Linq
+@using Microsoft.JSInterop
 @inject ContentPartyEstimationRoomViewModel ViewModel
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ContentRating.Web.UI.Services.AuthService AuthService
+@inject IJSRuntime JSRuntime
 @implements IDisposable
+@implements IAsyncDisposable
 
 <PageTitle>Промежуточные результаты - @ViewModel.RoomName</PageTitle>
 
@@ -132,11 +136,9 @@
         }
         else if (_showDetailedView)
         {
-            <!-- Подробный вид с превью контента -->
-            <Virtualize Items="@GetSortedContentRatings()" 
-                       Context="content"
-                       ItemSize="350"
-                       OverscanCount="7">
+            <!-- Подробный вид с превью контента (постраничная загрузка) -->
+            @foreach (var content in GetSortedContentRatings().Take(_visibleItemCount))
+            {
                 <div @key="@($"detailed-{content.content.ContentId}")">
                     <ContentRating.Web.UI.Components.ContentPartyResultItemComponent 
                         ContentRating="@content.content"
@@ -148,15 +150,13 @@
                         CurrentUserId="@ViewModel.CurrentUserId"
                         CreatorName="@GetCreatorName(content.content.CreatorId)" />
                 </div>
-            </Virtualize>
+            }
         }
         else
         {
-            <!-- Компактный вид -->
-            <Virtualize Items="@GetSortedContentRatings()" 
-                       Context="content"
-                       ItemSize="180"
-                       OverscanCount="8">
+            <!-- Компактный вид (постраничная загрузка) -->
+            @foreach (var content in GetSortedContentRatings().Take(_visibleItemCount))
+            {
                 <div @key="@($"compact-{content.content.ContentId}")">
                     <MudPaper Class="mb-4 pa-4" Elevation="2">
                     <MudGrid AlignItems="Center.Center" Style="flex-direction:column; flex-shrink: 0;">
@@ -181,7 +181,7 @@
                                             Icon="@GetContentTypeIcon(content.content.ContentType)">
                                         @content.content.ContentTypeDisplayName
                                     </MudChip>
-                                    <MudLink Href="@content.content.Address" Target="_blank" Typo="Typo.caption" Class="d-block mt-1">
+                                    <MudLink Href="@content.content.Address" Target="_blank" Typo="Typo.caption" Class="d-block mt-1 wrap-long-link">
                                         <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="mr-1" />
                                         Открыть контент
                                     </MudLink>
@@ -251,8 +251,11 @@
 
                 </MudPaper>
                 </div>
-            </Virtualize>
+            }
         }
+
+        <!-- Сентинел для бесконечной прокрутки -->
+        <div style="height:1px;" @ref="_sentinel"></div>
     }
 </MudContainer>
 
@@ -260,6 +263,13 @@
     [Parameter] public Guid RoomId { get; set; }
     
     private bool _showDetailedView = true; // По умолчанию показываем подробный вид
+    private int _visibleItemCount = _pageSize;
+    private const int _pageSize = 5;
+    private ElementReference _sentinel;
+    private ElementReference _prevSentinel;
+    private DotNetObjectReference<ContentPartyEstimationResults>? _dotNetRef;
+    private string _lastSearchText = string.Empty;
+    private bool _isLoadingBatch = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -285,10 +295,9 @@
         }
 
         await ViewModel.LoadRoomDataAsync(RoomId);
+        _visibleItemCount = Math.Min(_pageSize, ViewModel.ContentRatings.Count);
         StateHasChanged();
     }
-
-
 
     private List<(ContentPartyRatingViewModel content, int rank)> GetSortedContentRatings()
     {
@@ -351,10 +360,67 @@
 
     private void OnViewModelStateChanged()
     {
+        // Если количество отфильтрованных элементов меньше текущего видимого - корректируем
+        var sortedCount = GetSortedContentRatings().Count;
+        if (_visibleItemCount > sortedCount)
+        {
+            _visibleItemCount = Math.Min(_pageSize, sortedCount);
+        }
+
         InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose()
+    [JSInvokable]
+    public void LoadMoreContent()
+    {
+        if (_isLoadingBatch) return;
+        _isLoadingBatch = true;
+        if (_visibleItemCount < GetSortedContentRatings().Count)
+        {
+            _visibleItemCount = Math.Min(_visibleItemCount + _pageSize, GetSortedContentRatings().Count);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_sentinel.Equals(default))
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+
+            if (!_sentinel.Equals(_prevSentinel))
+            {
+                if (!_prevSentinel.Equals(default))
+                {
+                    await JSRuntime.InvokeVoidAsync("infiniteScroll.unregisterIntersection", _prevSentinel);
+                }
+                await JSRuntime.InvokeVoidAsync("infiniteScroll.registerIntersection", _sentinel, _dotNetRef);
+                _prevSentinel = _sentinel;
+            }
+        }
+
+        _isLoadingBatch = false;
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        try
+        {
+            if (!_prevSentinel.Equals(default))
+            {
+                await JSRuntime.InvokeVoidAsync("infiniteScroll.unregisterIntersection", _prevSentinel);
+            }
+        }
+        catch { }
+        _dotNetRef?.Dispose();
+
+        if (ViewModel != null)
+        {
+            ViewModel.StateChanged -= OnViewModelStateChanged;
+        }
+    }
+
+    void IDisposable.Dispose()
     {
         if (ViewModel != null)
         {

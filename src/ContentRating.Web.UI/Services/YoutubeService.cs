@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using ContentRating.Web.Contracts.YoutubeContent;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -16,10 +17,12 @@ namespace ContentRating.Web.UI.Services
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILogger<YoutubeService> _logger;
 
-        public YoutubeService(HttpClient httpClient)
+        public YoutubeService(HttpClient httpClient, ILogger<YoutubeService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
             _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
@@ -53,7 +56,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при получении плейлистов YouTube");
                 return YoutubeServiceResult<IEnumerable<YoutubePlaylist>>.Error(
                     "Произошла ошибка при загрузке плейлистов"
                 );
@@ -91,7 +94,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при получении видео из плейлиста YouTube {PlaylistId}", playlistId);
                 return YoutubeServiceResult<IEnumerable<YoutubeVideo>>.Error(
                     "Произошла ошибка при загрузке видео"
                 );

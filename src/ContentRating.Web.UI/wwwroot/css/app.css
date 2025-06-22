@@ -218,3 +218,9 @@ body .pwa-updater[b-pwa-updater] {
         min-width: 140px;
     }
 }
+
+/* Класс для переноса длинных ссылок, чтобы они не выходили за пределы контейнера */
+.wrap-long-link {
+    word-break: break-all;      /* Перенос длинных слов/URL */
+    overflow-wrap: anywhere;    /* Дополнительная поддержка разных браузеров */
+}

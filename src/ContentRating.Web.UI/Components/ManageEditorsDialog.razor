@@ -4,6 +4,7 @@
 @inject IContentEstimationListService ContentService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<ManageEditorsDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -168,6 +169,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при удалении редактора {EditorName} из комнаты {RoomId}", editor.Name, RoomId);
             Snackbar.Add($"Ошибка при удалении редактора: {ex.Message}", Severity.Error);
         }
         finally

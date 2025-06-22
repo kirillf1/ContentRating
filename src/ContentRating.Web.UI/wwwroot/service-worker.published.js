@@ -35,6 +35,9 @@ async function onActivate(event) {
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
+
+    // После перехода в состояние activated сразу берём управление вкладками
+    await self.clients.claim();
 }
 
 async function onFetch(event) {

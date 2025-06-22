@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
 using MudBlazor.Services;
 using Toolbelt.Blazor.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI;
 
@@ -16,14 +17,30 @@ public class Program
         builder.RootComponents.Add<App>("#app");
         builder.RootComponents.Add<HeadOutlet>("head::after");
 
+        // Добавляем логирование
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
+
         var apiBaseUrl = builder.HostEnvironment.BaseAddress;
 
         // Создаем HttpClient для получения конфигурации
         var configHttpClient = new HttpClient { BaseAddress = new Uri(apiBaseUrl) };
-        var configService = new ConfigurationService(configHttpClient);
+        var loggerFactory = LoggerFactory.Create(_ => { });
+        var logger = loggerFactory.CreateLogger<ConfigurationService>();
+        var configService = new ConfigurationService(configHttpClient, logger);
 
         // Получаем конфигурацию из API
-        var apiSettings = await configService.GetConfigurationAsync();
+        var apiSettings = await configService.GetApiSettingsAsync();
+        
+        // Если конфигурация не получена, используем значения по умолчанию
+        if (apiSettings == null)
+        {
+            apiSettings = new ApiSettings
+            {
+                BaseUrl = apiBaseUrl,
+                SignalRHubUrl = apiBaseUrl
+            };
+        }
+        
         builder.Services.AddSingleton(apiSettings);
 
         // Базовый HttpClient без аутентификации

@@ -4,6 +4,7 @@
 @using MudBlazor
 @inject IUserService UserService
 @inject ISnackbar Snackbar
+@inject ILogger<InviteUsersDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -167,13 +168,13 @@
 
     private async Task LoadUsers()
     {
-        _isLoading = true;
         try
         {
             _users = await UserService.GetAllUsersAsync();
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка загрузки пользователей для приглашения");
             Snackbar.Add($"Ошибка загрузки пользователей: {ex.Message}", Severity.Error);
         }
         finally
@@ -202,6 +203,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при приглашении пользователя {UserName} в комнату {RoomId}", user.Name, RoomId);
             Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
         }
         finally
@@ -230,6 +232,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при приглашении mock пользователя {UserName} в комнату {RoomId}", mockUser.Name, RoomId);
             Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
         }
         finally
@@ -262,6 +265,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при создании mock пользователя {MockUserName} в комнате {RoomId}", _newMockUserName, RoomId);
             Snackbar.Add($"Ошибка: {ex.Message}", Severity.Error);
         }
         finally

@@ -2,6 +2,7 @@
 @using ContentRating.Web.UI.Services
 @inject IContentEstimationListService ContentEstimationListService
 @inject ISnackbar Snackbar
+@inject ILogger<CreateRoomDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -107,8 +108,9 @@
                 Snackbar.Add("Ошибка при создании топа", Severity.Error);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при создании топа с именем {RoomName}", roomName);
             errorMessage = "Произошла ошибка при создании топа";
             Snackbar.Add("Произошла ошибка при создании топа", Severity.Error);
         }

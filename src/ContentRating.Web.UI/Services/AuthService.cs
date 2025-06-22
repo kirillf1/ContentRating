@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using ContentRating.Web.Contracts.Identity;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services
 {
@@ -10,6 +11,7 @@ namespace ContentRating.Web.UI.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly NavigationManager _navigationManager;
         private readonly SecureTokenStorage _tokenStorage;
+        private readonly ILogger<AuthService> _logger;
 
         public event Action? AuthStateChanged;
         public bool IsAuthenticated { get; private set; }
@@ -27,12 +29,14 @@ namespace ContentRating.Web.UI.Services
         public AuthService(
             IHttpClientFactory httpClientFactory,
             NavigationManager navigationManager,
-            SecureTokenStorage tokenStorage
+            SecureTokenStorage tokenStorage,
+            ILogger<AuthService> logger
         )
         {
             _httpClientFactory = httpClientFactory;
             _navigationManager = navigationManager;
             _tokenStorage = tokenStorage;
+            _logger = logger;
         }
 
         private HttpClient CreateHttpClient()
@@ -42,9 +46,19 @@ namespace ContentRating.Web.UI.Services
 
         public async Task InitializeAsync()
         {
-            // Если уже инициализировано или инициализируется, не делаем повторную инициализацию
-            if (_isInitialized || _isInitializing)
+            // Если уже инициализировано — просто выходим
+            if (_isInitialized)
             {
+                return;
+            }
+
+            // Если инициализация уже выполняется в другом месте — ждём её завершения
+            if (_isInitializing)
+            {
+                while (_isInitializing)
+                {
+                    await Task.Delay(50);
+                }
                 return;
             }
 
@@ -56,7 +70,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch
             {
-                // Игнорируем ошибки инициализации
+                // Игнорируем ошибки инициализации (они будут залогированы внутри методов)
             }
             finally
             {
@@ -137,7 +151,7 @@ namespace ContentRating.Web.UI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при обновлении токена аутентификации");
                 // При ошибке очищаем состояние
                 await ClearAuthStateAsync();
                 return false;

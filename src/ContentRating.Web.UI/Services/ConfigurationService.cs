@@ -1,46 +1,48 @@
 ﻿using System.Text.Json;
 using ContentRating.Web.UI.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.Services;
 
 public interface IConfigurationService
 {
-    Task<ApiSettings> GetConfigurationAsync();
+    Task<ApiSettings?> GetApiSettingsAsync();
 }
 
 public class ConfigurationService : IConfigurationService
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<ConfigurationService> _logger;
 
-    public ConfigurationService(HttpClient httpClient)
+    public ConfigurationService(HttpClient httpClient, ILogger<ConfigurationService> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
-    public async Task<ApiSettings> GetConfigurationAsync()
+    public async Task<ApiSettings?> GetApiSettingsAsync()
     {
         try
         {
             var response = await _httpClient.GetAsync("api/configuration");
-            response.EnsureSuccessStatusCode();
 
-            var jsonString = await response.Content.ReadAsStringAsync();
-            var config = JsonSerializer.Deserialize<ApiSettings>(
-                jsonString,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var config = JsonSerializer.Deserialize<ApiSettings>(
+                    jsonString,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
 
-            return config ?? new ApiSettings();
+                return config;
+            }
+
+            return null;
         }
         catch (Exception ex)
         {
-            // Логирование ошибки или fallback конфигурация
-            Console.WriteLine($"Ошибка получения конфигурации: {ex.Message}");
-            return new ApiSettings
-            {
-                BaseUrl = "https://localhost:7247",
-                SignalRHubUrl = "https://localhost:7247",
-            };
+            _logger.LogError(ex, "Ошибка получения конфигурации API");
+            return null;
         }
     }
 }

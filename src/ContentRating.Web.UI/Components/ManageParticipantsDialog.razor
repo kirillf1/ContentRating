@@ -1,9 +1,11 @@
 @using ContentRating.Web.UI.ViewModels
 @using ContentRating.Web.UI.Services
 @using MudBlazor
+@using ContentRating.Web.Contracts.ContentPartyEstimationRoom
 @inject IContentPartyEstimationService EstimationService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<ManageParticipantsDialog> Logger
 
 <MudDialog>
     <DialogContent>
@@ -179,6 +181,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Ошибка при удалении участника {ParticipantName} из комнаты {RoomId}", participant.DisplayName, RoomId);
             Snackbar.Add($"Ошибка при удалении участника: {ex.Message}", Severity.Error);
         }
         finally

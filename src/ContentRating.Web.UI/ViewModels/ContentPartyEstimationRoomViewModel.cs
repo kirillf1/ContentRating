@@ -2,6 +2,7 @@
 using ContentRating.Web.Contracts.ContentPartyRating;
 using ContentRating.Web.UI.Services;
 using MudBlazor;
+using Microsoft.Extensions.Logging;
 
 namespace ContentRating.Web.UI.ViewModels
 {
@@ -12,18 +13,24 @@ namespace ContentRating.Web.UI.ViewModels
         private readonly IContentPartyEstimationHubService _hubService;
         private readonly ISnackbar _snackbar;
         private readonly AuthService _authService;
+        private readonly ILogger<ContentPartyEstimationRoomViewModel> _logger;
 
         // Поиск контента с debounce
         private string _searchText = string.Empty;
         private string _debouncedSearchText = string.Empty;
         private System.Timers.Timer? _searchTimer;
 
+        // Кэш отфильтрованного списка
+        private List<ContentPartyRatingViewModel> _filteredContentRatings = new();
+        private bool _isFilterDirty = true;
+
         public ContentPartyEstimationRoomViewModel(
             IContentPartyEstimationService estimationService,
             IContentPartyRatingService ratingService,
             IContentPartyEstimationHubService hubService,
             ISnackbar snackbar,
-            AuthService authService
+            AuthService authService,
+            ILogger<ContentPartyEstimationRoomViewModel> logger
         )
         {
             _estimationService = estimationService;
@@ -31,6 +38,7 @@ namespace ContentRating.Web.UI.ViewModels
             _hubService = hubService;
             _snackbar = snackbar;
             _authService = authService;
+            _logger = logger;
 
             // Инициализируем таймер для debounce поиска
             _searchTimer = new System.Timers.Timer(300); // 300 мс
@@ -72,29 +80,43 @@ namespace ContentRating.Web.UI.ViewModels
             }
         }
 
-        // Отфильтрованный список контента на основе поиска
-        public List<ContentPartyRatingViewModel> FilteredContentRatings
+        public IReadOnlyList<ContentPartyRatingViewModel> FilteredContentRatings
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(_debouncedSearchText))
+                if (_isFilterDirty)
                 {
-                    return ContentRatings;
+                    RecalculateFilter();
                 }
 
+                return _filteredContentRatings;
+            }
+        }
+
+        private void RecalculateFilter()
+        {
+            if (string.IsNullOrWhiteSpace(_debouncedSearchText))
+            {
+                _filteredContentRatings = ContentRatings;
+            }
+            else
+            {
                 var searchLower = _debouncedSearchText.ToLowerInvariant();
-                return ContentRatings
+                _filteredContentRatings = ContentRatings
                     .Where(rating =>
-                        rating.Name.ToLowerInvariant().Contains(searchLower)
-                        || rating.Address.ToLowerInvariant().Contains(searchLower)
-                    )
+                        rating.Name.ToLowerInvariant().Contains(searchLower) ||
+                        rating.Address.ToLowerInvariant().Contains(searchLower))
                     .ToList();
             }
+
+            _isFilterDirty = false;
         }
 
         private void OnSearchTimerElapsed(object? sender, ElapsedEventArgs e)
         {
             _debouncedSearchText = _searchText;
+            _isFilterDirty = true;
+            RecalculateFilter();
             StateChanged?.Invoke();
         }
 
@@ -154,9 +176,13 @@ namespace ContentRating.Web.UI.ViewModels
 
                 // Подключаемся к SignalR для получения обновлений в реальном времени
                 await _hubService.ConnectAsync(roomId);
+
+                _isFilterDirty = true;
+                RecalculateFilter();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Ошибка при загрузке данных комнаты {RoomId}", roomId);
                 HasError = true;
                 ErrorMessage = "Произошла ошибка при загрузке данных";
                 _snackbar.Add("Ошибка загрузки данных", Severity.Error);
@@ -164,6 +190,8 @@ namespace ContentRating.Web.UI.ViewModels
             finally
             {
                 IsLoading = false;
+                _isFilterDirty = true;
+                RecalculateFilter();
                 StateChanged?.Invoke();
             }
         }
@@ -204,41 +232,39 @@ namespace ContentRating.Web.UI.ViewModels
                     UpdateLocalRating(contentRatingId, CurrentUserId.Value, newRating);
 
                     _snackbar.Add("Оценка сохранена", Severity.Success);
+                    _isFilterDirty = true;
+                    RecalculateFilter();
                     StateChanged?.Invoke();
                     return true;
                 }
                 else
                 {
-                    // Fallback на HTTP API если SignalR недоступен
-                    var request = new EstimateContentRequest
-                    {
-                        NewScore = newRating,
-                        RaterForChangeScoreId = CurrentUserId.Value,
-                    };
-
+                    // Отправляем оценку через API как fallback
                     var success = await _ratingService.EstimateContentAsync(
                         contentRatingId,
-                        request
+                        new EstimateContentRequest { RaterForChangeScoreId = CurrentUserId.Value, NewScore = newRating }
                     );
 
                     if (success)
                     {
                         UpdateLocalRating(contentRatingId, CurrentUserId.Value, newRating);
-                        _snackbar.Add("Оценка сохранена", Severity.Success);
+                        _snackbar.Add($"Контент оценен: {newRating:F2}", Severity.Success);
+                        _isFilterDirty = true;
+                        RecalculateFilter();
                         StateChanged?.Invoke();
                         return true;
                     }
                     else
                     {
-                        _snackbar.Add("Не удалось сохранить оценку", Severity.Error);
+                        _snackbar.Add("Не удалось отправить оценку", Severity.Error);
                         return false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                _snackbar.Add("Произошла ошибка при сохранении оценки", Severity.Error);
+                _logger.LogError(ex, "Ошибка при оценке контента {ContentRatingId} пользователем {UserId}", contentRatingId, CurrentUserId);
+                _snackbar.Add("Произошла ошибка при оценке контента", Severity.Error);
                 return false;
             }
         }
@@ -283,16 +309,16 @@ namespace ContentRating.Web.UI.ViewModels
 
         public async Task<bool> CompleteEstimationAsync()
         {
-            if (!CanCompleteEstimation())
-                return false;
-
             try
             {
                 var success = await _estimationService.CompleteEstimationAsync(RoomId);
                 if (success)
                 {
+                    IsEstimationCompleted = true;
                     _snackbar.Add("Оценка завершена", Severity.Success);
-                    // Состояние обновится через SignalR
+                    _isFilterDirty = true;
+                    RecalculateFilter();
+                    StateChanged?.Invoke();
                     return true;
                 }
                 else
@@ -303,36 +329,29 @@ namespace ContentRating.Web.UI.ViewModels
             }
             catch (Exception ex)
             {
-                _snackbar.Add($"Ошибка при завершении оценки: {ex.Message}", Severity.Error);
+                _logger.LogError(ex, "Ошибка при завершении оценки в комнате {RoomId}", RoomId);
+                _snackbar.Add("Произошла ошибка при завершении оценки", Severity.Error);
                 return false;
             }
         }
 
         public async Task<bool> DeleteContentAsync(Guid contentId)
         {
-            if (!CanDeleteContent())
-            {
-                _snackbar.Add("У вас нет прав для удаления контента", Severity.Error);
-                return false;
-            }
-
-            var content = ContentRatings.FirstOrDefault(c => c.ContentId == contentId);
-            if (content == null)
-            {
-                _snackbar.Add("Контент не найден", Severity.Error);
-                return false;
-            }
-
             try
             {
                 var success = await _estimationService.RemoveContentAsync(RoomId, contentId);
                 if (success)
                 {
-                    // Удаляем локально сразу для лучшего UX
-                    // SignalR обновит остальных участников
-                    ContentRatings.Remove(content);
-                    _snackbar.Add($"Контент «{content.Name}» удален", Severity.Success);
-                    StateChanged?.Invoke();
+                    // Удаляем контент из локального списка
+                    var contentToRemove = ContentRatings.FirstOrDefault(c => c.ContentId == contentId);
+                    if (contentToRemove != null)
+                    {
+                        ContentRatings.Remove(contentToRemove);
+                        _snackbar.Add("Контент удален", Severity.Success);
+                        _isFilterDirty = true;
+                        RecalculateFilter();
+                        StateChanged?.Invoke();
+                    }
                     return true;
                 }
                 else
@@ -343,7 +362,7 @@ namespace ContentRating.Web.UI.ViewModels
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                _logger.LogError(ex, "Ошибка при удалении контента {ContentId} из комнаты {RoomId}", contentId, RoomId);
                 _snackbar.Add("Произошла ошибка при удалении контента", Severity.Error);
                 return false;
             }
@@ -355,53 +374,58 @@ namespace ContentRating.Web.UI.ViewModels
             double newRating
         )
         {
-            if (!CanRateForMockUser(mockUserId, contentRatingId))
+            var mockUser = Raters.FirstOrDefault(r => r.Id == mockUserId);
+            if (mockUser == null || !mockUser.IsMock)
             {
-                _snackbar.Add("Вы не можете управлять оценками этого пользователя", Severity.Error);
+                _snackbar.Add("Mock пользователь не найден", Severity.Error);
                 return false;
             }
 
+            var content = ContentRatings.FirstOrDefault(c => c.RatingId == contentRatingId);
+            if (content == null)
+            {
+                _snackbar.Add("Контент не найден", Severity.Error);
+                return false;
+            }
+
+            // Валидация оценки
             if (newRating < MinRating || newRating > MaxRating)
             {
-                _snackbar.Add(
-                    $"Оценка должна быть от {MinRating:F2} до {MaxRating:F2}",
-                    Severity.Error
-                );
+                _snackbar.Add($"Оценка должна быть от {MinRating:F2} до {MaxRating:F2}", Severity.Error);
                 return false;
             }
 
             try
             {
-                // Для mock пользователей используем HTTP API (они не подключены к SignalR)
-                var request = new EstimateContentRequest
-                {
-                    NewScore = newRating,
-                    RaterForChangeScoreId = mockUserId,
-                };
-
-                var success = await _ratingService.EstimateContentAsync(contentRatingId, request);
+                // Для mock-пользователя всегда отправляем через API, чтобы явно указывать идентификатор рейтера
+                var success = await _ratingService.EstimateContentAsync(
+                    contentRatingId,
+                    new EstimateContentRequest
+                    {
+                        RaterForChangeScoreId = mockUserId,
+                        NewScore = newRating
+                    }
+                );
 
                 if (success)
                 {
                     UpdateLocalRating(contentRatingId, mockUserId, newRating);
-                    var mockUser = Raters.FirstOrDefault(r => r.Id == mockUserId);
-                    _snackbar.Add(
-                        $"Оценка для {mockUser?.DisplayName} сохранена",
-                        Severity.Success
-                    );
+                    _snackbar.Add($"Контент оценен от имени {mockUser.DisplayName}: {newRating:F2}", Severity.Success);
+                    _isFilterDirty = true;
+                    RecalculateFilter();
                     StateChanged?.Invoke();
                     return true;
                 }
                 else
                 {
-                    _snackbar.Add("Не удалось сохранить оценку", Severity.Error);
+                    _snackbar.Add("Не удалось отправить оценку", Severity.Error);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                _snackbar.Add("Произошла ошибка при сохранении оценки", Severity.Error);
+                _logger.LogError(ex, "Ошибка при оценке контента {ContentRatingId} от имени mock пользователя {MockUserId}", contentRatingId, mockUserId);
+                _snackbar.Add("Произошла ошибка при оценке контента", Severity.Error);
                 return false;
             }
         }
@@ -459,6 +483,8 @@ namespace ContentRating.Web.UI.ViewModels
                     );
                 }
 
+                _isFilterDirty = true;
+                RecalculateFilter();
                 StateChanged?.Invoke();
             }
         }
@@ -497,6 +523,8 @@ namespace ContentRating.Web.UI.ViewModels
                     }
                 }
 
+                _isFilterDirty = true;
+                RecalculateFilter();
                 StateChanged?.Invoke();
             }
         }
@@ -525,6 +553,8 @@ namespace ContentRating.Web.UI.ViewModels
                     }
                 }
 
+                _isFilterDirty = true;
+                RecalculateFilter();
                 StateChanged?.Invoke();
             }
         }
@@ -536,6 +566,8 @@ namespace ContentRating.Web.UI.ViewModels
             if (contentToRemove != null)
             {
                 ContentRatings.Remove(contentToRemove);
+                _isFilterDirty = true;
+                RecalculateFilter();
                 StateChanged?.Invoke();
             }
         }
@@ -543,6 +575,8 @@ namespace ContentRating.Web.UI.ViewModels
         private void OnEstimationCompleted()
         {
             IsEstimationCompleted = true;
+            _isFilterDirty = true;
+            RecalculateFilter();
             StateChanged?.Invoke();
         }
 
@@ -550,6 +584,8 @@ namespace ContentRating.Web.UI.ViewModels
         {
             MinRating = minRating;
             MaxRating = maxRating;
+            _isFilterDirty = true;
+            RecalculateFilter();
             StateChanged?.Invoke();
         }
 
@@ -570,7 +606,7 @@ namespace ContentRating.Web.UI.ViewModels
                 {
                     await LoadRoomDataAsync(RoomId);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     _snackbar.Add(
                         "Ошибка при обновлении данных после переподключения",
